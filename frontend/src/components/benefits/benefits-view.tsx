@@ -181,6 +181,7 @@ export function BenefitsView() {
 
       <NeedFilter needs={needs} value={filter} onChange={setNeed} />
 
+      <h2 className="sr-only">Benefits that may fit you</h2>
       {live.length ? (
         <div className="grid gap-3.5 [grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))]">
           {live.map((c) => (

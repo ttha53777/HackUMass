@@ -111,7 +111,7 @@ export function Intake({
       <header className="border-b border-line bg-surface px-4 py-[18px]">
         <div className="mx-auto flex w-[min(1080px,100%)] items-center justify-between gap-3">
           <span className="font-display text-xl font-extrabold tracking-[-0.05em]">
-            Open<b className="text-art-h1">Door</b>
+            Open<b className="text-brand">Door</b>
           </span>
           <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
             <span>Question {step + 1} of 3</span>

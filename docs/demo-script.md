@@ -2,7 +2,7 @@
 
 About 4 minutes. It uses real, hand-checked Hampshire County records. The persona is fictional.
 
-`backend/tests/test_demo_smoke.py` runs this exact script through the API and must pass before every demo (`cd backend && .venv/bin/pytest tests/test_demo_smoke.py`).
+`backend/tests/test_demo_smoke.py` runs the same answers through the API (five times, each in a fresh app) and must pass before every demo (`cd backend && .venv/bin/pytest tests/test_demo_smoke.py`).
 
 ## Before you start
 
@@ -11,38 +11,37 @@ About 4 minutes. It uses real, hand-checked Hampshire County records. The person
    `cd backend && .venv/bin/uvicorn app.main:app --port 8000 --env-file .env`
 3. Start the frontend: `cd frontend && npm run dev`, then open the printed URL.
 4. Check that `curl -s localhost:8000/api/health` shows the `llm_mode` you expect.
-5. Use a fresh browser window; *Start over* also gives a clean session.
+5. Use a fresh browser window, or **About you → Start over** (tap twice) for a clean session.
 
-**Persona (fictional):** a retired person living alone in Amherst on about $1,400 a month, worried about groceries and an electric bill they are behind on.
+**Persona (fictional):** someone living alone in Amherst, worried about groceries and a heating system that just stopped working in the home they own.
 
 ## Script
 
 | # | Do | Say / point at |
 |---|---|---|
-| 1 | Open the page. | The app leads: the first question is already there. It's not a chat box. |
-| 2 | Tick **Food & groceries** and **Utilities & energy bills** → **Continue**. | Tap-to-answer. Every later question depends on these choices. |
+| 1 | Open the page. Type a first name, **Get started**. | Welcome, not a chat box. The name stays on this device; other languages are marked *Soon*. |
+| 2 | Tick **Food & groceries** and **Heat & utility bills** → **Continue**. | One question per screen. The right rail shows programs in view and what we heard. |
 | 3 | ZIP **01002** → **Continue**. | Coverage is deliberately narrow: only programs we checked by hand. |
-| 4 | **I'm behind on a bill**. | Single choices advance on tap. The teaser shows programs were already found. |
-| 5 | Household **1** → **Continue**. | The question explains why it's asked. |
-| 6 | **$1,400**, *per month* → **Continue**. | "An estimate is fine." Income is asked only because nearby programs have income limits. |
-| 7 | Results appear. | Header "near Amherst (01002)", the tally, and the *guide, not a decision* box. |
-| 8 | Scroll to **Your next steps**. | Ranked: open-access meals first (no application), then what to check. "Act soon" comes from the behind-on-a-bill answer. Every link comes from the provider's record. |
-| 9 | Open **May not fit** → *Good Neighbor Energy Fund* → **Why we think this**. | Not met: $16,800 a year is below the $53,586 minimum. The rule, the numbers and the source are all shown. |
-| 10 | Back at the top: the follow-up card ("could change 1 result") → **I own my home**. | **The key moment.** *What changed* says Heating System Repair moved from "More information needed" to "Possibly a fit", and it moves up the plan. |
-| 11 | Optional: offer → **Yes** → pick *Simulated: retired, fixed monthly income* → tick consent → **Use this simulated profile**. | Clearly simulated sandbox data. Deposits match the $1,400 answer, so nothing changes and no question is needed. |
-| 11b | Optional alternative: pick *Simulated: family of four*. | Deposits of $5,350 conflict with the answer: the app keeps the person's number and asks. Answer **No, that's not right**. |
-| 12 | Open **How we put this together**. | Four specialists, real statuses and counts, no invented "AI reasoning". |
-| 13 | **Print or save**. | A plan to take to an appointment, with links written out. |
+| 4 | Household **1**, **None of these** → **Show my results**. | Three questions, then the Building screen: each row is a real agent step, checked off when the backend says it finished. |
+| 5 | Home. | One next step, ranked by the Action Planning agent, with its wording and caveat. *After that*, two paths (government benefits, local help), and the sharpen card: the one question that would settle the most programs. |
+| 6 | **About you** → *Questions you can answer* → heat & utilities: **My heating system is broken** → **Save answer**. | Any open question can be answered from anywhere. The toast says what moved. |
+| 7 | Housing: **I own my home**. Then benefits you get: **Fuel Assistance** → **Save answer**. | **The key moment.** "Got it. … moved to likely fit." Heating System Repair now fits (broken system, homeowner, gets Fuel Assistance); the Good Neighbor Energy Fund no longer does, because it is for people who don't get state aid. |
+| 8 | **Government benefits**. | Fuel Assistance shows *You have this*. Each card: who decides, questions left, documents, when. "One yes opens more" shows which approvals unlock others. |
+| 9 | Open the **SNAP** guide → *I'm starting this application*. Tap **I have this** on a document if one is listed. | Five sections from the record: check, gather, apply (easiest way first, phone chips, a call script), what to ask, track the decision. Saved on this device only. |
+| 10 | **Home**. | "Pick up where you left off": the started guide is now the next step. |
+| 11 | **Local help** → tap a card. | Grouped by how you get started; the week calendar shows only posted hours. The drawer: reasons, the rules with source links, verified date, and **How we checked this** (agent steps, counts only). |
+| 12 | **Documents**. | One list across every application; each paper counts everywhere it's needed. Nothing is uploaded. |
+| 13 | Optional: **About you** → *Try a sandbox profile* → pick *Simulated: family of four* → tick consent → **Use this profile**. | Clearly simulated. Its deposits differ from what was said, so nothing is used until the person answers the confirm card. |
 
-Close with the guardrails: eligibility is preliminary, program facts only come from curated records, nothing is ever submitted for the user, and there's no account or database.
+Close with the guardrails: eligibility is potential, never official; program facts only come from curated records; nothing is ever submitted for the user; no account, no database, no Social Security number.
 
 ## If something goes wrong
 
 | Symptom | Fix |
 |---|---|
-| "Your earlier session expired" | The backend restarted. The app has already started a new session; replay from step 2 (about 30 seconds). |
-| "We couldn't reach the server" | Start the backend on port 8000, then choose *Try again*. |
+| "Your last visit timed out, so we started fresh" | The backend restarted. A new session is ready; replay from step 1 (about 30 seconds), or use **Try a sample**. |
+| "We couldn't reach the server" | Start the backend on port 8000, then choose **Try again**. |
 | Live mode is slow, or wording looks off | Set `LLM_MODE=off` in `backend/.env` and restart the backend. Templates give the same statuses, links and order. |
 | "The bank sandbox didn't respond…" | Expected when Nessie is down. The built-in simulated persona is used, and the flow is unchanged. |
 | ZIP "outside coverage" | Use `01002`, and check that `PROGRAM_SOURCE=curated`. |
-| Results say "Updating…" for long | Wait for the poll (about 1 s); in live mode the model call can take several seconds. |
+| A question you expected is not listed | It was already answered or skipped: change it under **About you**. |

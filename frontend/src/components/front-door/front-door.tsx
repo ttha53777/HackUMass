@@ -104,6 +104,7 @@ export function FrontDoor() {
 
   const sample = async () => {
     setName(SAMPLE.name);
+    saveName(SAMPLE.name);
     setStage("intake");
     if (!(await send({ question_id: "needs", selected_option_ids: SAMPLE.needs }))) return setStep(0);
     if (!(await send({ question_id: "zip", value: SAMPLE.zip }))) return setStep(1);

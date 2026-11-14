@@ -18,9 +18,16 @@ export function Gate({ children }: { children: ReactNode }) {
 
   if (loadError) {
     return (
-      <p role="alert" className="m-auto max-w-md p-8 text-center text-muted-foreground">
-        {loadError}
-      </p>
+      <div role="alert" className="m-auto flex max-w-md flex-col items-center gap-4 p-8 text-center text-muted-foreground">
+        <p>{loadError}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-[11px] bg-brand px-5 py-[13px] font-bold text-on-brand hover:bg-brand-hover"
+        >
+          Try again
+        </button>
+      </div>
     );
   }
   if (!ready) {

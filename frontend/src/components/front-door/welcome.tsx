@@ -38,11 +38,11 @@ export function Welcome({
             <HandHeart aria-hidden className="size-[18px]" />
           </span>
           <span>
-            Open<b className="text-art-h1">Door</b>
+            Open<b className="text-brand">Door</b>
           </span>
         </div>
         <h1 className="font-display text-[clamp(34px,4.4vw,54px)] font-extrabold leading-[1.08] tracking-[-0.045em]">
-          Find the help that&apos;s <em className="not-italic text-art-h2">already waiting</em> for you.
+          Find the help that&apos;s <em className="not-italic text-brand">already waiting</em> for you.
         </h1>
         <p className="text-base leading-[1.75] text-muted-foreground">
           Three quick questions. We check government benefits and local help near you, then show you

@@ -20,7 +20,7 @@ function Logo() {
         <DoorOpen aria-hidden className="size-[18px]" />
       </span>
       <span>
-        Open<b className="text-art-h1">Door</b>
+        Open<b className="text-brand">Door</b>
       </span>
     </Link>
   );

@@ -1,6 +1,6 @@
 # OpenDoor: Demo-to-App Build Plan
 
-> **Status (2026-11-14): Phases 0-6 done.** See "Build log" at the end for what changed, deviations and open items.
+> **Status (2026-11-14): Phases 0-7 done.** See "Build log" at the end for what changed, deviations and open items.
 
 Source of truth for the look and behavior: the "OpenDoor Welcome Flow" artifact (claude.ai/artifact/UjUZ8vsSvz7kbsUQ1MB6bM).
 Companion to `docs/foundation-plan.md` (architecture). This plan covers only the product shell, UX and the contract changes needed to support it.
@@ -218,7 +218,7 @@ Phases 0-2, then Phase 3 steps 1-3, then Phase 4 Home + one Guide (Fuel Assistan
 
 **Phase 2.** `/` is the front door: Welcome (language chips, name kept on device, "Try a sample" through the real API), the 3 core questions, Building (never outlasts the backend), then `/home`. Refresh resumes; an outside-coverage ZIP shows the backend's notice instead of asking more.
 
-**Open items:** Phase 7 as planned; real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
+**Open items:** real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
 
 ### Architecture review (after Phase 3)
 
@@ -270,3 +270,26 @@ Mocked first as a design canvas (claude.ai/artifact/14rzBkdhqpv8A2BGxkDJZS), the
 - **LLM wording:** nothing new in the UI. In live mode the agent's guarded rewording reaches Home through `action_plan`; off mode is unchanged.
 - **`/legacy` retired:** `app/legacy`, `components/intake/` and `components/results/` deleted (each had an equivalent: the front door, QuestionForm, About you, Benefits/Local, Home, the evidence cards, How we checked this, StatusPill). No backend code removed. README lists where each endpoint appears; `GET /health` is API-only.
 - Verified: 293 backend tests, lint, typecheck, `next build`; upload, both confirmations and the sandbox profile run through the API. **Not clicked through in a browser.**
+
+### Phase 7 (hardening)
+
+First pass in a real browser (Chrome, dark and light, desktop and 390 px phone width), driven against a curated-data backend.
+
+Fixed:
+- **Contrast (AA):** light-theme `--faint`, `--sky-ink` and `--peach-ink` darkened so small text on paper, surface and tints reaches 4.5:1; the green accent words ("Door" in the logo, "already waiting" on Welcome) now use `--brand`, which passes in both themes (they used the art colors, at 1.8 to 3:1).
+- **Invalid markup:** About you nested a list item inside another list item (a hydration error in dev).
+- **Heading outline:** Benefits went from H1 to H3; a visually hidden H2 now introduces the cards.
+- **Backend down:** the dashboard said it couldn't reach the server but offered no way out; it now has **Try again**.
+- **Try a sample** now saves "Maya" on the device, so Home greets her and the call script uses the name.
+- **Home layout:** the glance strip moved into the left column, so a tall sharpen card no longer leaves a large empty gap.
+- **Polling:** backs off from 400 ms to 3 s instead of a fixed 1 s. `whenIdle()` now waits for React to commit the latest snapshot first, so a 202 reply isn't mistaken for "done" (the toast could read the previous `last_change`).
+- **Next.js 16:** dashboard pages set `export const instant = false` (they wait for the session in the browser), clearing the dev "instant navigation" errors; the guide page is a server page around a client `GuideRoute`.
+
+Checked, no change needed:
+- **Negative cases:** out-of-region ZIP (backend notice, ZIP can be changed); every follow-up "not sure" or skipped (Home and sharpen card show "all caught up"); backend down; backend restart mid-session ("Your last visit timed out, so we started fresh"); busy and stale answers are covered by backend tests and toasted in the UI.
+- **Privacy:** backend log holds request lines only (no answers, ZIPs, incomes or document text); no `innerHTML` or `dangerouslySetInnerHTML`; no SSN fields; `backend/.env` git-ignored; browser storage holds only the session id, the name and the plan's ids and flags; isolation and log-safety tests exist (`test_sessions_are_isolated`, `test_failure_logs_carry_no_user_values`, `test_the_api_key_never_reaches_the_logs`).
+- **Accessibility:** every button and link has a name, every input a label, one H1 per page; keyboard: Enter opens the drawer with focus on Close, Tab stays inside it with a visible outline, Escape closes it and returns focus to the card; no horizontal scroll on any page at 390 px.
+- **Demo:** `docs/demo-script.md` rewritten for the OpenDoor screens, using the same answers as `test_demo_smoke.py`. Three consecutive clean runs through the real UI (scripted clicks, same steps as the script), plus the smoke test three times.
+- **Fresh clone:** README setup on a new clone: 293 backend tests, `npm install`, lint, typecheck, build, and a live session through the proxy.
+
+Not done: a screen-reader pass with VoiceOver, 200% browser zoom (the window could not be zoomed from automation), and screenshots for `docs/ui-reference/`.

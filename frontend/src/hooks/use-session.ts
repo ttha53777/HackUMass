@@ -13,7 +13,10 @@ import {
 import type { AnswerIn, SessionSnapshot } from "@/lib/types";
 
 const STORAGE_KEY = "crn.session_id";
-const POLL_MS = 1000;
+// Poll quickly at first (most runs finish in well under a second), then back off.
+const POLL_MIN_MS = 400;
+const POLL_MAX_MS = 3000;
+const pollDelay = (attempt: number) => Math.min(POLL_MIN_MS * 1.6 ** attempt, POLL_MAX_MS);
 
 const OFFLINE_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
 
@@ -127,7 +130,7 @@ export function useSession(): SessionController {
           if (isApiError(error, "session_not_found")) void begin(null, true);
           else setPollAttempt((n) => n + 1);
         }
-    }, POLL_MS);
+    }, pollDelay(pollAttempt));
     return () => window.clearTimeout(timer);
   }, [sessionId, busy, pollAttempt, begin]);
 
@@ -210,6 +213,8 @@ export function useSession(): SessionController {
 
   const whenIdle = useCallback(async (timeoutMs = 20_000) => {
     const deadline = Date.now() + timeoutMs;
+    // Let React commit the latest snapshot first, so a 202 ("still working") is seen as busy.
+    await new Promise((resolve) => setTimeout(resolve, 50));
     while (workingRef.current && Date.now() < deadline) {
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
