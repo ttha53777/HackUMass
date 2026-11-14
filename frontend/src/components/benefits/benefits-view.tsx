@@ -28,12 +28,7 @@ import { STAGE_LABEL } from "@/lib/device-state";
 import type { ProgramCard, SessionSnapshot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const HOW = [
-  ["Check if you may qualify", "Answer the few questions the rules depend on. Skip any you'd rather not."],
-  ["Gather your papers", "One list, tailored to you. Documents carry over between applications."],
-  ["Apply the easiest way", "Online, by phone or in person, with a script for the call."],
-  ["Track the decision", "Mark it applied. If it's approved, we show what it unlocks. If it's turned down, we show what to try next."],
-];
+const HOW = ["See if you qualify", "Get your papers ready", "Apply", "Hear back"];
 
 const PRIORITY: Record<Tone, number> = { fit: 0, maybe: 1, open: 2, later: 3, checking: 4, have: 5, out: 9 };
 
@@ -157,27 +152,30 @@ export function BenefitsView() {
 
   return (
     <>
-      <div className="mb-[22px]">
-        <span className="inline-flex items-center gap-[7px] rounded-full bg-gov py-[5px] pl-2 pr-[11px] text-[11px] font-extrabold text-gov-ink">
-          <Landmark aria-hidden className="size-3.5" />
-          Government benefits
-        </span>
-        <h1 className="my-2 text-[clamp(26px,3vw,36px)] font-extrabold leading-[1.12] tracking-[-1.4px]">Benefits you can apply for, with a guide for each.</h1>
-        <p className="max-w-[640px] text-[14.5px] leading-[1.7] text-muted-foreground">
-          These are public programs. You send an application, and an agency decides. We can only tell you that you <em>might</em> qualify. Each
-          guide checks what we still need to know, lists the papers for your situation, and shows the fastest way to apply.
-        </p>
-      </div>
-
-      <ol className="mb-6 grid gap-2.5 min-[620px]:grid-cols-2 min-[1101px]:grid-cols-4">
-        {HOW.map(([t, d], i) => (
-          <li key={t} className="rounded-2xl bg-gov px-[15px] py-3.5">
-            <div className="mb-[9px] grid size-[26px] place-items-center rounded-[9px] bg-surface text-xs font-extrabold text-gov-ink">{i + 1}</div>
-            <strong className="mb-[3px] block text-[13px]">{t}</strong>
-            <p className="text-xs leading-[1.55] text-muted-foreground">{d}</p>
-          </li>
-        ))}
-      </ol>
+      <header className="relative mb-6 overflow-hidden rounded-[28px] bg-gov px-5 py-6 min-[751px]:px-8 min-[751px]:py-8">
+        <span aria-hidden className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-surface opacity-[0.07]" />
+        <div className="relative">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 text-[11.5px] font-extrabold text-gov-ink">
+            <Landmark aria-hidden className="size-3.5" />
+            Government benefits
+          </span>
+          <h1 className="mb-2 mt-3.5 text-[clamp(28px,3.4vw,40px)] font-extrabold leading-[1.1] tracking-[-1.4px]">Benefits you may qualify for</h1>
+          <p className="max-w-[560px] text-[15.5px] leading-[1.6] text-ink/80">
+            Pick one and we&apos;ll walk you through it, step by step. Only the agency can say yes, but we&apos;ll get you ready.
+          </p>
+          <ol aria-label="How each guide works" className="mt-5 flex flex-wrap items-center gap-x-1.5 gap-y-2">
+            {HOW.map((t, i) => (
+              <li key={t} className="flex items-center gap-1.5">
+                <span className="inline-flex items-center gap-2 rounded-full bg-surface/70 py-1.5 pl-1.5 pr-3 text-[12.5px] font-extrabold backdrop-blur-sm">
+                  <span className="grid size-5 place-items-center rounded-full bg-gov-ink text-[10.5px] text-surface">{i + 1}</span>
+                  {t}
+                </span>
+                {i < HOW.length - 1 ? <ArrowRight aria-hidden className="size-3.5 text-gov-ink opacity-60" /> : null}
+              </li>
+            ))}
+          </ol>
+        </div>
+      </header>
 
       <NeedFilter needs={needs} value={filter} onChange={setNeed} />
 
