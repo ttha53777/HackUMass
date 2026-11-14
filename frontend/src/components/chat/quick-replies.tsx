@@ -7,6 +7,8 @@ import { ArrowRight, Baby, Briefcase, Bus, Check, Flame, House, Minus, Stethosco
 import type { AnswerIn, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { optionLabel } from "./script";
+
 const ICON: Record<string, LucideIcon> = {
   food: Utensils,
   utilities: Flame,
@@ -33,6 +35,9 @@ export function QuickReplies({
   question,
   initial,
   confirm,
+  first: firstId,
+  skip,
+  pause,
   disabled,
   onAnswer,
 }: {
@@ -40,6 +45,12 @@ export function QuickReplies({
   initial?: string[];
   /** A "Yes, that's right" chip for something the person already said. */
   confirm?: { label: string; answer: AnswerIn };
+  /** Show this option first (e.g. a place to stay, after a safety message). */
+  first?: string;
+  /** Offer a quiet "Skip" for a question that can be skipped. */
+  skip?: boolean;
+  /** Offer a soft "Not right now" that pauses the conversation. */
+  pause?: () => void;
   disabled: boolean;
   onAnswer: (answer: AnswerIn) => void;
 }) {
@@ -60,7 +71,9 @@ export function QuickReplies({
         icon: n === 1 ? UserRound : Users,
       }))
     : multi || question.type === "single_select"
-      ? question.options.map((o) => ({ ...o, icon: ICON[o.id] }))
+      ? [...question.options]
+          .sort((a, b) => Number(b.id === firstId) - Number(a.id === firstId))
+          .map((o) => ({ id: o.id, label: optionLabel(question, o.id, o.label), icon: ICON[o.id] }))
       : [];
 
   const toggle = (id: string) => {
@@ -133,9 +146,33 @@ export function QuickReplies({
           transition={{ delay: 0.04 * chips.length + 0.05 }}
           className="mt-3 inline-flex items-center gap-2 rounded-[11px] bg-brand px-4 py-2.5 text-[14px] font-bold text-on-brand hover:bg-brand-hover disabled:opacity-40"
         >
-          {picked.length ? `Done, that's ${picked.length === 1 ? "it" : "all"}` : "Pick any that apply"}
+          {picked.length ? `Continue (${picked.length})` : "Continue"}
           <ArrowRight aria-hidden className="size-4" />
         </motion.button>
+      ) : null}
+      {skip || pause ? (
+        <div className="mt-3 flex flex-wrap gap-3">
+          {skip ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onAnswer({ question_id: question.id, skipped: true })}
+              className="rounded-lg px-1 py-1.5 text-[13.5px] font-semibold text-muted-foreground underline-offset-4 hover:text-ink hover:underline disabled:opacity-50"
+            >
+              Skip this one
+            </button>
+          ) : null}
+          {pause ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={pause}
+              className="rounded-lg px-1 py-1.5 text-[13.5px] font-semibold text-muted-foreground underline-offset-4 hover:text-ink hover:underline disabled:opacity-50"
+            >
+              Not right now
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

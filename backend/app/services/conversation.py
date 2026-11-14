@@ -101,7 +101,7 @@ Fill in every JSON field.
 reply: one or two short, warm sentences (6th-grade reading level) that show you
   understood what they told you, in your own plain words. Be kind and calm, not
   gushing. Do not ask a question; the website asks the next one itself. Do not give
-  advice. Do not name any program, agency, benefit, website, phone number, dollar
+  advice. Do not talk about the website's steps or progress (no "almost done"). Do not name any program, agency, benefit, website, phone number, dollar
   amount, date or place they did not mention. Never say or imply that they qualify, are eligible, or will get help.
   If off_topic is true, reply that you can help them find local support.
 needs: the help areas the message clearly asks for, from the allowed values only.

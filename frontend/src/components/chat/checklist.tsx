@@ -53,7 +53,7 @@ export function Checklist({
   }, []);
 
   return (
-    <div className="ml-11 max-w-[520px] overflow-hidden rounded-[18px] border border-line bg-surface shadow-card">
+    <div className="max-w-[520px] overflow-hidden rounded-[18px] border border-line bg-surface shadow-card">
       {rows.map(([title, detail, agent], i) => {
         if (shown <= i) return null;
         const Icon = ICONS[i];

@@ -8,6 +8,9 @@ import { plural } from "@/lib/format";
 /** The four questions the chat asks before handing over to Home (mirrors derive.coreDone). */
 export const CORE_IDS = ["needs", "zip", "household_size", "household_who"] as const;
 
+/** Asked after the core, only when the backend lists them as useful. Both skippable. */
+export const EXTRA_IDS = ["income_band", "housing_status"] as const;
+
 /** Answers for "Try a sample". */
 export const SAMPLE_NAME = "Maya";
 export const SAMPLE_ANSWERS: Record<string, AnswerIn> = {
@@ -15,6 +18,8 @@ export const SAMPLE_ANSWERS: Record<string, AnswerIn> = {
   zip: { question_id: "zip", value: "01002" },
   household_size: { question_id: "household_size", value: 2 },
   household_who: { question_id: "household_who", selected_option_ids: ["60"] },
+  housing_status: { question_id: "housing_status", selected_option_ids: ["renting"] },
+  // income_band options are built per session; the sample picks the first range.
 };
 
 export function greeting(name: string): string {
@@ -23,15 +28,35 @@ export function greeting(name: string): string {
 }
 
 /** How the chat words some questions. The backend prompt stays as is for other screens. */
-const DISPLAY: Record<string, { prompt: string; reason: string | null }> = {
+const DISPLAY: Record<string, { prompt?: string; reason?: string | null }> = {
   needs: {
     prompt: "What's been weighing on you lately?",
     reason: "Tell me in your own words, or tap what fits. You don't need to know which programs exist.",
   },
+  household_size: {
+    prompt: "How many people live with you, including you?",
+    reason: "Count everyone you share food or bills with. Income limits depend on it.",
+  },
+  household_who: {
+    prompt: "Does anyone at home fit any of these?",
+    reason: "Some programs are only for older adults, young children or pregnancy. Pick any that apply.",
+  },
+  income_band: { reason: "A rough range is fine, and you can skip this." },
+  housing_status: { prompt: "And what's your housing like right now?", reason: "Some help is only for renters or homeowners." },
 };
 
 export function shown(q: Question): { prompt: string; reason: string | null } {
-  return DISPLAY[q.id] ?? { prompt: q.prompt, reason: q.reason };
+  const d = DISPLAY[q.id];
+  return { prompt: d?.prompt ?? q.prompt, reason: d && "reason" in d ? (d.reason ?? null) : q.reason };
+}
+
+/** Plainer chip labels for some options (ids unchanged). */
+const OPTION_LABEL: Record<string, Record<string, string>> = {
+  household_who: { "60": "60 or older", "55": "55 to 59", child: "A child under 5, or a pregnancy", none: "No one like that" },
+};
+
+export function optionLabel(q: Question, optionId: string, fallback: string): string {
+  return OPTION_LABEL[q.id]?.[optionId] ?? fallback;
 }
 
 /** Fixed, team-reviewed safety message (the one fact here not from the curated data). */
@@ -43,12 +68,24 @@ export const SAFETY_TEXT = {
 export const OFF_TOPIC =
   "I'm here to help you find food, heat, housing, health and transport support nearby. Tell me what's going on, or tap what fits below.";
 
-/** When a typed message didn't settle the question. */
-export function nudge(q: Question): string {
+/**
+ * What to say when a typed message didn't settle the question. Never a stock
+ * "thank you" after the navigator already replied to what was said.
+ */
+export function bridge(q: Question, { urgent, replied }: { urgent: boolean; replied: boolean }): string {
+  if (urgent) {
+    return "You can keep going here whenever it feels right. I can look for practical help too, like a safe place to stay, food or bills.";
+  }
   if (q.type === "zip") return "I'll need the five digits of your ZIP code, like 01002.";
-  if (q.id === "household_size") return "About how many people live with you, counting you? A number works best.";
-  return "Thank you for sharing that. Tap what fits best below, or tell me a little more.";
+  if (q.id === "household_size") return "About how many people live with you, counting you? A number is all I need.";
+  if (q.id === "income_band") return "A rough yearly amount is fine, like 30,000. Or tap a range, or skip.";
+  return replied
+    ? "Whenever you're ready, tap what fits below or tell me a bit more."
+    : "I want to make sure I get this right. Tap what fits below, or tell me a bit more.";
 }
+
+export const PAUSE_TEXT =
+  "That's okay. Take your time. I'm here when you're ready, and you can type anything below.";
 
 const UNSUPPORTED_LABEL: Record<UnsupportedNeed, string | null> = {
   childcare: "childcare",
@@ -62,7 +99,7 @@ const UNSUPPORTED_LABEL: Record<UnsupportedNeed, string | null> = {
 export function unsupportedLine(needs: UnsupportedNeed[]): string | null {
   const labels = needs.map((n) => UNSUPPORTED_LABEL[n]).filter((x): x is string => !!x);
   if (!labels.length) return null;
-  return `I can't search for ${list(labels)} yet, so I'll focus on what I can find for you.`;
+  return `I can't search for ${list(labels)} yet.`;
 }
 
 /** A question asked as a confirmation of something the person already said. */
@@ -76,7 +113,7 @@ export function confirmation(q: Question, noted: NotedFacts): { prompt: string; 
     };
   }
   if (q.id === "household_who" && noted.household_who.length) {
-    const labels = q.options.filter((o) => noted.household_who.includes(o.id)).map((o) => o.label);
+    const labels = q.options.filter((o) => noted.household_who.includes(o.id)).map((o) => optionLabel(q, o.id, o.label).toLowerCase());
     if (!labels.length) return null;
     return {
       prompt: `You mentioned ${list(labels)}. Is that everyone I should know about?`,
@@ -91,9 +128,9 @@ export function confirmation(q: Question, noted: NotedFacts): { prompt: string; 
 }
 
 /** How long the typing bubble shows before a message of this length. */
-export function typingMs(text: string, reduced: boolean): number {
+export function typingMs(text: string, reduced: boolean, followOn = false): number {
   if (reduced) return 0;
-  return Math.min(1300, 520 + text.length * 9);
+  return followOn ? Math.min(700, 280 + text.length * 5) : Math.min(1300, 520 + text.length * 9);
 }
 
 const MATCHED = /\(we also matched this to (.+)\)$/;
@@ -140,6 +177,10 @@ export function ack(questionId: string, s: SessionSnapshot, afterReply = false):
     }
     case "household_who":
       return "Thank you. That helps me find the right programs.";
+    case "income_band":
+      return item ? "Thank you. That's all I need about money." : "No problem, we can skip that.";
+    case "housing_status":
+      return "Thank you. That's the last question.";
     default:
       return "Thank you, I've updated that.";
   }
@@ -157,7 +198,7 @@ export function resultsLine(s: SessionSnapshot): { headline: string; detail: str
     };
   }
   return {
-    headline: `${plural(live.length, "program")} ${live.length === 1 ? "looks" : "look"} worth a look for you.`,
+    headline: `${plural(live.length, "program")} could help you.`,
     detail: `${plural(gov, "benefit")} you can apply for, and ${plural(loc, "local option")} nearby. Your plan puts them in order.`,
   };
 }
@@ -182,6 +223,7 @@ export function parseTyped(q: Question, raw: string): AnswerIn | { hint: string 
     if (n < lo || n > hi) return { hint: `Pick a number from ${lo} to ${hi}.` };
     return { question_id: q.id, value: n };
   }
+  if (q.id === "income_band") return incomeBand(q, text);
   if (q.type === "single_select" || q.type === "multi_select") {
     const t = text.toLowerCase();
     const hits = q.options.filter((o) => t.includes(o.label.toLowerCase()) || o.label.toLowerCase().includes(t));
@@ -206,13 +248,72 @@ function numberIn(text: string): number | null {
   return null;
 }
 
+/** A typed amount matched to the income range that contains it (yearly). */
+function incomeBand(q: Question, text: string): AnswerIn | { hint: string } {
+  const t = text.toLowerCase();
+  if (/rather not|prefer not|not sure|don'?t know|no idea|skip/.test(t)) return { question_id: q.id, selected_option_ids: ["unsure"] };
+  const m = t.replace(/,/g, "").match(/(\d+(?:\.\d+)?)\s*(k\b)?/);
+  if (!m) return { hint: "A rough yearly amount is fine, like 30,000. Or tap a range." };
+  let amount = Number(m[1]) * (m[2] ? 1000 : 1);
+  if (/month|\/mo\b|a mo\b/.test(t)) amount *= 12;
+  else if (/week|\/wk\b/.test(t)) amount *= 52;
+  else if (/hour|\/hr\b/.test(t)) return { hint: "Could you give me a rough total for the month or year?" };
+  for (const o of q.options) {
+    const r = o.id.match(/^(\d+)-(\d+|inf)$/);
+    if (!r) continue;
+    const lo = Number(r[1]);
+    const hi = r[2] === "inf" ? Infinity : Number(r[2]);
+    if (amount >= lo && amount < hi) return { question_id: q.id, selected_option_ids: [o.id] };
+  }
+  return { hint: "Tap the range that's closest." };
+}
+
 /** What the person "said", shown in their bubble. */
 export function userSaid(q: Question, a: AnswerIn): string {
+  if (a.skipped) return "I'd rather skip this one";
   if (a.text && a.selected_option_ids?.includes("other")) return a.text;
   if (a.selected_option_ids?.length) {
-    return q.options.filter((o) => a.selected_option_ids!.includes(o.id)).map((o) => o.label).join(", ");
+    return q.options
+      .filter((o) => a.selected_option_ids!.includes(o.id))
+      .map((o) => optionLabel(q, o.id, o.label))
+      .join(", ");
   }
   if (q.id === "household_size" && a.value === 1) return "Just me";
   if (q.id === "household_size" && typeof a.value === "number") return `${a.value} people`;
   return String(a.value ?? a.text ?? "");
+}
+
+const REVIEW_LABEL: Record<string, string> = {
+  needs: "Help with",
+  zip: "Area",
+  household_size: "Household",
+  household_who: "At home",
+  income_band: "Yearly income",
+  housing_status: "Housing",
+};
+
+export type ReviewRow = { id: string; label: string; value: string };
+
+/** One row per answered core or extra question, for the review card. */
+export function reviewRows(s: SessionSnapshot | null): ReviewRow[] {
+  if (!s) return [];
+  const rows: ReviewRow[] = [];
+  for (const id of [...CORE_IDS, ...EXTRA_IDS]) {
+    const item = s.answered.find((a) => a.question_id === id);
+    if (!item) continue;
+    let value = item.skipped ? "Skipped" : item.display_value;
+    if (!item.skipped) {
+      if (id === "needs") value = chosenLabels(item).join(", ") || value;
+      if (id === "zip" && s.region) value = `${s.region.city} · ${item.display_value}`;
+      if (id === "household_size") value = item.display_value === "1" ? "Just you" : `${item.display_value} people`;
+      if (id === "household_who") {
+        value = item.question.options
+          .filter((o) => item.display_value.split(", ").includes(o.label))
+          .map((o) => optionLabel(item.question, o.id, o.label))
+          .join(", ") || value;
+      }
+    }
+    rows.push({ id, label: REVIEW_LABEL[id] ?? item.question.prompt, value });
+  }
+  return rows;
 }

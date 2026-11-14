@@ -1,32 +1,34 @@
 "use client";
 
 import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, HandHeart, RotateCcw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { HandHeart, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useApp } from "@/components/session/session-provider";
 import { interpretMessage } from "@/lib/api";
 import { coreDone } from "@/lib/derive";
+import { saveConfirmed } from "@/lib/device-state";
 import type { AnswerIn, InterpretOut, NotedFacts, Question, SessionSnapshot } from "@/lib/types";
 
 import { BotMessage, SafetyCard, TypingBubble, UserMessage } from "./bubbles";
-import { Checklist } from "./checklist";
 import { Composer } from "./composer";
 import { QuickReplies } from "./quick-replies";
+import { ReviewCard } from "./review-card";
 import {
   CORE_IDS,
+  EXTRA_IDS,
   OFF_TOPIC,
+  PAUSE_TEXT,
   SAFETY_TEXT,
   SAMPLE_ANSWERS,
   ack,
   answered,
+  bridge,
   chosenLabels,
   confirmation,
   greeting,
-  nudge,
   parseTyped,
-  resultsLine,
+  reviewRows,
   shown,
   typingMs,
   unsupportedLine,
@@ -38,11 +40,16 @@ type Entry =
   | { key: string; kind: "question"; prompt: string; reason: string | null; animate: boolean }
   | { key: string; kind: "user"; text: string; questionId: string; animate: boolean }
   | { key: string; kind: "safety" }
-  | { key: string; kind: "checklist" }
-  | { key: string; kind: "results"; headline: string; detail: string };
+  | { key: string; kind: "review" };
 
-type Phase = "chat" | "checking" | "done";
-type Asking = { question: Question; confirm?: { label: string; answer: AnswerIn } };
+/** chat: answering questions. review: looking over the summary. paused: "not right now". */
+type Mode = "chat" | "review" | "paused";
+type Asking = {
+  question: Question;
+  confirm?: { label: string; answer: AnswerIn };
+  first?: string;
+  pause?: boolean;
+};
 
 const isCore = (id: string) => (CORE_IDS as readonly string[]).includes(id);
 const EMPTY_NOTED: NotedFacts = { household_size: null, household_who: [], zip: null };
@@ -51,26 +58,35 @@ const EMPTY_NOTED: NotedFacts = { household_size: null, household_who: [], zip: 
 const nextKey = () => `m${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 /**
- * The guided intake as a warm conversation. The navigator asks whatever core
- * question the backend has pending. Taps answer directly; typed messages are read
- * by the backend (`/interpret`), which proposes a guarded reply, an answer, and
- * facts to confirm later. Nothing typed is applied without the person seeing it.
+ * The guided intake as a warm conversation: the four core questions, up to two
+ * extras the backend says matter, then a review card with Done. Taps answer
+ * directly; typed messages are read by the backend (`/interpret`), which proposes
+ * a guarded reply, an answer, and facts to confirm later.
  */
-export function ChatIntake({ name, sample, onExit }: { name: string; sample: boolean; onExit: () => void }) {
+export function ChatIntake({
+  name,
+  sample,
+  onExit,
+  onDone,
+}: {
+  name: string;
+  sample: boolean;
+  onExit: () => void;
+  onDone: () => void;
+}) {
   const app = useApp();
-  const router = useRouter();
   const reduced = useReducedMotion() ?? false;
 
   const [entries, setEntries] = useState<Entry[]>([]);
   const [typing, setTyping] = useState(false);
   const [asking, setAsking] = useState<Asking | null>(null);
   const [hint, setHint] = useState<string | null>(null);
-  const [phase, setPhase] = useState<Phase>("chat");
-  const [minTimeDone, setMinTimeDone] = useState(false);
+  const [mode, setMode] = useState<Mode>("chat");
   const [ghost, setGhost] = useState<string | undefined>(undefined);
   const [thinking, setThinking] = useState(false);
-  // "Try a sample" plays the core questions only; afterwards the person drives.
-  const autoplay = sample && phase === "chat";
+  // "Try a sample" plays until the review card; afterwards the person drives.
+  const [sampleDone, setSampleDone] = useState(false);
+  const autoplay = sample && !sampleDone;
 
   // Latest app state for async sequences, read after each await.
   const latest = useRef(app);
@@ -89,6 +105,10 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
   const safetyShown = useRef(false);
   // Each "I can't search for X yet" is said once per conversation.
   const unsupportedSaid = useRef(new Set<string>());
+  // Extras are offered once each; a skip counts as answered.
+  const extrasAsked = useRef(new Set<string>());
+  // The question that was open when the person said "Not right now".
+  const pausedOn = useRef<Question | null>(null);
 
   const composer = useRef<HTMLInputElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
@@ -97,9 +117,9 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   const say = useCallback(
-    async (text: string, kind: "bot" | "warn" = "bot") => {
+    async (text: string, kind: "bot" | "warn" = "bot", followOn = false) => {
       setTyping(true);
-      await wait(typingMs(text, reduced));
+      await wait(typingMs(text, reduced, followOn));
       if (!alive.current) return;
       setTyping(false);
       push({ key: nextKey(), kind, text, animate: true });
@@ -109,7 +129,7 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
 
   /** Ask a question, as a confirmation when the person already mentioned the answer. */
   const ask = useCallback(
-    async (q: Question) => {
+    async (q: Question, extra?: Omit<Asking, "question" | "confirm">) => {
       const confirm = confirmation(q, noted.current);
       const { prompt, reason } = confirm ? { prompt: confirm.prompt, reason: null } : shown(q);
       setTyping(true);
@@ -117,27 +137,43 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
       if (!alive.current) return;
       setTyping(false);
       push({ key: nextKey(), kind: "question", prompt, reason, animate: true });
-      await wait(reduced ? 0 : 180);
-      if (alive.current) setAsking({ question: q, confirm: confirm ? { label: confirm.label, answer: confirm.answer } : undefined });
+      await wait(reduced ? 0 : 160);
+      if (alive.current) {
+        setMode("chat");
+        setAsking({ question: q, confirm: confirm ? { label: confirm.label, answer: confirm.answer } : undefined, ...extra });
+      }
     },
     [push, reduced],
   );
 
-  const finish = useCallback(async () => {
-    setPhase("checking");
-    setMinTimeDone(false);
-    await say("Give me a moment. I'm checking every program near you against what you've shared.");
-    if (alive.current) push({ key: nextKey(), kind: "checklist" });
-  }, [push, say]);
+  /** The summary, replacing any earlier one so only one card is ever live. */
+  const review = useCallback(async () => {
+    setAsking(null);
+    setSampleDone(true);
+    await say("Here's everything you've told me so far.", "bot", true);
+    if (!alive.current) return;
+    setEntries((list) => [...list.filter((e) => e.kind !== "review"), { key: nextKey(), kind: "review" }]);
+    setMode("review");
+  }, [say]);
 
-  /** Ask the backend's next core question, or wrap up once the core is done. */
+  /** The next core question, then up to two extras the backend lists as useful, then review. */
   const advance = useCallback(async () => {
     const s = latest.current.snapshot;
-    if (coreDone(s)) return finish();
-    const q = s?.pending_question;
-    if (q && isCore(q.id)) return ask(q);
-    return finish();
-  }, [ask, finish]);
+    if (!s) return;
+    if (!coreDone(s)) {
+      const q = s.pending_question;
+      if (q && isCore(q.id)) return ask(q);
+      return review();
+    }
+    const next = EXTRA_IDS.map((id) => s.open_questions.find((o) => o.question.id === id)?.question).find(
+      (q) => q && !s.answered.some((a) => a.question_id === q.id) && !extrasAsked.current.has(q.id),
+    );
+    if (next) {
+      extrasAsked.current.add(next.id);
+      return ask(next);
+    }
+    return review();
+  }, [ask, review]);
 
   // Answers that depend on each other go one at a time, each after the backend
   // finished the run the previous one started.
@@ -150,12 +186,11 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
   }, []);
 
   /**
-   * Submit an answer. `typed`: the person's bubble is already shown, and `before`
-   * holds the lines to say first (a warm reply, an honest "can't search for that").
+   * Submit an answer. `typed`: the person's bubble is already shown; `before` is the
+   * warm reply to say first, `after` an honest note added to the acknowledgement.
    */
   const answer = useCallback(
-    async (body: AnswerIn, q: Question, typed?: { before: string[] }) => {
-      const wasDone = phase === "done";
+    async (body: AnswerIn, q: Question, typed?: { before: string[]; after?: string | null }) => {
       setAsking(null);
       setHint(null);
       setGhost(undefined);
@@ -174,29 +209,25 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
         return;
       }
       if (q.id === "zip" && (s.coverage !== "supported" || s.programs.length === 0)) {
-        await say(s.notices[0]?.message ?? "I couldn't find programs for that ZIP yet.", "warn");
-        await say("If you have a different ZIP, I can try that. Most programs here serve Amherst and nearby towns.");
+        await say("I don't have programs for that ZIP code yet. Right now I cover Amherst and nearby towns in Hampshire and Franklin Counties.", "warn");
+        await say("If there's another ZIP you can use, like where you work or stay, I can try that.", "bot", true);
         if (alive.current) setAsking({ question: q });
         return;
       }
-      await say(ack(q.id, s, Boolean(typed?.before.length)));
+      const line = ack(q.id, s, Boolean(typed?.before.length));
+      await say(typed?.after ? `${line} ${typed.after}` : line, "bot", Boolean(typed?.before.length));
       if (!alive.current) return;
-      if (wasDone && coreDone(s)) {
-        const r = resultsLine(s);
-        await say("Here's your updated picture.");
-        push({ key: nextKey(), kind: "results", ...r });
-        return;
-      }
       await advance();
     },
-    [advance, phase, push, say, send],
+    [advance, push, say, send],
   );
 
-  /** A typed message: read it on the server, then reply, answer, or ask again. */
+  /** A typed message: read it on the server, then reply, answer, or ask again gently. */
   const understand = useCallback(
     async (raw: string, q: Question) => {
       setAsking(null);
       setHint(null);
+      setMode("chat");
       push({ key: nextKey(), kind: "user", text: raw.trim(), questionId: q.id, animate: true });
       setTyping(true);
       setThinking(true);
@@ -213,7 +244,8 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
       }
       if (!alive.current) return;
 
-      if (result?.safety === "urgent" && !safetyShown.current) {
+      const urgent = result?.safety === "urgent";
+      if (urgent && !safetyShown.current) {
         safetyShown.current = true;
         setTyping(false);
         push({ key: nextKey(), kind: "safety" });
@@ -231,23 +263,43 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
           zip: result.noted.zip ?? noted.current.zip,
         };
       }
-      const local = parseTyped(q, raw);
-      const body = result ? result.answer : "hint" in local || local.selected_option_ids?.includes("other") ? null : local;
+      // Income amounts and ZIPs are read here as well; the server doesn't map them.
+      const local = q.id === "income_band" || q.type === "zip" ? parseTyped(q, raw) : null;
+      const body = result?.answer ?? (local && !("hint" in local) ? local : null);
       const fresh = (result?.unsupported_needs ?? []).filter((n) => !unsupportedSaid.current.has(n));
       fresh.forEach((n) => unsupportedSaid.current.add(n));
-      const before = [result?.reply, unsupportedLine(fresh)].filter((x): x is string => !!x);
-      if (body) return answer(body, q, { before });
+      const reply = result?.reply ?? null;
+      const after = unsupportedLine(fresh);
+      if (body) return answer(body, q, { before: reply ? [reply] : [], after });
 
-      for (const line of before) await say(line);
-      await say(nudge(q));
-      if (alive.current) setAsking({ question: q });
+      if (reply) await say(reply);
+      if (after) await say(after, "bot", true);
+      await say(bridge(q, { urgent, replied: Boolean(reply) }), "bot", Boolean(reply || after));
+      if (alive.current) {
+        setAsking({ question: q, first: urgent && q.id === "needs" ? "housing" : undefined, pause: urgent });
+      }
     },
     [answer, push, reduced, say],
   );
 
+  const pause = useCallback(async () => {
+    if (!asking) return;
+    pausedOn.current = asking.question;
+    setAsking(null);
+    await say(PAUSE_TEXT);
+    if (alive.current) setMode("paused");
+  }, [asking, say]);
+
+  const resume = useCallback(async () => {
+    const q = pausedOn.current;
+    pausedOn.current = null;
+    if (q) await ask(q);
+  }, [ask]);
+
   const typed = (raw: string) => {
-    if (!asking || !raw.trim()) return;
-    const q = asking.question;
+    const q = asking?.question ?? (mode === "paused" ? pausedOn.current : null);
+    if (!q || !raw.trim()) return;
+    if (mode === "paused") pausedOn.current = null;
     // Plain digits for a ZIP or a count need no reading.
     if ((q.type === "zip" || q.type === "number") && /^\s*\d[\d\s-]*\s*$/.test(raw)) {
       const parsed = parseTyped(q, raw);
@@ -259,15 +311,25 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
 
   const edit = useCallback(
     async (questionId: string) => {
-      const item = answered(latest.current.snapshot, questionId);
+      const s = latest.current.snapshot;
+      const item = s?.answered.find((a) => a.question_id === questionId);
       if (!item) return;
+      // Extras are re-asked with their current options (income ranges follow household size).
+      const q = s?.open_questions.find((o) => o.question.id === questionId)?.question ?? item.question;
       setAsking(null);
       setHint(null);
+      setMode("chat");
       await say("Of course. Let's change that.");
-      await ask(item.question);
+      await ask(q);
     },
     [ask, say],
   );
+
+  const done = () => {
+    const id = latest.current.snapshot?.session_id;
+    if (id) saveConfirmed(id);
+    onDone();
+  };
 
   // Start once the session is loaded. A session already part-way through is
   // replayed instantly, so a refresh keeps the conversation.
@@ -279,17 +341,18 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
     started.current = true;
     sessionId.current = s.session_id;
     const replay: Entry[] = [];
-    const done = CORE_IDS.map((id) => answered(s, id)).filter((a) => !!a);
-    if (done.length) {
+    const items = [...CORE_IDS, ...EXTRA_IDS].map((id) => s.answered.find((a) => a.question_id === id)).filter((a) => !!a);
+    if (items.length) {
       replay.push({ key: nextKey(), kind: "bot", text: greeting(name), animate: false });
-      for (const item of done) {
+      for (const item of items) {
+        extrasAsked.current.add(item.question_id);
         const { prompt, reason } = shown(item.question);
         replay.push({ key: nextKey(), kind: "question", prompt, reason, animate: false });
         const labels = chosenLabels(item);
         replay.push({
           key: nextKey(),
           kind: "user",
-          text: labels.length ? labels.join(", ") : item.display_value,
+          text: item.skipped ? "I'd rather skip this one" : labels.length ? labels.join(", ") : item.display_value,
           questionId: item.question_id,
           animate: false,
         });
@@ -307,31 +370,18 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
     if (sessionId.current && app.snapshot && app.snapshot.session_id !== sessionId.current) onExit();
   }, [app.snapshot, onExit]);
 
-  // Results appear once the backend finished and the checklist had its moment.
-  const resultsShown = useRef(false);
-  useEffect(() => {
-    if (phase !== "checking" || !minTimeDone || app.working || !coreDone(app.snapshot) || resultsShown.current) return;
-    resultsShown.current = true;
-    const r = resultsLine(app.snapshot as SessionSnapshot);
-    void (async () => {
-      setTyping(true);
-      await wait(typingMs(r.headline, reduced));
-      if (!alive.current) return;
-      setTyping(false);
-      push({ key: nextKey(), kind: "results", ...r });
-      setPhase("done");
-    })();
-  }, [phase, minTimeDone, app.working, app.snapshot, push, reduced]);
-
   // "Try a sample": answer each question as if typed, after a short pause.
   useEffect(() => {
     if (!autoplay || !asking) return;
     const q = asking.question;
-    const body = SAMPLE_ANSWERS[q.id];
+    const body =
+      q.id === "income_band" && q.options[0]
+        ? { question_id: q.id, selected_option_ids: [q.options[0].id] }
+        : SAMPLE_ANSWERS[q.id];
     if (!body) return;
     let cancelled = false;
     void (async () => {
-      await wait(reduced ? 0 : 750);
+      await wait(reduced ? 0 : 350);
       if (q.type === "zip" || q.type === "number") {
         const text = String(body.value);
         for (let i = 1; i <= text.length && !cancelled; i++) {
@@ -347,8 +397,8 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
     };
   }, [autoplay, asking, answer, reduced]);
 
-  // Keep the newest message in view while the thread grows (messages, chips, the
-  // checklist filling in), unless the person scrolled up to reread.
+  // Keep the newest message in view while the thread grows, unless the person
+  // scrolled up to reread.
   const stick = useRef(true);
   useEffect(() => {
     stick.current = true;
@@ -383,26 +433,35 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
   }, [reduced]);
   useEffect(() => {
     const t = asking?.question.type;
-    if (asking && !asking.confirm && (t === "zip" || t === "text" || t === "currency")) {
+    if ((asking && !asking.confirm && (t === "zip" || t === "text" || t === "currency")) || mode === "paused") {
       composer.current?.focus({ preventScroll: true });
     }
-  }, [asking]);
+  }, [asking, mode]);
 
-  const canEdit = phase !== "checking" && !typing && !app.working && !autoplay && !thinking;
+  const busy = typing || app.working || thinking;
+  const canEdit = !busy && !autoplay;
   // Only the latest answer to each question can be changed.
   const lastUserIndex = new Map<string, number>();
   entries.forEach((e, i) => {
     if (e.kind === "user") lastUserIndex.set(e.questionId, i);
   });
+  const lastReview = entries.findLastIndex((e) => e.kind === "review");
 
   const q = asking?.question;
-  const placeholder = !q
-    ? "…"
-    : q.type === "zip"
-      ? "Type your 5-digit ZIP, like 01002"
-      : q.type === "number"
-        ? "Or type it, like “me and my two kids”"
-        : "Or tell me in your own words…";
+  const placeholder =
+    mode === "paused"
+      ? "Type whenever you're ready…"
+      : mode === "review"
+        ? "Tap a line above to change it"
+        : !q
+          ? "One moment…"
+          : q.type === "zip"
+            ? "Type your 5-digit ZIP, like 01002"
+            : q.type === "number"
+              ? "Or type it, like “me and my two kids”"
+              : q.id === "income_band"
+                ? "Or type a rough amount, like 30,000 a year"
+                : "Or tell me in your own words…";
 
   return (
     <MotionConfig reducedMotion="user">
@@ -459,22 +518,13 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
                       {e.text}
                     </UserMessage>
                   ) : null}
-                  {e.kind === "checklist" ? <Checklist snapshot={app.snapshot} reduced={reduced} onMinimumTime={() => setMinTimeDone(true)} /> : null}
-                  {e.kind === "results" ? (
-                    <BotMessage lead={lead}>
-                      <span className="block font-display text-[clamp(19px,2.2vw,23px)] font-extrabold leading-[1.3] tracking-[-0.03em] text-ink">{e.headline}</span>
-                      <span className="mt-1 block">{e.detail}</span>
-                      <motion.button
-                        type="button"
-                        onClick={() => router.replace("/home")}
-                        whileHover={{ x: 2 }}
-                        whileTap={{ scale: 0.97 }}
-                        className="mt-4 inline-flex items-center gap-2 rounded-[12px] bg-brand px-5 py-3 font-bold text-on-brand hover:bg-brand-hover"
-                      >
-                        See my plan <ArrowRight aria-hidden className="size-4" />
-                      </motion.button>
-                      <span className="mt-2.5 block text-xs text-faint">You can tap any of your answers above to change it first.</span>
-                    </BotMessage>
+                  {e.kind === "review" && i === lastReview ? (
+                    <ReviewCard
+                      rows={reviewRows(app.snapshot)}
+                      disabled={busy || mode !== "review"}
+                      onChange={(id) => void edit(id)}
+                      onDone={done}
+                    />
                   ) : null}
                 </motion.div>
               );
@@ -488,9 +538,23 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
                   <QuickReplies
                     question={asking.question}
                     confirm={asking.confirm}
+                    first={asking.first}
+                    skip={asking.question.skippable && asking.question.id !== "income_band"}
+                    pause={asking.pause ? () => void pause() : undefined}
                     disabled={app.working || autoplay}
                     onAnswer={(a) => void answer(a, asking.question)}
                   />
+                </motion.div>
+              ) : null}
+              {mode === "paused" && !typing ? (
+                <motion.div key="resume" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="pl-11">
+                  <button
+                    type="button"
+                    onClick={() => void resume()}
+                    className="inline-flex min-h-11 items-center rounded-full border border-line bg-surface px-4 py-2 text-[14.5px] font-bold hover:border-brand-line hover:bg-surface-2"
+                  >
+                    I&apos;m ready to keep going
+                  </button>
                 </motion.div>
               ) : null}
             </AnimatePresence>
@@ -499,7 +563,7 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
           <Composer
             ref={composer}
             placeholder={placeholder}
-            disabled={!asking || app.working || autoplay || thinking}
+            disabled={(!asking && mode !== "paused") || app.working || autoplay || thinking}
             numeric={q?.type === "zip"}
             hint={hint}
             ghost={ghost}

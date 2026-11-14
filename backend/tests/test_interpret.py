@@ -219,3 +219,14 @@ def test_unmet_needs_from_the_model_only_on_the_needs_question():
     out = interpret("household_who", "my youngest is 3 years old", NAMES)
     assert out.answer.selected_option_ids == ["child"]
     assert out.unsupported_needs == []
+
+
+def test_housing_status_from_plain_words_without_a_model():
+    cases = {
+        "we rent an apartment": "renting",
+        "I own my home": "own",
+        "I'm staying with my sister for now": "staying_with_others",
+        "I'm sleeping in my car": "no_stable_housing",
+    }
+    for text, expected in cases.items():
+        assert interpret("housing_status", text, NAMES).answer.selected_option_ids == [expected], text

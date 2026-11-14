@@ -3,17 +3,18 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { Building } from "@/components/chat/building";
 import { ChatIntake } from "@/components/chat/chat-intake";
 import { SAMPLE_NAME } from "@/components/chat/script";
 import { useApp } from "@/components/session/session-provider";
 import { coreDone } from "@/lib/derive";
-import { cleanName, readName, saveName } from "@/lib/device-state";
+import { cleanName, readConfirmed, readName, saveName } from "@/lib/device-state";
 
 import { Welcome } from "./welcome";
 
-type Stage = "welcome" | "chat";
+type Stage = "welcome" | "chat" | "building";
 
-/** The front door: Welcome, then a conversation with the navigator, then Home. */
+/** The front door: Welcome, a conversation with the navigator, a review, Building, then Home. */
 export function FrontDoor() {
   const router = useRouter();
   const { snapshot, working, expired, loadError, restart } = useApp();
@@ -27,13 +28,13 @@ export function FrontDoor() {
     setName(readName());
   }, []);
 
-  // Someone who already finished the intake (refresh, or came back) goes straight in;
-  // someone part-way through picks the conversation up where it was.
+  // Someone who already confirmed their answers (refresh, or came back) goes straight in;
+  // someone part-way through, or not yet confirmed, picks the conversation up where it was.
   const resumed = useRef(false);
   useEffect(() => {
     if (resumed.current || !snapshot) return;
     resumed.current = true;
-    if (coreDone(snapshot)) router.replace("/home");
+    if (coreDone(snapshot) && readConfirmed(snapshot.session_id)) router.replace("/home");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time resume decision
     else if (snapshot.answered.length > 0) setStage("chat");
   }, [snapshot, router]);
@@ -81,9 +82,11 @@ export function FrontDoor() {
           onStart={(raw) => start(raw)}
           onSample={() => start("", true)}
         />
-      ) : (
-        <ChatIntake key={snapshot?.session_id ?? "none"} name={name} sample={sample} onExit={exit} />
-      )}
+      ) : null}
+      {stage === "chat" ? (
+        <ChatIntake key={snapshot?.session_id ?? "none"} name={name} sample={sample} onExit={exit} onDone={() => setStage("building")} />
+      ) : null}
+      {stage === "building" ? <Building name={name} /> : null}
     </>
   );
 }
