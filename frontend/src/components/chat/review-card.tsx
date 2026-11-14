@@ -42,18 +42,21 @@ export function ReviewCard({
             >
               <button
                 type="button"
-                disabled={disabled}
+                disabled={disabled || row.locked}
                 onClick={() => onChange(row.id)}
-                aria-label={`${row.label}: ${row.value}. Change`}
+                aria-label={row.locked ? `${row.label}: ${row.value}` : `${row.label}: ${row.value}. Change`}
                 className="group flex w-full items-start gap-4 px-5 py-3 text-left transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span className="w-[104px] shrink-0 pt-px text-[12px] font-extrabold uppercase tracking-[1.2px] text-faint">{row.label}</span>
                 <span className={row.value === "Skipped" ? "flex-1 text-[14.5px] italic text-muted-foreground" : "flex-1 text-[14.5px] font-bold text-ink"}>
                   {row.value}
+                  {row.note ? <span className="mt-0.5 block text-[12px] font-medium text-muted-foreground">{row.note}</span> : null}
                 </span>
-                <span aria-hidden className="flex items-center gap-1 pt-0.5 text-xs font-semibold text-faint opacity-70 group-hover:opacity-100">
-                  <Pencil className="size-3" /> Change
-                </span>
+                {row.locked ? null : (
+                  <span aria-hidden className="flex items-center gap-1 pt-0.5 text-xs font-semibold text-faint opacity-70 group-hover:opacity-100">
+                    <Pencil className="size-3" /> Change
+                  </span>
+                )}
               </button>
             </motion.li>
           ))}

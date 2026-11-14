@@ -126,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
         <nav
           aria-label="Main"
-          className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] min-[751px]:hidden"
+          className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-6 border-t border-line bg-surface pb-[env(safe-area-inset-bottom)] min-[751px]:hidden"
         >
           {NAV.map(({ href, label, icon: Icon }) => {
             const on = active(path, href);
@@ -141,7 +141,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 )}
               >
                 <Icon aria-hidden className="size-5" />
-                <span className="max-w-full truncate">{label.replace("Government benefits", "Benefits")}</span>
+                <span className="max-w-full truncate">{label.replace("Government benefits", "Benefits").replace("Your money", "Money")}</span>
               </Link>
             );
           })}
