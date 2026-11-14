@@ -7,7 +7,11 @@ Status: Phases 0 to 3 built on 2026-11-14 (see "Progress" below). Phase 3's live
 **Phase 0**
 
 - Contract change done: `ApplicationRecord`, `SessionState.applications` and `application_result` (`graph/state.py`); the Administrator stores a result and marks the plan dirty; Action Planning moves a submitted program to the bottom ("Sent on ... Watch for a reply from ...") and turns `unclear` into "Check whether your application went through"; `SessionSnapshot.applications` and `automatable_program_ids` in `api/schemas.py` and `frontend/src/lib/types.ts`; the snapshot fixture is regenerated and synced.
-- S1 (`backend/scripts/spikes/s1_gemini_cu.py`) and S2 (`s2_steel.py`) are written, but they have **not been run yet**: `backend/.env` has no `GEMINI_API_KEY` or `STEEL_API_KEY`. The go/no-go decision is still open.
+- **S1: GO** (run 2026-11-14, `gemini-4-hydrogen`, with prompt-injection detection on). The model clicked a button and typed into a field on a local page. What it settled:
+  - **Coordinates are on a 1000x1000 grid.** A click returned as (833, 810) maps to (1199, 729); the button's centre is (1200, 730).
+  - **The function result format** differs from Google's docs. `result` must be a JSON object. The docs' list of text and image parts is rejected with a misleading `400 "Request blocked due to safety violations (harmful content)"`. The screenshot goes in a separate `user_input` step after the turn's results. A nested image inside the object is accepted, but the model doesn't see it. `agent.py` now does this (`function_result` + `screenshot_step`).
+  - **A client-lifetime bug, found and fixed.** Keeping only `genai.Client(...).aio.interactions` let the client be garbage-collected, which closed its HTTP connection on the second call. `GeminiBrowserModel` now keeps the client (with a regression test).
+- S2 (`s2_steel.py`) is written but **not run yet**: there is no `STEEL_API_KEY`.
 - S3 (`s3_real_forms.py`) has a baseline from a residential IP (`--local`). The run through Steel, from a datacenter IP, is still to do.
 
   | program | host | visible fields | bot wall |

@@ -32,14 +32,19 @@ async def main() -> None:
     from google import genai
     from playwright.async_api import async_playwright
 
-    from app.execution.agent import parse_interaction
+    from app.execution.agent import Call, function_result, parse_interaction, screenshot_step
+    from app.execution.computer import Observation
     from app.execution.config import DEFAULT_AGENT_MODEL
     import os
 
     key = require("GEMINI_API_KEY")
     model = os.environ.get("BROWSER_AGENT_MODEL", "").strip() or DEFAULT_AGENT_MODEL
-    client = genai.Client(api_key=key).aio.interactions
-    tools = [{"type": "computer_use", "environment": "browser", "enable_prompt_injection_detection": True}]
+    genai_client = genai.Client(api_key=key)  # keep a reference, or its HTTP client closes
+    client = genai_client.aio.interactions
+    # S1_INJECTION_DETECTION=0 turns off Google's opt-in screenshot scanning, to isolate its effect.
+    detect = os.environ.get("S1_INJECTION_DETECTION", "1") != "0"
+    tools = [{"type": "computer_use", "environment": "browser", "enable_prompt_injection_detection": detect}]
+    print("model:", model, "| prompt-injection detection:", detect)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(channel=os.environ.get("LOCAL_BROWSER_CHANNEL", "chrome") or None, headless=True)
@@ -73,12 +78,12 @@ async def main() -> None:
                     await page.mouse.click(gx, gy)
                 elif call.name == "type":
                     await page.keyboard.insert_text(str(args.get("text", "")))
-                payload = {"url": page.url}
                 if "safety_decision" in args:
                     print("   safety_decision:", args["safety_decision"])
-                parts.append({"type": "function_result", "call_id": call.id, "name": call.name, "result": [
-                    {"type": "text", "text": json.dumps(payload)},
-                    {"type": "image", "data": await shot(), "mime_type": "image/png"}]})
+                # Same format as the agent (result object, then one screenshot step).
+                observation = Observation(page.url, await page.screenshot(type="png"))
+                parts.append(function_result(call, observation, {}))
+            parts.append(screenshot_step(observation))
         clicked = await page.inner_text("#out") == "clicked"
         typed = await page.input_value("#name")
         await browser.close()

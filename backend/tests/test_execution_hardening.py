@@ -184,3 +184,14 @@ async def _route(strict, url, navigation):
 )
 def test_allowlist(strict, url, navigation, expected):
     assert asyncio.run(_route(strict, url, navigation)) == expected
+
+
+def test_gemini_model_keeps_its_client_alive(monkeypatch):
+    """Regression: keeping only `.aio.interactions` let the Client be collected and close."""
+    import gc
+
+    from google import genai
+
+    model = GeminiBrowserModel("k", "m", "i")
+    gc.collect()
+    assert isinstance(model._client, genai.Client)
