@@ -18,6 +18,8 @@ const STORAGE_KEY = "crn.session_id";
 const POLL_MIN_MS = 400;
 const POLL_MAX_MS = 3000;
 const pollDelay = (attempt: number) => Math.min(POLL_MIN_MS * 1.6 ** attempt, POLL_MAX_MS);
+// Background rewording (live mode) usually takes a few seconds.
+const WORDING_POLL_MS = 1500;
 
 const OFFLINE_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
 
@@ -138,6 +140,26 @@ export function useSession(): SessionController {
     }, pollDelay(pollAttempt));
     return () => window.clearTimeout(timer);
   }, [sessionId, busy, pollAttempt, begin]);
+
+  // Live mode: wording is rewritten in the background after a run. Re-read the
+  // snapshot until it lands. This never counts as "working": answering stays open.
+  const wordingPending = snapshot?.wording_pending ?? false;
+  const [wordingPoll, setWordingPoll] = useState(0);
+  useEffect(() => {
+    if (!sessionId || busy || !wordingPending) return;
+    const mine = generation.current;
+    const timer = window.setTimeout(async () => {
+      try {
+        const next = await getSession(sessionId);
+        if (generation.current !== mine) return;
+        setSnapshot(next);
+        if (next.wording_pending && !next.busy) setWordingPoll((n) => n + 1);
+      } catch {
+        // Cosmetic only: the busy poll or the next action surfaces lasting problems.
+      }
+    }, WORDING_POLL_MS);
+    return () => window.clearTimeout(timer);
+  }, [sessionId, busy, wordingPending, wordingPoll]);
 
   /** Sends one change to the session; shared by answers and evidence. */
   const send = useCallback(

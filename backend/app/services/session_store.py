@@ -19,7 +19,9 @@ from pydantic import BaseModel
 
 from app.graph import state as state_module
 from app.graph.build import run_config
+from app.services.llm import get_llm
 from app.services.log_safety import describe_exception
+from app.services.wording import Key, WordingCache, pending_slots, remember, rewrite
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +95,15 @@ class SessionMeta:
     interpret_count: int = 0
     # Web-search backup results, "<need>:<zip>" -> results. Lives and dies with the session.
     web_cache: dict[str, Any] = field(default_factory=dict)
+    # Plain-language rewrites of template text (services/wording.py), filled in the
+    # background after each run. Lives and dies with the session.
+    wording: WordingCache = field(default_factory=dict)
+    wording_in_flight: set[Key] = field(default_factory=set)
+    wording_tasks: set[asyncio.Task] = field(default_factory=set)
+
+    @property
+    def wording_pending(self) -> bool:
+        return bool(self.wording_tasks)
 
 
 class SessionManager:
@@ -121,22 +132,15 @@ class SessionManager:
         return self._graph.get_state(run_config(session_id)).values
 
     async def disconnect_bank(self, session_id: str) -> bool:
-        """Forget the connected (simulated) bank: its summary, and any income figure read
-        from it that the person never confirmed. A confirmed figure is their own answer
-        now and stays. Then one run so questions and results catch up."""
-        values = self.values(session_id)
-        update: dict[str, Any] = {"financial_summary": None}
-        profile = values.get("profile")
-        if profile is not None:
-            kept = {
-                name: fact
-                for name, fact in profile.facts.items()
-                if not (fact.provenance == "nessie_sandbox" and not fact.confirmed)
-            }
-            update["profile"] = profile.model_copy(update={"facts": kept})
-            update["changed_fields"] = sorted(set(profile.facts) - set(kept))
-        self._graph.update_state(run_config(session_id), update, as_node="user_intelligence")
-        return await self.submit(session_id, {"run_counts": {}})
+        """Forget the connected (simulated) bank.
+
+        Sent through the graph like any other input, never written into state
+        directly: User Intelligence drops what it read from the bank, and the
+        Administrator re-checks every program and plan step that depended on it.
+        """
+        return await self.submit(
+            session_id, {"pending_evidence": state_module.EvidenceRequest(kind="nessie_disconnect")}
+        )
 
     async def submit(self, session_id: str, graph_input: dict[str, Any]) -> bool:
         """Run the graph with new input. Returns True if it finished on the fast path.
@@ -169,6 +173,10 @@ class SessionManager:
                 timeout=RUN_TIMEOUT_SECONDS,
             )
             meta.last_change = status_changes(before, _statuses(self.values(session_id)))
+            try:
+                self._start_wording(session_id, meta)
+            except Exception as exc:  # wording is optional: never fail the run for it
+                logger.warning("rewording not started: %s", describe_exception(exc))
         except TimeoutError:
             logger.error("graph run timed out (session %s)", session_id)
             meta.run_notices.append(("run_timeout", RUN_TIMEOUT_MESSAGE))
@@ -177,6 +185,33 @@ class SessionManager:
             meta.run_notices.append(("run_failed", RUN_FAILED_MESSAGE))
         finally:
             meta.busy = False
+
+    def _start_wording(self, session_id: str, meta: SessionMeta) -> None:
+        """Reword this run's new template text in the background (live mode only).
+
+        Never holds `busy`: the person can keep answering while it runs, and the
+        snapshot shows each rewrite once it exists for the exact text in state.
+        """
+        if get_llm() is None:
+            return
+        items = pending_slots(self.values(session_id), meta.wording, meta.wording_in_flight)
+        if not items:
+            return
+        meta.wording_in_flight.update(items)
+        task = asyncio.create_task(self._reword(meta, items))
+        for registry in (self._tasks, meta.wording_tasks):
+            registry.add(task)
+            task.add_done_callback(registry.discard)
+
+    async def _reword(self, meta: SessionMeta, items: dict[Key, list[str]]) -> None:
+        try:
+            results = await asyncio.wait_for(asyncio.to_thread(rewrite, items), timeout=RUN_TIMEOUT_SECONDS)
+            if results:
+                remember(meta.wording, results)  # on the event loop: no concurrent writes
+        except Exception as exc:  # templates stay; wording is never worth an error notice
+            logger.warning("rewording failed: %s", describe_exception(exc))
+        finally:
+            meta.wording_in_flight.difference_update(items)
 
     def _expire_idle(self) -> None:
         cutoff = time.monotonic() - IDLE_EXPIRY_SECONDS

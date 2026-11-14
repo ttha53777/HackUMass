@@ -155,7 +155,9 @@ class FinancialSummary(BaseModel):
 
 
 class EvidenceRequest(BaseModel):
-    kind: Literal["nessie", "document"]
+    # "nessie_disconnect" withdraws the simulated bank: User Intelligence forgets
+    # what it read, so the Administrator re-checks what depended on it.
+    kind: Literal["nessie", "document", "nessie_disconnect"]
     persona_id: str | None = None
     document_ref: str | None = None
 

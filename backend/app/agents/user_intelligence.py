@@ -250,6 +250,34 @@ def apply_confirmation(profile: Profile, field: str, confirmed: bool, now: datet
     return [field]
 
 
+def forget_bank_evidence(profile: Profile) -> list[str]:
+    """The person disconnected the simulated bank: drop everything read from it.
+
+    An unconfirmed bank figure is removed. A figure the person confirmed is their
+    own answer now (provenance "user_reported") and stays. A conflict between
+    their answer and the bank loses its bank side; with no other evidence left,
+    it closes and their answer is confirmed again.
+    """
+    changed: list[str] = []
+    for name, fact in list(profile.facts.items()):
+        if fact.provenance == "nessie_sandbox" and not fact.confirmed:
+            del profile.facts[name]
+            changed.append(name)
+    for conflict in list(profile.conflicts):
+        if not any(c.provenance == "nessie_sandbox" for c in conflict.candidates):
+            continue
+        remaining = [c for c in conflict.candidates if c.provenance != "nessie_sandbox"]
+        if any(c.provenance in EVIDENCE_PROVENANCES for c in remaining):
+            conflict.candidates = remaining
+            continue
+        _drop_conflict(profile, conflict.field)
+        user = next((c for c in remaining if c.provenance == "user_reported"), None)
+        if user is not None:
+            profile.facts[conflict.field] = user.model_copy(update={"confirmed": True})
+        changed.append(conflict.field)
+    return changed
+
+
 # --------------------------------------------------------------------------
 # Graph node
 # --------------------------------------------------------------------------
@@ -308,6 +336,11 @@ def make_user_intelligence(
                 update["errors"] = list(state.get("errors") or []) + [
                     SafeError(code=code, message=message, agent="user_intelligence", at=now)
                 ]
+
+        if evidence is not None and evidence.kind == "nessie_disconnect":
+            update["consents"] = {**(state.get("consents") or {}), "nessie": False}
+            update["financial_summary"] = None
+            changed += forget_bank_evidence(profile)
 
         if evidence is not None and evidence.kind == "document" and evidence.document_ref:
             update["consents"] = {**(state.get("consents") or {}), "document": True}

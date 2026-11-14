@@ -2,8 +2,8 @@
 
 Deterministic. Every link, document and contact detail is copied from the
 program record; nothing is generated. In live mode a model may reword
-`rationale` and `next_step` (services/wording.py, guarded) but never the order,
-links, documents or urgency.
+`rationale` and `next_step` after the run (services/wording.py, guarded) but
+never the order, links, documents or urgency.
 
 Order (foundation plan B.4, with urgency as a tie-breaker inside a tier):
   1. tier:     apply_now (likely eligible) -> confirm_eligibility (possibly)
@@ -38,7 +38,6 @@ from app.graph.state import (
     Program,
     SessionState,
 )
-from app.services.wording import reword_plan
 
 TIER = {
     "likely_eligible": "apply_now",
@@ -208,6 +207,6 @@ def action_planning(state: SessionState) -> dict[str, Any]:
         intake.skipped_fields,
         state.get("applications") or {},
     )
-    # Live mode only: rephrase rationale and next step. Order, links and
-    # documents are never sent for rewriting.
-    return {"action_plan": reword_plan(plan, {p.id: p for p in programs})}
+    # Template text only: optional rewording of rationale and next step happens
+    # after the run (services/wording.py); order, links and documents never do.
+    return {"action_plan": plan}
