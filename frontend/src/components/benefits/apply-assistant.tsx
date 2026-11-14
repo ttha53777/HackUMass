@@ -62,6 +62,8 @@ export function ApplyAssistant({ program }: { program: Program }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [tick, setTick] = useState(0);
+  // The person can switch to screenshots if the provider's live view won't load.
+  const [snapshots, setSnapshots] = useState(false);
   const runId = run?.run_id ?? null;
   const active = !!run && ACTIVE.includes(run.status);
   // Keep polling after the run ends until its outcome is in the main graph.
@@ -171,10 +173,16 @@ export function ApplyAssistant({ program }: { program: Program }) {
             Screenshots of the form go to Google&apos;s AI and the browser service while it works.
           </li>
         </ul>
-        {/* Every automation record is practice-mode for now (backend/app/data/automation/). */}
-        <Callout tone="info" className="mt-0 mb-3">
-          This opens a practice copy of the form. Nothing is sent to any agency.
-        </Callout>
+        {snapshot.automation_modes[program.id] === "stop_before_submit" ? (
+          <Callout tone="warn" className="mt-0 mb-3">
+            This opens the real form from {program.provider}. The assistant fills it in and stops before sending, so nothing is sent.
+            To apply, send the form yourself on their site.
+          </Callout>
+        ) : (
+          <Callout tone="info" className="mt-0 mb-3">
+            This opens a practice copy of the form. Nothing is sent to any agency.
+          </Callout>
+        )}
         <button type="button" className={btn("gov")} disabled={pending} onClick={() => void begin()}>
           I agree, start filling it in
         </button>
@@ -200,8 +208,15 @@ export function ApplyAssistant({ program }: { program: Program }) {
         {run.mode === "practice" ? <span className="rounded-full bg-amber px-2 py-0.5 text-[10.5px] font-extrabold text-amber-ink">Practice copy</span> : null}
         <span className="ml-auto flex items-center gap-2">
           {run.seconds_left !== null ? (
-            <span className="text-xs font-bold tabular-nums text-muted-foreground" title="Time left before the browser closes">
-              {clock(run.seconds_left)}
+            <span
+              className={cn(
+                "rounded-full px-2 py-0.5 text-xs font-bold tabular-nums",
+                run.seconds_left < 120 ? "bg-amber text-amber-ink" : "text-muted-foreground",
+              )}
+              title="Time left before the browser closes"
+            >
+              {run.seconds_left < 120 ? `${clock(run.seconds_left)} left` : clock(run.seconds_left)}
+              {run.seconds_left < 120 ? <span className="sr-only"> Less than two minutes before the browser closes.</span> : null}
             </span>
           ) : null}
           {run.status === "working" || run.status === "needs_answer" ? (
@@ -223,12 +238,12 @@ export function ApplyAssistant({ program }: { program: Program }) {
         <div className="flex flex-wrap items-center gap-3 bg-amber px-4 py-3 text-amber-ink">
           <p className="min-w-0 flex-1 text-[13px] font-bold leading-[1.5]">
             {run.handoff.message}
-            {!run.live_view_url ? (
+            {!run.live_view_url && run.handoff.reason !== "stop_point" ? (
               <span className="mt-0.5 block text-xs font-semibold">Use the browser window that opened on this computer.</span>
             ) : null}
           </p>
           <button type="button" className={btn("primary", "sm")} disabled={pending} onClick={() => void act(() => controlRun(sessionId, run.run_id, "return"))}>
-            I&apos;m done
+            {run.handoff.reason === "stop_point" ? "End here" : "I'm done"}
           </button>
         </div>
       ) : null}
@@ -263,7 +278,7 @@ export function ApplyAssistant({ program }: { program: Program }) {
 
       <div className="grid gap-0 min-[1101px]:grid-cols-[minmax(0,1fr)_240px]">
         <div className="bg-surface-2">
-          {active && run.live_view_url ? (
+          {active && run.live_view_url && !(snapshots && run.has_frame) ? (
             <iframe
               key={run.interactive ? "interactive" : "view"}
               src={run.live_view_url}
@@ -277,6 +292,11 @@ export function ApplyAssistant({ program }: { program: Program }) {
             <img src={runFrameUrl(sessionId, run.run_id, tick)} alt="The latest view of the application form" className="block aspect-[16/10] w-full object-contain" />
           ) : active ? (
             <div className="grid aspect-[16/10] place-items-center text-[13px] font-bold text-muted-foreground">Opening the browser…</div>
+          ) : null}
+          {active && run.live_view_url && run.has_frame ? (
+            <button type="button" className={btn("link", undefined, "mx-4 my-1.5")} onClick={() => setSnapshots(!snapshots)}>
+              {snapshots ? "Show the live view" : "Live view not loading? Show snapshots instead"}
+            </button>
           ) : null}
           {!active ? <Result run={run} onReset={reset} /> : null}
         </div>
@@ -310,14 +330,14 @@ function Result({ run, onReset }: { run: RunView; onReset: () => void }) {
           {run.mode === "practice" ? "The practice form says it was received" : "The provider's page says your application was received"}
           {run.outcome?.confirmation_text ? `. Reference: ${run.outcome.confirmation_text}` : ""}.
         </Callout>
-      ) : run.status === "done" ? (
+      ) : run.status === "done" && !run.message ? (
         <Callout tone="info" className="mt-0">
           {run.outcome?.status === "not_submitted"
             ? "The form wasn't sent. You can start again, or apply another way below."
             : "We couldn't tell whether it went through. Check with the provider before applying again."}
         </Callout>
       ) : null}
-      {run.message ? <Callout tone={run.status === "failed" ? "warn" : "info"} className={run.status === "done" ? undefined : "mt-0"}>{run.message}</Callout> : null}
+      {run.message ? <Callout tone={run.status === "failed" ? "warn" : "info"} className={run.status === "done" && sent ? undefined : "mt-0"}>{run.message}</Callout> : null}
       <button type="button" className={btn("ghost", "sm", "mt-3")} onClick={onReset}>
         {sent ? "Close" : "Start again"}
       </button>

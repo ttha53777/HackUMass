@@ -308,6 +308,8 @@ export type SessionSnapshot = {
   applications: Record<string, ApplicationRecord>;
   /** Programs the browser assistant can help fill in. Empty when the feature is off. */
   automatable_program_ids: string[];
+  /** For each of those: our practice copy, or a real form where the assistant stops before sending. */
+  automation_modes: Record<string, "practice" | "stop_before_submit">;
 };
 
 // ---------------------------------------------------------------------------
@@ -344,6 +346,8 @@ export type HandoffReason =
   | "file_upload"
   | "safety_confirmation"
   | "unknown_field"
+  | "choice"
+  | "stop_point"
   | "stuck"
   | "person_requested";
 

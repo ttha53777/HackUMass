@@ -1,0 +1,8 @@
+{
+  "program_id": "hves-home-delivered-meals",
+  "mode": "stop_before_submit",
+  "start_url": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
+  "allowed_hosts": ["fd7.formdesk.com"],
+  "enabled": false,
+  "note": "The only candidate real form that is plain HTML with no CAPTCHA and no requests on load (probed 2026-11-14). It is a referral into Highland Valley Elder Services' intake, so it stays disabled until the team agrees to fill-and-stop on a real site (plan section 7) and spike S3 confirms it loads from Steel. Fill-and-stop: the run ends at the first submit or attestation and nothing is sent."
+}

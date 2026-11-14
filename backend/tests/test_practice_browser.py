@@ -82,7 +82,7 @@ def fill(pairs):
     return plan
 
 
-async def _scenario():
+async def _scenario(stop_before_submit=False):
     async with playwright_api.async_playwright() as p:
         try:
             browser = await p.chromium.launch(channel=CHANNEL, headless=True)
@@ -101,7 +101,8 @@ async def _scenario():
                 ("click", "#certify"), ("type", "first_name"), ("click", "#submit")]
         hooks = Hooks()
         model = FormModel(page, plan)
-        end = await Agent(PlaywrightComputer(page, settle_seconds=0.05), model, store, HOSTS, hooks).run()
+        end = await Agent(PlaywrightComputer(page, settle_seconds=0.05), model, store, HOSTS, hooks,
+                          stop_before_submit=stop_before_submit).run()
 
         typed = {key: await page.input_value(sel) for sel, key in STEP1 + STEP2}
         on_review = await page.locator("[data-panel='3']").is_visible()
@@ -115,6 +116,14 @@ async def _scenario():
             off_site = "blocked"
         await browser.close()
         return end, hooks, model, typed, on_review, certified, signature, text, off_site
+
+
+def test_fill_and_stop_ends_at_the_certify_box_in_a_real_browser():
+    end, hooks, model, typed, on_review, certified, signature, text, _ = asyncio.run(_scenario(stop_before_submit=True))
+    assert end.kind == "stopped_before_submit"
+    assert typed == {key: VALUES[key] for _, key in STEP1 + STEP2} and on_review
+    assert hooks.handoffs == ["stop_point"]  # nothing after the first attestation
+    assert not certified and signature == "" and verify_practice(text).status == "not_submitted"
 
 
 def test_agent_fills_steps_one_and_two_and_stops_at_attest_and_submit():

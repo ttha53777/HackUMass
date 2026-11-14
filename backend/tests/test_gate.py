@@ -50,8 +50,13 @@ def test_attestation_checkbox_hands_off():
     assert click_on(box).reason == "attestation"
 
 
-def test_ordinary_checkbox_passes():
-    assert click_on(Element(tag="input", type="checkbox", text="Text me updates")).kind == "allow"
+@pytest.mark.parametrize("element", [
+    Element(tag="input", type="checkbox", text="Text me updates"),
+    Element(tag="input", type="radio", text="Home Delivered Meals (must be 60 or over)"),
+    Element(tag="li", role="option", text="Oil"),
+])
+def test_every_choice_is_the_persons(element):
+    assert click_on(element).reason == "choice"
 
 
 def test_sign_in_button_and_password_field_hand_off():

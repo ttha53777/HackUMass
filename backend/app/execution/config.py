@@ -86,19 +86,22 @@ def practice_url(base_url: str) -> str:
 
 
 @lru_cache(maxsize=1)
-def _load_records(directory: str) -> dict[str, AutomationRecord]:
+def _load_records(directory: str, include_disabled: bool) -> dict[str, AutomationRecord]:
     records: dict[str, AutomationRecord] = {}
+    seen: set[str] = set()
     for path in sorted(Path(directory).glob("*.json")):
         record = AutomationRecord.model_validate(json.loads(path.read_text()))
-        if record.program_id in records:
+        if record.program_id in seen:
             raise ValueError(f"duplicate automation record for {record.program_id}")
-        records[record.program_id] = record
+        seen.add(record.program_id)
+        if record.enabled or include_disabled:
+            records[record.program_id] = record
     return records
 
 
-def automation_records(directory: Path = AUTOMATION_DIR) -> dict[str, AutomationRecord]:
-    """Every curated automation record, by program id. Validated on load."""
-    return _load_records(str(directory))
+def automation_records(directory: Path = AUTOMATION_DIR, *, include_disabled: bool = False) -> dict[str, AutomationRecord]:
+    """Curated automation records by program id (enabled ones unless asked). All are validated on load."""
+    return _load_records(str(directory), include_disabled)
 
 
 @dataclass(frozen=True)

@@ -36,7 +36,7 @@ STEPS = [
 def main() -> None:
     app = create_app(repository_from_env("curated"), NessieService(None))
     # Show the browser agent's button in the UI fixture, as if BROWSER_PROVIDER were set.
-    app.state.automatable_ids = frozenset(automation_records())
+    app.state.automation_modes = {pid: r.mode for pid, r in automation_records().items()}
     with TestClient(app) as client:
         session_id = client.post("/api/sessions").json()["session_id"]
         snapshot: dict = {}

@@ -59,7 +59,7 @@ def harness(request, repo):
     h = Harness(options.get("turns", FULL_RUN), **{k: v for k, v in options.items() if k != "turns"})
     app = create_app(repo, NessieService(None), execution=h.manager)
     app.state.automation = {PROGRAM: AutomationRecord(program_id=PROGRAM, mode="practice")}
-    app.state.automatable_ids = frozenset(app.state.automation)
+    app.state.automation_modes = {k: r.mode for k, r in app.state.automation.items()}
     with TestClient(app) as client:
         h.client = client
         yield h
@@ -278,7 +278,7 @@ def test_stop_releases_the_browser_from_every_state(repo, state):
         h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: h.model)
     app = create_app(repo, NessieService(None), execution=h.manager)
     app.state.automation = {PROGRAM: AutomationRecord(program_id=PROGRAM, mode="practice")}
-    app.state.automatable_ids = frozenset(app.state.automation)
+    app.state.automation_modes = {k: r.mode for k, r in app.state.automation.items()}
     with TestClient(app) as client:
         session_id, _ = run_food_intake(client)
         run = start_run(client, session_id)
@@ -288,3 +288,95 @@ def test_stop_releases_the_browser_from_every_state(repo, state):
         assert time.monotonic() - started < 5
         assert view["status"] == "stopped" and view["live_view_url"] is None
         assert all(session.closed for session in h.provider.sessions)
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 hardening
+# ---------------------------------------------------------------------------
+
+
+def make_client(repo, manager, programs=None):
+    app = create_app(repo, NessieService(None), execution=manager)
+    app.state.automation = programs or {PROGRAM: AutomationRecord(program_id=PROGRAM, mode="practice")}
+    app.state.automation_modes = {k: r.mode for k, r in app.state.automation.items()}
+    return TestClient(app)
+
+
+def test_no_more_than_two_runs_at_once(repo):
+    h = Harness([[click(500, 900)]] * 500, delay=0.05)
+    h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: ScriptedModel([[click(500, 900)]] * 500, delay=0.05))
+    with make_client(repo, h.manager) as client:
+        sessions = [run_food_intake(client)[0] for _ in range(3)]
+        start_run(client, sessions[0])
+        start_run(client, sessions[1])
+        third = client.post(runs_url(sessions[2]), json={"program_id": PROGRAM, "consent": True})
+        assert third.status_code == 429 and third.json()["error"]["code"] == "too_many_runs"
+
+
+def test_the_session_deadline_closes_the_browser(repo):
+    h = Harness([[click(500, 900)]] * 500, delay=0.05)
+    h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: h.model, run_deadline=0.3)
+    with make_client(repo, h.manager) as client:
+        session_id, _ = run_food_intake(client)
+        run = start_run(client, session_id)
+        view = wait_for(client, session_id, run["run_id"], "stopped")
+        assert "ran out of time" in view["message"]
+        assert h.provider.sessions[0].closed
+
+
+class BrokenModel:
+    async def turn(self, input_parts, previous_id):
+        from app.execution.agent import ModelUnavailable
+
+        raise ModelUnavailable
+
+
+def test_a_model_outage_fails_the_run_safely(repo):
+    h = Harness([])
+    h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: BrokenModel())
+    with make_client(repo, h.manager) as client:
+        session_id, _ = run_food_intake(client)
+        run = start_run(client, session_id)
+        view = wait_for(client, session_id, run["run_id"], "failed")
+        assert "Google's AI" in view["message"] and h.provider.sessions[0].closed
+        wait_for_recorded(client, session_id, run["run_id"])
+        assert client.get(f"/api/sessions/{session_id}").json()["applications"] == {}  # a failure records nothing
+
+
+def test_fill_and_stop_on_a_real_site(repo):
+    real = AutomationRecord(program_id=PROGRAM, mode="stop_before_submit",
+                            start_url="https://apply.example.org/form", allowed_hosts=["apply.example.org"])
+    h = Harness([[click(100, 200)], [type_("{{zip}}")], [click(500, 950)], [click(500, 900)]])
+    with make_client(repo, h.manager, {PROGRAM: real}) as client:
+        session_id, snapshot = run_food_intake(client)
+        assert snapshot["automation_modes"] == {PROGRAM: "stop_before_submit"}
+        run = start_run(client, session_id)
+        assert run["mode"] == "stop_before_submit"
+        view = wait_for(client, session_id, run["run_id"], "needs_you")
+        assert view["handoff"]["reason"] == "stop_point"
+        assert view["interactive"] is False and view["live_view_url"].endswith("interactive=false")
+        client.post(runs_url(session_id, run["run_id"], "control"), json={"action": "return"})
+        view = wait_for_recorded(client, session_id, run["run_id"])
+        assert view["status"] == "done" and view["outcome"]["status"] == "not_submitted"
+        assert "Nothing was sent" in view["message"]
+        assert h.computers[0].url == "https://apply.example.org/form"
+        assert h.computers[0].executed == ["click", "type"]  # Submit was never touched
+        assert client.get(f"/api/sessions/{session_id}").json()["applications"][PROGRAM]["status"] == "stopped"
+
+
+class ExplodingComputer(FakeComputer):
+    async def execute(self, action, value=None):
+        raise ValueError(f"could not type {value}")
+
+
+def test_a_crash_mid_run_logs_no_typed_value(repo, caplog):
+    h = Harness([[click(100, 200)], [type_("{{zip}}")]])
+    h.provider = FakeProvider(lambda target: ExplodingComputer(url=target.start_url))
+    h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: h.model)
+    with make_client(repo, h.manager) as client, caplog.at_level(logging.DEBUG):
+        session_id, _ = run_food_intake(client)
+        run = start_run(client, session_id)
+        view = wait_for(client, session_id, run["run_id"], "failed")
+    assert view["message"] == "Something went wrong with the browser. Nothing more was filled in."
+    # The failure is logged by class and code location; the message (with the value) never is.
+    assert "ValueError" in caplog.text and "could not type" not in caplog.text

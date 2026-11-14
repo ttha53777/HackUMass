@@ -13,6 +13,8 @@ import { formatDate } from "@/lib/format";
 import type { ProgramCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { ApplyAssistant } from "@/components/benefits/apply-assistant";
+
 import { HowWeChecked } from "./how-we-checked";
 import { QuestionForm } from "./question-form";
 import { SourceRules } from "./source-rules";
@@ -107,6 +109,8 @@ export function ProgramDetail({ card }: { card: ProgramCard }) {
             Provider page
           </ExtLink>
         </div>
+        {/* Benefits with a guide show the assistant on the guide page instead. */}
+        {!p.guide ? <ApplyAssistant program={p} /> : null}
       </Sec>
 
       {p.hours?.length ? (

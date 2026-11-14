@@ -1,6 +1,6 @@
 # Browser Execution Agent: 36-hour MVP plan
 
-Status: Phases 0, 1 and 2 built on 2026-11-14 (see "Progress" below). Written 2026-11-14 against `main` at `60c466a`.
+Status: Phases 0 to 3 built on 2026-11-14 (see "Progress" below). Phase 3's live acceptance runs and the real-site switch-on are waiting on API keys and a team decision. Written 2026-11-14 against `main` at `60c466a`.
 
 ## Progress
 
@@ -28,6 +28,30 @@ Status: Phases 0, 1 and 2 built on 2026-11-14 (see "Progress" below). Written 20
 - **Acceptance.** `tests/test_practice_browser.py::test_full_practice_run_with_one_question_and_one_handoff` drives the real manager and `LocalProvider` (headless Chrome) against the practice form served over HTTP. It covers one question, a handoff at the certify step, the person signing and submitting, I'm done, verify (`submitted` with a `PRACTICE-` reference), the result recorded, the private details wiped and the browser closed, all in about 5 seconds. The gate blocking the agent's own Submit is covered in `test_gate.py` and `test_execution_agent.py`. Stop releases the browser in under 5 seconds from `starting`, `working`, `needs_answer` and `needs_you` (`test_execution_api.py`).
 - **Manual UI check.** A scratch harness ran the real backend with `LocalProvider` and the scripted model, and drove the Next.js UI: six questions answered in the panel, the takeover with I'm done, the stage set to `applied`, and Home showing the sent application with no console errors.
 - **Not yet proven:** the under-4-minutes target with real Gemini, and the interactive Steel iframe during takeover. Both need the S1 and S2 keys.
+
+**Phase 3:** built, except that the live acceptance runs need keys and turning on a real site needs a team decision.
+
+- **Fill-and-stop for real sites.** In `stop_before_submit` mode, the first submit or attestation the gate meets ends the run at a read-only `stop_point` ("The form is filled in up to the point of sending. We stop here: nothing will be sent."). The live view stays non-interactive there, so the form can't be sent from the panel. The person presses **End here**, and the run finishes as `done` with outcome `not_submitted` and is recorded as `stopped`. The panel and the consent card say which kind of form it is: `SessionSnapshot.automation_modes` is a new contract field, mirrored in `types.ts`.
+- **Real form chosen, but kept off.** All six candidates were probed read-only on 2026-11-14:
+  - **SNAP** (foodbankwma.org): the referral is a third-party mRelief screener inside an iframe, which the gate hands off, and the page carries many ad trackers.
+  - **ASC pantry:** "Sign Me Up" opens an Oasis Insight kiosk with reCAPTCHA, which is a real client-records system.
+  - **Weatherization** (monday.com): a Cloudflare challenge and custom dropdowns.
+  - **Eversource:** a CAPTCHA.
+  - **Fuel assistance** (toapply.org): sign-up first.
+  - **Highland Valley Elder Services** referral (Formdesk): plain HTML, no CAPTCHA, no requests on load. It is the only workable one. Its record (`data/automation/hves-home-delivered-meals.json`) ships with `"enabled": false`: it is validated on load but never offered until the team agrees to section 7 item 1 and S3 passes through Steel. Local-help programs show the panel in the program drawer, so it will appear once that record is turned on.
+- **Choices are the person's.** A click on any radio button, checkbox or option (`role=option` included) is handed off as `choice`. The fill sheet holds only typed details, so the agent never answers a multiple-choice question for the person. A new `full_name` key is derived from first and last name, for forms with a single name field.
+- **Failures.** The model gets one retry on a transient failure, and a `failed` interaction status counts as a failure. Either way the person sees "couldn't reach Google's AI" and the run records nothing. Steel's 401/403, 402 and 429 responses map to safe messages. The countdown turns amber under 2 minutes. "Live view not loading? Show snapshots instead" switches to the screenshot fallback.
+- **Tests:**
+  - at most 2 runs at once (429);
+  - the session deadline closes the browser;
+  - model outage;
+  - fill-and-stop through the API and in real Chrome;
+  - the allowlist handler, including strict mode, CDN assets, CAPTCHA frames and `data:` URLs;
+  - a crash mid-run logs the exception class but never its message;
+  - automation records are validated.
+
+  Off-site navigation, cross-session 404s and no typed values in logs were already covered.
+- **Acceptance rehearsal:** `scripts/spikes/rehearse.py` runs the real manager, provider and Gemini N times, answering with an obviously fictional person and playing the person's part at the handoff. It prints a table and PASS or FAIL against the Phase 3 bar. Checked with a scripted model in both modes. **Not yet run against Gemini:** there is no key.
 
 **Changes from this plan, and why**
 

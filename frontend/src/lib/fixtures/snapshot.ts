@@ -3295,5 +3295,10 @@ export const snapshotFixture: SessionSnapshot = {
     "fbwm-snap-application-assistance",
     "eversource-ma-discount-rate",
     "capv-fuel-assistance"
-  ]
+  ],
+  "automation_modes": {
+    "fbwm-snap-application-assistance": "practice",
+    "eversource-ma-discount-rate": "practice",
+    "capv-fuel-assistance": "practice"
+  }
 };

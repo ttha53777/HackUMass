@@ -61,7 +61,7 @@ def _snapshot(request: Request, session_id: str, meta: SessionMeta) -> SessionSn
         meta,
         fixture_data=request.app.state.programs.is_fixture,
         region_for=request.app.state.programs.region,
-        automatable_ids=request.app.state.automatable_ids,
+        automation_modes=request.app.state.automation_modes,
     )
 
 

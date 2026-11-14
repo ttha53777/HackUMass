@@ -34,6 +34,22 @@ class ProviderError(Exception):
     """The browser could not be started. The message is safe to show."""
 
 
+# Steel's HTTP status -> what the person is told. Never includes the response body.
+STEEL_STATUS_MESSAGES = {
+    401: "The cloud browser isn't set up correctly on this server.",
+    403: "The cloud browser isn't set up correctly on this server.",
+    402: "The cloud browser has run out of credit. Apply another way for now.",
+    429: "The cloud browser is busy. Try again in a few minutes.",
+}
+GENERIC_CLOUD_MESSAGE = "We couldn't open the cloud browser. Please try again in a moment."
+
+
+def steel_message(exc: BaseException) -> str:
+    response = getattr(exc, "response", None)
+    status = getattr(response, "status_code", None)
+    return STEEL_STATUS_MESSAGES.get(status, GENERIC_CLOUD_MESSAGE) if status else GENERIC_CLOUD_MESSAGE
+
+
 class BrowserSession(Protocol):
     computer: Computer
 
@@ -186,7 +202,7 @@ class SteelProvider:
         except Exception as exc:
             await session.close()
             logger.error("cloud browser failed to start: %s", describe_exception(exc))
-            raise ProviderError("We couldn't open the cloud browser. Please try again in a moment.") from exc
+            raise ProviderError(steel_message(exc)) from exc
 
 
 class FakeSession:

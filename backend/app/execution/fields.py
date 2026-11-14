@@ -38,6 +38,7 @@ CATALOGUE: dict[str, FieldSpec] = {
     for spec in (
         FieldSpec("first_name", "First name", "first name"),
         FieldSpec("last_name", "Last name", "last name"),
+        FieldSpec("full_name", "Full name", "full name"),
         FieldSpec(
             "date_of_birth", "Date of birth", "date of birth",
             pattern=r"^(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(19|20)\d\d$", hint="MM/DD/YYYY",
@@ -93,6 +94,11 @@ class FieldStore:
         if key not in CATALOGUE:
             raise KeyError(key)
         self._values[key] = value
+        # Forms that ask for one name field get it from the two the person gave.
+        if key in ("first_name", "last_name") and "full_name" not in self._values:
+            first, last = self._values.get("first_name"), self._values.get("last_name")
+            if first and last:
+                self._values["full_name"] = f"{first} {last}"
 
     def clear(self) -> None:
         self._values.clear()

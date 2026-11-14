@@ -194,6 +194,9 @@ class SessionSnapshot(BaseModel):
     applications: dict[str, ApplicationRecord] = Field(default_factory=dict)
     # Programs the browser agent can help fill in. Empty when the feature is off.
     automatable_program_ids: list[str] = Field(default_factory=list)
+    # For each of those: "practice" (our practice copy; a submit is harmless) or
+    # "stop_before_submit" (a real provider form; the run ends before sending).
+    automation_modes: dict[str, Literal["practice", "stop_before_submit"]] = Field(default_factory=dict)
 
 
 class NessieEvidenceIn(BaseModel):

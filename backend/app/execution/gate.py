@@ -80,7 +80,9 @@ class Element:
 
     @property
     def is_check(self) -> bool:
-        return (self.tag == "input" and self.type in ("checkbox", "radio")) or self.role in ("checkbox", "radio", "switch")
+        return (self.tag == "input" and self.type in ("checkbox", "radio")) or self.role in (
+            "checkbox", "radio", "switch", "option", "menuitemradio", "menuitemcheckbox"
+        )
 
     @property
     def is_text_field(self) -> bool:
@@ -160,8 +162,10 @@ def _classify_press(element: Element) -> Verdict:
     if reason:
         return _handoff(reason)
     words = element.words
-    if element.is_check and _ATTEST.search(words):
-        return _handoff("attestation")
+    if element.is_check:
+        # Ticking or choosing is answering a question for the person. The fill sheet
+        # only holds typed details, so every choice is theirs to make.
+        return _handoff("attestation" if _ATTEST.search(words) else "choice")
     if element.is_button_like:
         if _SIGN_IN.search(words):
             return _handoff("sign_in")

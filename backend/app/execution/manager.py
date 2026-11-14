@@ -26,7 +26,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Awaitable, Callable
 
-from app.execution.agent import Agent, AgentEnd, BrowserModel, GeminiBrowserModel, system_instruction
+from app.execution.agent import Agent, AgentEnd, BrowserModel, GeminiBrowserModel, ModelUnavailable, system_instruction
 from app.execution.computer import Computer, Observation
 from app.execution.config import (
     MAX_CONCURRENT_RUNS,
@@ -64,7 +64,9 @@ END_MESSAGES = {
     "finished": None,
     "step_limit": "The assistant reached its step limit. Check the page and finish it yourself if needed.",
     "time_limit": "The assistant ran out of time. Check the page and finish it yourself if needed.",
+    "stopped_before_submit": "We filled in the form and stopped before sending it. Nothing was sent.",
 }
+MODEL_MESSAGE = "The assistant couldn't reach Google's AI, so it stopped. Nothing more was filled in."
 PAUSE_TIMEOUT_MESSAGE = "We waited a while with no reply, so we closed the browser. Nothing was sent."
 DEADLINE_MESSAGE = "The browser session ran out of time, so we closed it."
 STOPPED_MESSAGE = "You stopped the assistant and we closed the browser."
@@ -121,7 +123,8 @@ class Run:
         return max(0, int(self.started + RUN_DEADLINE_SECONDS - time.monotonic()))
 
     def view(self) -> RunView:
-        interactive = self.status == "needs_you"
+        # The fill-and-stop point stays read-only so the form cannot be sent from here.
+        interactive = self.status == "needs_you" and self.handoff_reason != "stop_point"
         live = None
         if self.browser is not None and self.status in ("working", "needs_answer", "needs_you", "verifying"):
             live = self.browser.live_view_url(interactive)
@@ -324,6 +327,8 @@ class ExecutionManager:
             self._end(run, "stopped", PAUSE_TIMEOUT_MESSAGE)
         except ProviderError as exc:
             self._end(run, "failed", str(exc))
+        except ModelUnavailable:
+            self._end(run, "failed", MODEL_MESSAGE)
         except ExecutionError as exc:
             self._end(run, "failed", exc.message)
         except Exception as exc:
@@ -349,7 +354,14 @@ class ExecutionManager:
         run.browser = await self._provider.open(run.target)
         run.status = "working"
         computer = _RecordingComputer(run.browser.computer, run)
-        end: AgentEnd = await Agent(computer, model, run.store, run.target.allowed_hosts, hooks).run()
+        agent = Agent(computer, model, run.store, run.target.allowed_hosts, hooks,
+                      stop_before_submit=run.target.mode == "stop_before_submit")
+        end: AgentEnd = await agent.run()
+        if end.kind == "stopped_before_submit":
+            # Nothing was sent by construction; no need to read the page.
+            run.outcome = Outcome(status="not_submitted")
+            self._end(run, "done", END_MESSAGES[end.kind])
+            return
         run.status = "verifying"
         observation = await computer.observe()
         text = await computer.page_text()

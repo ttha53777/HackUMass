@@ -38,7 +38,7 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
     settings = AgentSettings.from_env()
     app.state.agent_settings = settings
     app.state.automation = {}
-    app.state.automatable_ids = frozenset()
+    app.state.automation_modes = {}
     app.state.execution = None
     if execution is None and settings.provider != "off" and not settings.gemini_api_key:
         logger.warning("BROWSER_PROVIDER is set but GEMINI_API_KEY is not; the browser agent is off")
@@ -66,7 +66,7 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
 
     records = automation_records()
     app.state.automation = records
-    app.state.automatable_ids = frozenset(records)
+    app.state.automation_modes = {pid: record.mode for pid, record in records.items()}
     app.state.execution = execution
     app.include_router(execution_router)
     app.include_router(practice_router)

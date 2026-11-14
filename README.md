@@ -111,6 +111,8 @@ Only mounted when `BROWSER_PROVIDER` is `steel` or `local` and `GEMINI_API_KEY` 
 | `GET /sessions/{id}/applications/{run_id}/frame` | Latest screenshot (PNG), the fallback view when there is no embeddable live view. |
 | `GET /practice/` | Our own practice application form (not under `/api`). Practice copy, never sent anywhere. |
 
+Programs the assistant can fill are listed in `backend/app/data/automation/`. A `practice` record opens our practice form; a `stop_before_submit` record opens a real provider form and the run always ends before sending. Records with `"enabled": false` are validated but never offered. Rehearse with real keys: `cd backend && .venv/bin/python scripts/spikes/rehearse.py --runs 5`.
+
 Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
 Try it with the backend running:

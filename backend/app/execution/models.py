@@ -37,6 +37,8 @@ HandoffReason = Literal[
     "file_upload",
     "safety_confirmation",  # Gemini asked for a person's confirmation
     "unknown_field",  # a field the fill sheet has no key for
+    "choice",  # a radio button, checkbox or option: the person's own answer
+    "stop_point",  # real site, fill-and-stop: the form is filled; nothing will be sent
     "stuck",  # the agent asked for help
     "person_requested",  # the person pressed Take over
 ]
@@ -50,6 +52,8 @@ HANDOFF_MESSAGES: dict[str, str] = {
     "file_upload": "This page asks you to upload a file. Choose it yourself.",
     "safety_confirmation": "The next step needs your OK. Please look it over and do it yourself.",
     "unknown_field": "This page asks for something we don't have. Please fill it in yourself.",
+    "choice": "This question needs your own answer. Pick it yourself, then press I'm done.",
+    "stop_point": "The form is filled in up to the point of sending. We stop here: nothing will be sent.",
     "stuck": "The assistant got stuck on this page. Please take it from here.",
     "person_requested": "You have control. Press I'm done when you want the assistant to continue.",
 }
@@ -65,6 +69,9 @@ class AutomationRecord(BaseModel):
     start_url: str | None = None
     allowed_hosts: list[str] = Field(default_factory=list)
     note: str = ""
+    # A disabled record is validated but never offered. Real-site records ship
+    # disabled until the team agrees (plan section 7) and spike S3 passes.
+    enabled: bool = True
 
     @model_validator(mode="after")
     def _real_sites_are_pinned(self) -> AutomationRecord:
