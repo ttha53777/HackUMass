@@ -6,13 +6,15 @@ runs) and by User Intelligence (to store the normalised value).
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
 from app.graph.questions import OTHER_OPTION_ID, QuestionSpec
 from app.graph.state import AnswerIn, Fact
 
-_ZIP = re.compile(r"^\d{5}$")
+# Five digits, optionally ZIP+4. Kept as a string: Massachusetts ZIPs start with 0.
+_ZIP = re.compile(r"^(\d{5})(?:-?\d{4})?$")
 _PERIOD_TO_MONTH = {"week": 52 / 12, "month": 1.0, "year": 1 / 12}
 
 
@@ -24,9 +26,13 @@ def _number(raw: Any) -> float:
     if isinstance(raw, bool) or raw is None:
         raise AnswerError("Enter a number.")
     try:
-        return float(str(raw).replace(",", "").replace("$", "").strip())
+        value = float(str(raw).replace(",", "").replace("$", "").strip())
     except ValueError as exc:
         raise AnswerError("Enter a number.") from exc
+    # "nan" and "inf" parse as floats; NaN slips past every min/max comparison.
+    if not math.isfinite(value):
+        raise AnswerError("Enter a number.")
+    return value
 
 
 def _check_options(spec: QuestionSpec, answer: AnswerIn) -> list[str]:
@@ -61,10 +67,13 @@ def normalize_answer(spec: QuestionSpec, answer: AnswerIn) -> Any:
         return spec.value_map.get(chosen[0], chosen[0])
 
     if kind == "zip":
-        value = str(answer.value or "").strip()
-        if not _ZIP.match(value):
+        if not isinstance(answer.value, str):
+            # A JSON number would already have lost a leading zero (01002 -> 1002).
             raise AnswerError("Enter a 5-digit ZIP code.")
-        return value
+        match = _ZIP.match(answer.value.strip())
+        if not match:
+            raise AnswerError("Enter a 5-digit ZIP code.")
+        return match.group(1)
 
     if kind in ("number", "currency"):
         value = _number(answer.value)
@@ -81,7 +90,7 @@ def normalize_answer(spec: QuestionSpec, answer: AnswerIn) -> Any:
         return round(value, 2)
 
     # text
-    text = (answer.text or str(answer.value or "")).strip()
+    text = " ".join((answer.text or str(answer.value or "")).split())
     if not text:
         raise AnswerError("Enter an answer, or skip this question.")
     return text
