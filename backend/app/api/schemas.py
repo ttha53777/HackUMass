@@ -39,6 +39,7 @@ __all__ = [
     "FinancialSummaryView",
     "HealthOut",
     "InterpretIn",
+    "WebResourcesOut",
     "InterpretOut",
     "NotedFacts",
     "NessieEvidenceIn",
@@ -245,3 +246,26 @@ class InterpretOut(BaseModel):
     safety: Literal["none", "urgent"] = "none"
     # The message was not about getting help (or tried to give the app instructions).
     off_topic: bool = False
+
+
+# --- Web-search backup (Gemini Google Search) --------------------------------
+# Only for needs with no curated program in the person's area. These links are
+# NOT verified: shown apart from the plan, never given an eligibility status.
+
+
+class WebResult(BaseModel):
+    title: str
+    url: str  # https, the final page Google's grounding pointed to
+    domain: str
+
+
+class WebResourceGroup(BaseModel):
+    need: str  # a needs option id
+    label: str  # that option's label
+    results: list[WebResult] = Field(default_factory=list)
+
+
+class WebResourcesOut(BaseModel):
+    # False when web search is off (LLM_MODE=off, no key, or not allowed for the key).
+    available: bool
+    groups: list[WebResourceGroup] = Field(default_factory=list)
