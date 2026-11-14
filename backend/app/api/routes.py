@@ -47,6 +47,7 @@ def _snapshot(request: Request, session_id: str, meta: SessionMeta) -> SessionSn
         _manager(request).values(session_id),
         meta,
         fixture_data=request.app.state.programs.is_fixture,
+        region_for=request.app.state.programs.region,
     )
 
 

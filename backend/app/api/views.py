@@ -6,7 +6,7 @@ dirty flags, raw answers) is never dumped.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Callable
 
 from app.agents.eligibility import inputs_hash
 from app.api.schemas import (
@@ -16,6 +16,7 @@ from app.api.schemas import (
     Notice,
     ProfileSummaryItem,
     ProgramCard,
+    RegionView,
     SessionSnapshot,
 )
 from app.graph.answers import display_value
@@ -34,7 +35,12 @@ FIXTURE_MESSAGE = (
 
 
 def build_snapshot(
-    session_id: str, values: dict[str, Any], meta: SessionMeta, *, fixture_data: bool
+    session_id: str,
+    values: dict[str, Any],
+    meta: SessionMeta,
+    *,
+    fixture_data: bool,
+    region_for: Callable[[str], dict[str, str] | None] = lambda _zip: None,
 ) -> SessionSnapshot:
     intake: IntakeState = values.get("intake") or IntakeState()
     profile: Profile = values.get("profile") or Profile()
@@ -106,6 +112,21 @@ def build_snapshot(
             seen.add(code)
             notices.append(Notice(code=code, message=message))
 
+    region = None
+    zip_fact = profile.facts.get("zip")
+    if coverage == "supported" and zip_fact is not None:
+        found = region_for(str(zip_fact.value))
+        if found:
+            region = RegionView(zip=str(zip_fact.value), **{k: found[k] for k in ("city", "county", "state")})
+
+    field_labels = {
+        name: spec.label
+        for card in cards
+        if card.assessment
+        for name in card.assessment.missing_fields
+        if (spec := spec_for_field(name)) is not None
+    }
+
     summary = values.get("financial_summary")
     return SessionSnapshot(
         session_id=session_id,
@@ -115,6 +136,7 @@ def build_snapshot(
         answered=answered,
         profile_summary=profile_summary,
         coverage=coverage,
+        region=region,
         programs=cards,
         action_plan=values.get("action_plan") or [],
         plan_stale=dirty.discovery
@@ -126,4 +148,5 @@ def build_snapshot(
         if summary
         else None,
         notices=notices,
+        field_labels=field_labels,
     )

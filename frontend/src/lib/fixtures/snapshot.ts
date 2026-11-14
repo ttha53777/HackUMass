@@ -152,6 +152,12 @@ export const snapshotFixture: SessionSnapshot = {
     }
   ],
   "coverage": "supported",
+  "region": {
+    "zip": "00000",
+    "city": "Fixtureville",
+    "county": "Fixture County",
+    "state": "ZZ"
+  },
   "programs": [
     {
       "program": {
@@ -323,5 +329,8 @@ export const snapshotFixture: SessionSnapshot = {
     }
   },
   "financial_summary": null,
-  "notices": []
+  "notices": [],
+  "field_labels": {
+    "age_60_plus": "Aged 60 or older"
+  }
 };

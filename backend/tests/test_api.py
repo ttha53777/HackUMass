@@ -245,3 +245,24 @@ def test_curated_source_with_no_data_reports_unsupported(tmp_path):
         answer(client, session_id, question_id="needs", selected_option_ids=["food"])
         snapshot = answer(client, session_id, question_id="zip", value="00000")
         assert snapshot["coverage"] == "unsupported" and snapshot["programs"] == []
+
+
+def test_snapshot_names_the_region_and_labels_missing_facts(client):
+    session_id = start(client)["session_id"]
+    answer(client, session_id, question_id="needs", selected_option_ids=["food"])
+    snapshot = answer(client, session_id, question_id="zip", value="00000")
+    assert snapshot["region"] == {
+        "zip": "00000", "city": "Fixtureville", "county": "Fixture County", "state": "ZZ",
+    }
+    answer(client, session_id, question_id="household_size", value=1)
+    snapshot = answer(client, session_id, question_id="monthly_income", skipped=True)
+    missing = {f for c in snapshot["programs"] for f in (c["assessment"] or {}).get("missing_fields", [])}
+    assert missing and set(snapshot["field_labels"]) == missing
+    assert snapshot["field_labels"]["monthly_income"] == "Monthly income"
+
+
+def test_unsupported_zip_has_no_region(client):
+    session_id = start(client)["session_id"]
+    answer(client, session_id, question_id="needs", selected_option_ids=["food"])
+    snapshot = answer(client, session_id, question_id="zip", value="99999")
+    assert snapshot["coverage"] == "unsupported" and snapshot["region"] is None
