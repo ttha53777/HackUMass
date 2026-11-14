@@ -181,7 +181,7 @@ def test_structured_requirements_reference_askable_fields(root):
     programs, _ = load_programs(root / "programs")
     for program in programs:
         for req in program.requirements:
-            if req.kind in ("text_only", "open_access", "residency"):
+            if req.kind in ("text_only", "open_access", "residency", "info"):
                 continue
             assert req.field in FIELDS_WITH_QUESTIONS, (program.id, req.id, req.field)
 

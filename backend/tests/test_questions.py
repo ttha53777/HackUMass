@@ -9,8 +9,10 @@ from app.graph.questions import (
     MAX_TOTAL_QUESTIONS,
     REGISTRY,
     get_spec,
+    income_band_question,
     next_core_question,
     next_followup_question,
+    open_questions,
     referenced_fields,
 )
 from app.graph.state import AnswerIn, IntakeState
@@ -21,6 +23,7 @@ ANSWERS = {
     "housing_status": "renting",
     "situation": "retired",
     "household_size": 1,
+    "household_who": ["none"],
     "monthly_income": 1400.0,
 }
 
@@ -51,31 +54,39 @@ def test_first_questions_are_always_needs_then_zip(repo):
     assert core_sequence(repo, ["transportation"])[:2] == ["needs", "zip"]
 
 
-def test_different_needs_produce_different_questions(repo):
-    food = core_sequence(repo, ["food"])
-    housing = core_sequence(repo, ["housing"])
-    assert food == ["needs", "zip", "household_size", "monthly_income"]
-    assert housing == ["needs", "zip", "housing_status", "household_size", "monthly_income"]
+CORE = ["needs", "zip", "household_size", "household_who"]
 
 
-def test_irrelevant_questions_are_never_asked(repo):
-    # No transportation program has an income rule, so income is not asked.
-    assert core_sequence(repo, ["transportation"]) == ["needs", "zip"]
-    # `situation` is in the registry but no fixture program references it.
+def test_core_is_the_same_four_questions_whatever_the_needs(repo):
+    for needs in (["food"], ["housing"], ["utilities"], ["transportation"]):
+        assert core_sequence(repo, needs) == CORE
+
+
+def test_everything_else_is_a_followup_never_a_core_question(repo):
     for needs in (["food"], ["housing"], ["utilities"], ["food", "utilities", "housing"]):
-        assert "situation" not in core_sequence(repo, needs)
+        asked = core_sequence(repo, needs)
+        assert "situation" not in asked and "monthly_income" not in asked
 
 
-def test_need_specific_question_requires_that_need(repo):
-    assert "utility_urgency" in core_sequence(repo, ["utilities"])
-    assert "utility_urgency" not in core_sequence(repo, ["food"])
+def test_household_questions_wait_for_programs():
+    # No programs (outside coverage, or no match): nothing to match a household to.
+    profile = make_profile(needs=["food"], zip="99999")
+    assert next_core_question(profile, IntakeState(), []) is None
+
+
+def test_need_specific_followups_are_open_only_for_that_need(repo):
+    base = dict(zip="00000", household_size=1, household_who=["none"], monthly_income=1400.0)
+    for needs, expected in ((["utilities"], True), (["food"], False)):
+        profile = make_profile(needs=needs, **base)
+        programs, assessments = _assessments(repo, needs, profile)
+        ids = [item.question.id for item in open_questions(profile, IntakeState(), programs, assessments)]
+        assert ("utility_urgency" in ids) is expected
 
 
 def test_skipped_or_answered_questions_are_not_selected_again(repo):
     programs = repo.list("00000", ["food"])
-    profile = make_profile(needs=["food"], zip="00000", household_size=2)
-    intake = IntakeState(skipped_fields=["monthly_income"])
-    assert next_core_question(profile, intake, programs) is None
+    profile = make_profile(needs=["food"], zip="00000", household_size=2, household_who=["none"])
+    assert next_core_question(profile, IntakeState(), programs) is None
 
 
 def test_core_question_cap(repo):
@@ -128,7 +139,11 @@ def test_followup_caps_and_skips(repo):
 
 
 def test_income_table_also_references_household_size(repo):
-    assert referenced_fields(repo.get("fixture-food-benefit")) == {"monthly_income", "household_size"}
+    assert referenced_fields(repo.get("fixture-food-benefit")) == {
+        "monthly_income",
+        "income_band",
+        "household_size",
+    }
     assert referenced_fields(repo.get("fixture-ride-service")) == set()
 
 
@@ -137,6 +152,7 @@ def test_income_floor_table_also_references_household_size(repo):
     floor = program.requirements[0].model_copy(update={"kind": "income_min", "op": "gte"})
     assert referenced_fields(program.model_copy(update={"requirements": [floor]})) == {
         "monthly_income",
+        "income_band",
         "household_size",
     }
 
@@ -146,7 +162,7 @@ def test_registry_is_consistent():
     assert len(fields) == len(set(fields)), "each question fills its own field"
     for spec in REGISTRY.values():
         question = spec.question
-        if question.type in ("single_select", "multi_select"):
+        if question.type in ("single_select", "multi_select") and not spec.option_regex:
             assert question.options
         assert set(spec.value_map) <= {option.id for option in question.options}
 
@@ -194,7 +210,7 @@ def test_reject_invalid_answers(question_id, answer):
 
 def test_skip_rules():
     validate_answer(get_spec("monthly_income"), AnswerIn(question_id="monthly_income", skipped=True))
-    for required in ("needs", "zip"):
+    for required in ("needs", "zip", "household_size", "household_who"):
         with pytest.raises(AnswerError):
             validate_answer(get_spec(required), AnswerIn(question_id=required, skipped=True))
 
@@ -210,3 +226,52 @@ def test_display_values():
         "age_60_plus": "No",
         "household_size": "1",
     }
+
+
+# --- open questions, income bands, new answer shapes ---------------------------
+
+
+def test_open_questions_are_ranked_and_name_the_programs_they_affect(repo):
+    profile = make_profile(needs=["food"], zip="00000", household_size=1, household_who=["none"])
+    programs, assessments = _assessments(repo, ["food"], profile)
+    items = open_questions(profile, IntakeState(), programs, assessments)
+    by_id = {item.question.id: item.affects for item in items}
+    assert by_id["income_band"] == ["fixture-food-benefit"]
+    assert by_id["age_60_plus"] == ["fixture-senior-pantry"]
+    # The head is what the app asks next.
+    assert next_followup_question(profile, IntakeState(), programs, assessments) == items[0].question
+
+
+def test_answered_or_skipped_questions_leave_the_open_list(repo):
+    profile = make_profile(needs=["food"], zip="00000", household_size=1, household_who=["none"])
+    programs, assessments = _assessments(repo, ["food"], profile)
+    skipped = IntakeState(skipped_fields=["monthly_income"])  # income_band is the same fact
+    ids = [i.question.id for i in open_questions(profile, skipped, programs, assessments)]
+    assert "income_band" not in ids and "age_60_plus" in ids
+
+
+def test_income_band_options_split_at_the_published_limits(repo):
+    profile = make_profile(needs=["food"], zip="00000", household_size=1)
+    question = income_band_question(profile, repo.list("00000", ["food"]))
+    labels = [option.label for option in question.options]
+    assert labels[0].startswith("Under $") and labels[-2].startswith("Over $")
+    assert labels[-1] == "Not sure, or prefer not to say"
+    assert "household of 1" in question.prompt
+
+
+def test_income_band_answers_are_validated_by_shape_and_stored_as_a_range():
+    spec = get_spec("income_band")
+    value = normalize_answer(spec, AnswerIn(question_id="income_band", selected_option_ids=["0-31920"]))
+    assert value == {"lo": 0.0, "hi": 31920.0}
+    assert normalize_answer(spec, AnswerIn(question_id="income_band", selected_option_ids=["unsure"])) == "unsure"
+    open_ended = normalize_answer(spec, AnswerIn(question_id="income_band", selected_option_ids=["53585-inf"]))
+    assert open_ended == {"lo": 53585.0, "hi": None}
+    with pytest.raises(AnswerError):
+        normalize_answer(spec, AnswerIn(question_id="income_band", selected_option_ids=["lots"]))
+
+
+def test_none_of_these_is_exclusive():
+    spec = get_spec("household_who")
+    assert normalize_answer(spec, AnswerIn(question_id="household_who", selected_option_ids=["none"])) == ["none"]
+    with pytest.raises(AnswerError):
+        validate_answer(spec, AnswerIn(question_id="household_who", selected_option_ids=["none", "60"]))

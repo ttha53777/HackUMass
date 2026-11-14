@@ -52,12 +52,42 @@ def get_checkpointer() -> InMemorySaver:
     )
 
 
+FIT_STATUSES = ("likely_eligible", "already_receiving")
+
+
+def status_changes(before: dict[str, str], after: dict[str, str]) -> dict[str, list[str]]:
+    """Which programs changed status during a run. Programs new to the list are ignored."""
+    change: dict[str, list[str]] = {
+        "moved_to_fit": [], "opens_later": [], "no_longer_fit": [], "updated": [],
+    }
+    for program_id, status in after.items():
+        previous = before.get(program_id)
+        if previous is None or previous == status:
+            continue
+        if status in FIT_STATUSES:
+            change["moved_to_fit"].append(program_id)
+        elif status == "opens_later":
+            change["opens_later"].append(program_id)
+        elif status == "likely_ineligible":
+            change["no_longer_fit"].append(program_id)
+        else:
+            change["updated"].append(program_id)
+    return change
+
+
+def _statuses(values: dict[str, Any]) -> dict[str, str]:
+    return {pid: a.status for pid, a in (values.get("eligibility_assessments") or {}).items()}
+
+
 @dataclass
 class SessionMeta:
     busy: bool = False
     last_seen: float = field(default_factory=time.monotonic)
     # (code, message) pairs from the most recent run, safe to show.
     run_notices: list[tuple[str, str]] = field(default_factory=list)
+    # What the latest input changed (program ids by kind of change), set when its
+    # run finishes and cleared by the next input. Statuses only, never answers.
+    last_change: dict[str, list[str]] | None = None
 
 
 class SessionManager:
@@ -93,13 +123,21 @@ class SessionManager:
         meta = self._sessions[session_id]
         meta.busy = True
         meta.run_notices = []
-        task = asyncio.create_task(self._run(session_id, meta, graph_input))
+        meta.last_change = None
+        before = _statuses(self.values(session_id))
+        task = asyncio.create_task(self._run(session_id, meta, graph_input, before))
         self._tasks.add(task)
         task.add_done_callback(self._tasks.discard)
         await asyncio.wait({task}, timeout=FAST_PATH_SECONDS)
         return task.done()
 
-    async def _run(self, session_id: str, meta: SessionMeta, graph_input: dict[str, Any]) -> None:
+    async def _run(
+        self,
+        session_id: str,
+        meta: SessionMeta,
+        graph_input: dict[str, Any],
+        before: dict[str, str],
+    ) -> None:
         # Each run starts with fresh per-run budgets and a clean error list.
         payload = {**graph_input, "run_counts": {}, "errors": []}
         try:
@@ -107,6 +145,7 @@ class SessionManager:
                 asyncio.to_thread(self._graph.invoke, payload, run_config(session_id)),
                 timeout=RUN_TIMEOUT_SECONDS,
             )
+            meta.last_change = status_changes(before, _statuses(self.values(session_id)))
         except TimeoutError:
             logger.error("graph run timed out (session %s)", session_id)
             meta.run_notices.append(("run_timeout", RUN_TIMEOUT_MESSAGE))

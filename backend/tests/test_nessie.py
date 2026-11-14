@@ -123,6 +123,7 @@ def to_results(client, income=None) -> str:
     answer(client, sid, question_id="needs", selected_option_ids=["food"])
     answer(client, sid, question_id="zip", value="00000")
     answer(client, sid, question_id="household_size", value=1)
+    answer(client, sid, question_id="household_who", selected_option_ids=["none"])
     if income is None:
         answer(client, sid, question_id="monthly_income", skipped=True)
     else:

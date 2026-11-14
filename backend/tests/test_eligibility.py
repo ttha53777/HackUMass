@@ -269,8 +269,8 @@ def curated() -> ProgramsRepository:
     return repository_from_env("curated")
 
 
-PERSONA = dict(needs=["food", "utilities"], zip="01002", utility_urgency="behind",
-               household_size=1, monthly_income=1400.0)
+PERSONA = dict(needs=["food", "utilities"], zip="01002", utility_issues=["bills"],
+               household_size=1, household_who=["none"], monthly_income=1400.0)
 
 
 def test_persona_against_curated_records(curated):
@@ -279,18 +279,26 @@ def test_persona_against_curated_records(curated):
 
     assert status["asc-community-meals"] == "likely_eligible"  # open access
     assert status["fbwm-mobile-food-bank"] == "likely_eligible"
-    assert status["fbwm-snap-application-assistance"] == "possibly_eligible"  # DTA decides
+    assert status["fbwm-snap-application-assistance"] == "likely_eligible"  # under the SNAP limit
+    assert status["capv-fuel-assistance"] == "likely_eligible"  # under the 2026-27 table
     assert status["ma-good-neighbor-energy-fund"] == "likely_ineligible"  # below the 60% floor
-    assert status["capv-rent-utility-assistance"] == "likely_ineligible"  # shutoff only
-    assert status["capv-heating-system-repair"] == "insufficient_information"  # owners only
-    assert status["capv-fuel-assistance"] == "possibly_eligible"  # rules are text only
+    assert status["capv-rent-utility-assistance"] == "likely_ineligible"  # shut-off or rent arrears only
+    assert status["capv-heating-system-repair"] == "likely_ineligible"  # system is not broken
+    assert status["capv-weatherization"] == "insufficient_information"  # needs the benefits answer
+    assert status["hves-home-delivered-meals"] == "likely_ineligible"  # nobody over 60
 
 
-def test_heating_repair_turns_on_the_housing_follow_up(curated):
+def test_heating_repair_asks_for_the_housing_and_benefit_answers(curated):
     repair = curated.get("capv-heating-system-repair")
-    assert assess(repair, make_profile(**PERSONA)).missing_fields == ["housing_status"]
-    assert assess(repair, make_profile(**PERSONA, housing_status="own")).status == "possibly_eligible"
-    assert assess(repair, make_profile(**PERSONA, housing_status="renting")).status == "likely_ineligible"
+    broken = dict(PERSONA, utility_issues=["broken"])
+    assert assess(repair, make_profile(**broken)).missing_fields == ["benefits_held", "housing_status"]
+    ready = dict(broken, housing_status="own", benefits_held=["fuel"])
+    assert assess(repair, make_profile(**ready)).status == "likely_eligible"
+    renting = dict(ready, housing_status="renting")
+    assert assess(repair, make_profile(**renting)).status == "likely_ineligible"
+    # Owner with a broken system but no fuel assistance yet: it opens once they have it.
+    later = dict(broken, housing_status="own", benefits_held=["snap"])
+    assert assess(repair, make_profile(**later)).status == "opens_later"
 
 
 def test_every_curated_record_assesses_without_error(curated):
@@ -298,5 +306,145 @@ def test_every_curated_record_assesses_without_error(curated):
         for p in curated.all():
             result = assess(p, profile)
             assert result.explanation
-            assert len(result.criteria) == len(p.requirements)
+            # Requirements limited to other needs are left out of the criteria.
+            assert {c.requirement_id for c in result.criteria} <= {r.id for r in p.requirements}
             assert set(result.source_urls) <= {r.source_url for r in p.requirements} | {p.info_url}
+
+
+# --------------------------------------------------------------------------
+# Rules added for the app shell: groups, "opens later", notes, unsure, bands
+# --------------------------------------------------------------------------
+
+from app.graph.state import Program  # noqa: E402
+
+
+def program_with(*requirements, held_benefit=None) -> Program:
+    return Program(
+        id="p", name="P", provider="Prov", type="community", categories=["utilities"],
+        service_area={"statewide": True}, description="d", info_url="https://x.test",
+        documents_needed=None, requirements=list(requirements), verified_on="2026-11-01",
+        held_benefit=held_benefit,
+    )
+
+
+def cat(rid, field, op, value, **extra):
+    return req("categorical", id=rid, field=field, op=op, value=value, **extra)
+
+
+def test_alternatives_are_met_if_any_member_is_met():
+    program = program_with(
+        cat("a", "utility_issues", "in", ["shutoff"], group="crisis"),
+        cat("b", "housing_need", "eq", "behind", group="crisis"),
+    )
+    assert assess(program, make_profile(utility_issues=["shutoff"])).status == "likely_eligible"
+    assert assess(program, make_profile(housing_need="behind")).status == "likely_eligible"
+    both_no = make_profile(utility_issues=["bills"], housing_need="search")
+    assert assess(program, both_no).status == "likely_ineligible"
+
+
+def test_a_group_asks_for_one_field_at_a_time():
+    program = program_with(
+        cat("a", "utility_issues", "in", ["shutoff"], group="crisis"),
+        cat("b", "housing_need", "eq", "behind", group="crisis"),
+    )
+    assert assess(program, make_profile()).missing_fields == ["utility_issues"]
+    after = assess(program, make_profile(utility_issues=["bills"]))
+    assert after.status == "insufficient_information" and after.missing_fields == ["housing_need"]
+
+
+def test_requirement_limited_to_a_need_is_ignored_for_other_needs():
+    program = program_with(
+        cat("a", "utility_issues", "in", ["shutoff"], group="crisis", needs_any=["utilities"]),
+        cat("b", "housing_need", "eq", "behind", group="crisis", needs_any=["housing"]),
+    )
+    profile = make_profile(needs=["utilities"], utility_issues=["bills"])
+    result = assess(program, profile)
+    assert result.status == "likely_ineligible"
+    assert [c.requirement_id for c in result.criteria] == ["a"]
+
+
+def test_unmet_unlock_means_opens_later_and_missing_is_still_reported():
+    program = program_with(
+        cat("benefit", "benefits_held", "in", ["fuel"], on_unmet="later"),
+        cat("owner", "housing_status", "in", ["own"]),
+    )
+    assert assess(program, make_profile(benefits_held=["snap"])).status == "opens_later"
+    later = assess(program, make_profile(benefits_held=["snap"]))
+    assert later.missing_fields == ["housing_status"]
+    # A hard no still wins over "opens later".
+    out = assess(program, make_profile(benefits_held=["snap"], housing_status="renting"))
+    assert out.status == "likely_ineligible"
+    assert assess(program, make_profile(benefits_held=["fuel"], housing_status="own")).status == "likely_eligible"
+
+
+def test_note_only_requirements_never_lower_the_status():
+    program = program_with(
+        req("residency", id="area"),
+        cat("benefit", "benefits_held", "in", ["snap"], on_unmet="note"),
+        req("info", id="i"),
+    )
+    assert assess(program, make_profile(zip="00000", benefits_held=["none"])).status == "likely_eligible"
+    assert assess(program, make_profile(zip="00000", benefits_held=["snap"])).status == "likely_eligible"
+
+
+def test_not_sure_is_undecided_and_not_asked_again():
+    program = program_with(cat("bus", "near_bus_route", "eq", "yes"))
+    result = assess(program, make_profile(near_bus_route="unsure"))
+    assert result.status == "possibly_eligible" and result.missing_fields == []
+
+
+def test_already_receiving_the_benefit_wins():
+    program = program_with(
+        req("income_max", id="inc", field="monthly_income", op="lte", period="month", value=100),
+        held_benefit="snap",
+    )
+    result = assess(program, make_profile(benefits_held=["snap"], monthly_income=9999.0))
+    assert result.status == "already_receiving"
+    assert assess(program, make_profile(benefits_held=["none"], monthly_income=9999.0)).status == "likely_ineligible"
+
+
+def band(lo, hi):
+    return {"lo": float(lo), "hi": None if hi is None else float(hi)}
+
+
+def test_income_band_is_decided_only_when_the_whole_range_is_on_one_side():
+    program = program_with(
+        req("income_max", id="inc", field="monthly_income", op="lte", period="year", value={"2": 70073})
+    )
+    base = dict(household_size=2)
+    assert assess(program, make_profile(**base, income_band=band(0, 70073))).status == "likely_eligible"
+    assert assess(program, make_profile(**base, income_band=band(70073, 93431))).status == "likely_ineligible"
+    inside = assess(program, make_profile(**base, income_band=band(53585, 93431)))
+    assert inside.status == "possibly_eligible"  # the limit falls inside the range
+    unsure = assess(program, make_profile(**base, income_band="unsure"))
+    assert unsure.status == "possibly_eligible" and unsure.missing_fields == []
+
+
+def test_income_floor_accepts_a_band_that_starts_at_the_floor():
+    floor = req("income_min", id="f", field="monthly_income", op="gte", period="year", value={"1": 53586})
+    program = program_with(floor)
+    # Bands are split at rounded limits, a dollar from the floor: that still counts as meeting it.
+    assert assess(program, make_profile(household_size=1, income_band=band(53585, 71447))).status == "likely_eligible"
+    assert assess(program, make_profile(household_size=1, income_band=band(0, 53585))).status == "likely_ineligible"
+
+
+def test_a_typed_amount_beats_an_unconfirmed_band_but_not_the_other_way_round():
+    program = program_with(
+        req("income_max", id="inc", field="monthly_income", op="lte", period="month", value={"1": 2000})
+    )
+    typed = make_profile(household_size=1, monthly_income=1000.0, income_band=band(50000, None))
+    assert assess(program, typed).status == "likely_eligible"
+
+
+def test_why_lines_show_the_rule_that_decided_a_group():
+    program = program_with(
+        cat("shutoff", "utility_issues", "in", ["shutoff"], group="crisis", text="Shut-off help."),
+        cat("rent", "housing_need", "eq", "behind", group="crisis", text="Rent help."),
+        req("info", id="note", text="Funding varies."),
+    )
+    lines = assess(program, make_profile(housing_need="behind")).checks
+    assert [(line.kind, line.text) for line in lines] == [("pass", "Rent help."), ("note", "Funding varies.")]
+    asking = assess(program, make_profile()).checks[0]
+    assert (asking.kind, asking.missing_field) == ("ask", "utility_issues")
+    have = assess(program_with(req("residency", id="a"), held_benefit="snap"), make_profile(benefits_held=["snap"]))
+    assert [line.kind for line in have.checks] == ["have"]

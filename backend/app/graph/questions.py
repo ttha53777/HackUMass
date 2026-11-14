@@ -3,18 +3,21 @@
 Every question the app can ask lives in REGISTRY. The Administrator never
 invents questions; it picks from here with the two pure functions at the bottom.
 
-A question is only asked when its answer matters:
-  * `needs` and `zip` are always asked, in that order.
-  * Other core questions are asked only if a candidate program's requirements
-    reference the question's target field.
-  * Follow-up questions are asked only after Eligibility reports the field as
-    missing for at least one program.
+The app asks only four core questions, in this order: `needs`, `zip`,
+`household_size`, `household_who`. Everything else is a follow-up:
+
+  * A follow-up is *open* once Eligibility reports its field as missing for at
+    least one program. `open_questions` ranks them by how many programs each
+    would settle, and the person may answer any of them in any order.
+  * `pending_question` is always the head of that ranked list, so the app still
+    asks one question at a time.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from app.graph.state import (
     EligibilityAssessment,
@@ -26,8 +29,8 @@ from app.graph.state import (
 )
 
 MAX_CORE_QUESTIONS = 6
-MAX_FOLLOWUP_QUESTIONS = 2
-MAX_TOTAL_QUESTIONS = 10
+MAX_FOLLOWUP_QUESTIONS = 20
+MAX_TOTAL_QUESTIONS = 30
 
 OTHER_OPTION_ID = "other"
 
@@ -46,6 +49,13 @@ class QuestionSpec:
     # Maps option ids to stored values, e.g. {"yes": True}. Default: the id itself.
     value_map: dict[str, Any] = field(default_factory=dict)
     integer: bool = False
+    # Core question that only matters when there are programs to match
+    # (household facts): skipped when the ZIP is outside coverage or nothing matched.
+    needs_programs: bool = False
+    # Options built per session (income bands): ids must match this pattern.
+    option_regex: str | None = None
+    # Turns the chosen option id into the stored value (income bands).
+    parse: Callable[[str], Any] | None = None
 
 
 def _opts(*pairs: tuple[str, str]) -> list[Option]:
@@ -57,16 +67,15 @@ _SPECS: list[QuestionSpec] = [
     QuestionSpec(
         question=Question(
             id="needs",
-            prompt="What are you having the most trouble with right now?",
-            reason="Choose everything that applies. This decides which programs we look for.",
+            prompt="What could use some support right now?",
+            reason="Pick everything that applies. You don't need to know which programs exist.",
             type="multi_select",
             options=_opts(
                 ("food", "Food & groceries"),
-                ("utilities", "Utilities & energy bills"),
-                ("housing", "Housing & rent"),
-                ("healthcare", "Healthcare"),
-                ("transportation", "Transportation"),
-                ("employment", "Work & income"),
+                ("utilities", "Heat & utility bills"),
+                ("housing", "Rent or a place to stay"),
+                ("healthcare", "Medical care"),
+                ("transportation", "Getting around"),
             ),
             allow_other=True,
             skippable=False,
@@ -79,7 +88,7 @@ _SPECS: list[QuestionSpec] = [
         question=Question(
             id="zip",
             prompt="What ZIP code do you live in?",
-            reason="We use your ZIP code to find programs that serve your area.",
+            reason="Many programs only serve certain towns or counties. Your ZIP settles that.",
             type="zip",
             skippable=False,
             target_field="zip",
@@ -98,6 +107,7 @@ _SPECS: list[QuestionSpec] = [
                 ("reduce", "I want to lower future bills"),
             ),
             target_field="utility_urgency",
+            origin="eligibility_followup",
         ),
         label="Utility situation",
         only_for_needs=frozenset({"utilities"}),
@@ -114,6 +124,7 @@ _SPECS: list[QuestionSpec] = [
                 ("no_stable_housing", "I don't have stable housing"),
             ),
             target_field="housing_status",
+            origin="eligibility_followup",
         ),
         label="Housing",
         only_for_needs=frozenset({"housing"}),
@@ -132,29 +143,53 @@ _SPECS: list[QuestionSpec] = [
             ),
             allow_other=True,
             target_field="situation",
+            origin="eligibility_followup",
         ),
         label="Situation",
     ),
     QuestionSpec(
         question=Question(
             id="household_size",
-            prompt="How many people live in your household, including you?",
-            reason="Some programs set their limits by household size.",
+            prompt="Who lives with you?",
+            reason="Income limits depend on household size. Count everyone you share food or bills with, including you.",
             type="number",
+            skippable=False,
             target_field="household_size",
             min=1,
             max=20,
         ),
         label="Household size",
         integer=True,
+        always=True,
+        needs_programs=True,
+    ),
+    QuestionSpec(
+        question=Question(
+            id="household_who",
+            prompt="Is anyone at home...",
+            reason="Some programs are for older adults or young children.",
+            type="multi_select",
+            options=_opts(
+                ("60", "Someone 60 or older"),
+                ("55", "Someone 55 to 59"),
+                ("child", "A child under 5, or someone pregnant"),
+                ("none", "None of these"),
+            ),
+            skippable=False,
+            target_field="household_who",
+        ),
+        label="At home",
+        always=True,
+        needs_programs=True,
     ),
     QuestionSpec(
         question=Question(
             id="monthly_income",
-            prompt="About how much income does your household receive?",
+            prompt="About how much income does your household receive each month?",
             reason="Some programs have income limits. An estimate is fine.",
             type="currency",
             target_field="monthly_income",
+            origin="eligibility_followup",
             min=0,
             max=1_000_000,
         ),
@@ -188,6 +223,174 @@ _SPECS: list[QuestionSpec] = [
         ),
         label="Heat included in rent",
         value_map={"included": True, "pay_directly": False},
+    ),
+]
+
+# --- Follow-ups added for the app shell. Each is asked only when a program's
+# requirements name its field and the answer is still unknown. -------------
+
+_YES_NO_UNSURE = _opts(("yes", "Yes"), ("no", "No"), ("unsure", "Not sure"))
+_YES_NO = _opts(("yes", "Yes"), ("no", "No"))
+# Option id that is exclusive within a multi-select ("None of these").
+EXCLUSIVE_OPTION_ID = "none"
+
+# Income bands are built per session from the programs' own tables, so their
+# ids are numeric ranges like "0-32000" or "53585-inf", plus "unsure".
+INCOME_BAND_PATTERN = r"^(?:\d{1,9}-(?:\d{1,9}|inf)|unsure)$"
+_BAND_RE = re.compile(INCOME_BAND_PATTERN)
+
+
+def parse_income_band(option_id: str) -> Any:
+    """Stored value for a band id: {"lo", "hi"} in dollars per year, or "unsure"."""
+    if option_id == "unsure":
+        return "unsure"
+    low, high = option_id.split("-")
+    return {"lo": float(low), "hi": None if high == "inf" else float(high)}
+
+
+_SPECS += [
+    QuestionSpec(
+        question=Question(
+            id="income_band",
+            prompt="About how much does your household make in a year, before taxes?",
+            reason="A range is all we need. Each cutoff is a published limit for your household size.",
+            type="single_select",
+            options=[],  # filled in by income_band_question()
+            target_field="income_band",
+            origin="eligibility_followup",
+        ),
+        label="Yearly income",
+        option_regex=INCOME_BAND_PATTERN,
+        parse=parse_income_band,
+    ),
+    QuestionSpec(
+        question=Question(
+            id="benefits_held",
+            prompt="Do you already get any of these?",
+            reason="Some programs open up automatically once you have one of these.",
+            type="multi_select",
+            options=_opts(
+                ("snap", "SNAP (food stamps)"),
+                ("masshealth", "MassHealth"),
+                ("fuel", "Fuel Assistance"),
+                ("none", "None of these"),
+            ),
+            target_field="benefits_held",
+            origin="eligibility_followup",
+        ),
+        label="Benefits you get",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="utility_issues",
+            prompt="What's going on with your heat or utilities?",
+            reason="A shut-off notice or a broken furnace opens different programs.",
+            type="multi_select",
+            options=_opts(
+                ("heat", "Paying for heat this winter"),
+                ("bills", "My electric or gas bill is too high"),
+                ("shutoff", "I have a shut-off notice"),
+                ("broken", "My heating system is broken"),
+            ),
+            target_field="utility_issues",
+            origin="eligibility_followup",
+        ),
+        label="Heat & utilities",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="housing_need",
+            prompt="Which is closest to your situation?",
+            reason="Emergency shelter and rent help come from different places.",
+            type="single_select",
+            options=_opts(
+                ("behind", "I'm behind on rent or facing eviction"),
+                ("tonight", "I need a place to stay tonight"),
+                ("search", "I'm looking for housing"),
+            ),
+            target_field="housing_need",
+            origin="eligibility_followup",
+        ),
+        label="Housing situation",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="eversource_customer",
+            prompt="Is Eversource your electric or gas company?",
+            reason="The discount rate is only for Eversource customers.",
+            type="single_select",
+            options=_YES_NO_UNSURE,
+            target_field="eversource_customer",
+            origin="eligibility_followup",
+        ),
+        label="Eversource customer",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="umass_affiliation",
+            prompt="Are you part of the UMass Amherst community?",
+            reason="The Campus Pantry is for UMass students, staff and affiliates.",
+            type="single_select",
+            options=_YES_NO,
+            target_field="umass_affiliation",
+            origin="eligibility_followup",
+        ),
+        label="UMass Amherst community",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="disability_bus",
+            prompt="Does a disability make it hard to ride the bus?",
+            reason="Door-to-door paratransit is for people who cannot use the regular bus.",
+            type="single_select",
+            options=_YES_NO_UNSURE,
+            target_field="disability_bus",
+            origin="eligibility_followup",
+        ),
+        label="Disability and the bus",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="near_bus_route",
+            prompt="Do you live within about 3/4 mile of a city bus route?",
+            reason="PVTA paratransit only runs within 3/4 mile of a city bus route.",
+            type="single_select",
+            options=_YES_NO_UNSURE,
+            target_field="near_bus_route",
+            origin="eligibility_followup",
+        ),
+        label="Near a bus route",
+    ),
+    # Tailoring questions: no program's eligibility depends on them, but the
+    # answers change the guide and the document list. Asked from the guide.
+    QuestionSpec(
+        question=Question(
+            id="college_student",
+            prompt="Is anyone in your household a college student?",
+            reason="Fuel Assistance asks college students for their current financial aid awards.",
+            type="single_select",
+            options=_YES_NO,
+            target_field="college_student",
+            origin="eligibility_followup",
+        ),
+        label="College student at home",
+    ),
+    QuestionSpec(
+        question=Question(
+            id="raft_use",
+            prompt="What do you need RAFT to cover?",
+            reason="Rent help needs an application from your landlord too. For overdue utilities or moving costs, only your household applies.",
+            type="single_select",
+            options=_opts(
+                ("rent", "Overdue rent"),
+                ("mortgage", "Overdue mortgage"),
+                ("utilities", "Overdue utilities"),
+                ("moving", "Moving costs"),
+            ),
+            target_field="raft_use",
+            origin="eligibility_followup",
+        ),
+        label="What RAFT would cover",
     ),
 ]
 
@@ -262,18 +465,33 @@ def spec_for_field(target_field: str) -> QuestionSpec | None:
 def referenced_fields(program: Program) -> set[str]:
     """Profile fields a program's requirements depend on."""
     fields: set[str] = set()
+    if program.held_benefit:
+        fields.add("benefits_held")  # "you already get this" depends on it
     for requirement in program.requirements:
         if requirement.field:
             fields.add(requirement.field)
         # An income table keyed by household size also needs the household size.
         if requirement.kind in INCOME_KINDS and isinstance(requirement.value, dict):
             fields.add("household_size")
+        # Income is answered either as an amount or as a yearly band.
+        if requirement.kind in INCOME_KINDS:
+            fields.add("income_band")
     return fields
+
+
+# Fields that can be answered by more than one question.
+_ALIASES: dict[str, tuple[str, ...]] = {
+    "monthly_income": ("monthly_income", "income_band"),
+    "income_band": ("monthly_income", "income_band"),
+}
 
 
 def _is_settled(target_field: str, profile: Profile, intake: IntakeState) -> bool:
     """Answered or deliberately skipped: either way, do not ask again."""
-    return target_field in profile.facts or target_field in intake.skipped_fields
+    return any(
+        name in profile.facts or name in intake.skipped_fields
+        for name in _ALIASES.get(target_field, (target_field,))
+    )
 
 
 def _selected_needs(profile: Profile) -> list[str]:
@@ -311,6 +529,8 @@ def next_core_question(
         if question.origin != "core":
             continue
         if _is_settled(question.target_field, profile, intake):
+            continue
+        if spec.needs_programs and not programs:
             continue
         if not spec.always:
             if question.target_field not in referenced:
@@ -400,38 +620,134 @@ def next_awaiting_question(
     )
 
 
+PERIOD_TO_YEAR = {"month": 12.0, "year": 1.0, "week": 52.0}
+
+
+def _money(amount: float) -> str:
+    return f"${amount:,.0f}"
+
+
+def _income_cutoffs(programs: list[Program], household: int) -> list[int]:
+    """Yearly income limits that matter for this household, from the programs' own tables."""
+    cutoffs: list[float] = []
+    for program in programs:
+        for requirement in program.requirements:
+            if requirement.kind not in INCOME_KINDS or not isinstance(requirement.value, dict):
+                continue
+            limit = requirement.value.get(str(household))
+            factor = PERIOD_TO_YEAR.get(requirement.period or "month")
+            if limit is not None and factor is not None:
+                cutoffs.append(float(limit) * factor)
+    kept: list[int] = []
+    for value in sorted(cutoffs):
+        # Limits that differ by a dollar (one program's ceiling is another's
+        # floor) would make a pointless band.
+        if not kept or value - kept[-1] > max(25.0, kept[-1] * 0.001):
+            kept.append(round(value))
+    return kept
+
+
+def income_band_question(profile: Profile, programs: list[Program]) -> Question | None:
+    """The yearly income question, with ranges split at the published limits."""
+    size_fact = profile.facts.get("household_size")
+    try:
+        household = max(1, int(size_fact.value)) if size_fact else None
+    except (TypeError, ValueError):
+        household = None
+    if household is None:
+        return None
+    cutoffs = _income_cutoffs(programs, household)
+    if not cutoffs:
+        return None
+    edges = [0, *cutoffs]
+    options = [
+        Option(
+            id=f"{low}-{high}",
+            label=f"Under {_money(high)}" if low == 0 else f"{_money(low)} to {_money(high)}",
+        )
+        for low, high in zip(edges, cutoffs)
+    ]
+    options.append(Option(id=f"{cutoffs[-1]}-inf", label=f"Over {_money(cutoffs[-1])}"))
+    options.append(Option(id="unsure", label="Not sure, or prefer not to say"))
+    base = REGISTRY["income_band"].question
+    people = "person" if household == 1 else "people"
+    return base.model_copy(
+        update={
+            "options": options,
+            "prompt": f"About how much does your household of {household} make in a year, before taxes?",
+            "reason": (
+                f"Each cutoff is a published limit for {household} {people}. "
+                "A range is all we need."
+            ),
+        }
+    )
+
+
+def question_for_field(
+    target_field: str, profile: Profile, programs: list[Program]
+) -> Question | None:
+    """The question that would settle a field Eligibility reported as missing."""
+    if target_field in ("monthly_income", "income_band"):
+        return income_band_question(profile, programs) or REGISTRY["monthly_income"].question
+    spec = spec_for_field(target_field)
+    return spec.question if spec else None
+
+
+@dataclass(frozen=True)
+class OpenQuestion:
+    question: Question
+    affects: list[str]  # program ids this answer could settle
+
+
+def open_questions(
+    profile: Profile,
+    intake: IntakeState,
+    programs: list[Program],
+    assessments: dict[str, EligibilityAssessment],
+) -> list[OpenQuestion]:
+    """Unanswered follow-ups, most useful first.
+
+    A question is open when an assessment reports its field as missing and the
+    person has neither answered nor skipped it. Ranked by how many programs it
+    affects (programs in the person's first need count double), then by
+    registry order, so the order is stable.
+    """
+    order = {spec.question.id: index for index, spec in enumerate(_SPECS)}
+    needs = _selected_needs(profile)
+    first_need = needs[0] if needs else None
+    found: dict[str, tuple[Question, list[str]]] = {}
+    weight: dict[str, int] = {}
+    for program in programs:
+        assessment = assessments.get(program.id)
+        if assessment is None:
+            continue
+        for missing in assessment.missing_fields:
+            if _is_settled(missing, profile, intake):
+                continue
+            question = question_for_field(missing, profile, programs)
+            if question is None or question.origin == "core":
+                continue
+            entry = found.setdefault(question.id, (question, []))
+            if program.id not in entry[1]:
+                entry[1].append(program.id)
+                # Programs in the first need the person chose count double.
+                weight[question.id] = weight.get(question.id, 0) + (
+                    2 if first_need in program.categories else 1
+                )
+    ranked = sorted(
+        found.values(), key=lambda e: (-weight[e[0].id], order.get(e[0].id, 999))
+    )
+    return [OpenQuestion(question=q, affects=ids) for q, ids in ranked]
+
+
 def next_followup_question(
     profile: Profile,
     intake: IntakeState,
     programs: list[Program],
     assessments: dict[str, EligibilityAssessment],
 ) -> Question | None:
-    """The single follow-up most likely to change a recommendation, if any.
-
-    Score = number of assessments stuck on `insufficient_information` because of
-    the field, counted double for programs in the user's first-selected need.
-    """
-    needs = _selected_needs(profile)
-    first_need = needs[0] if needs else None
-    categories = {program.id: program.categories for program in programs}
-
-    scores: dict[str, int] = {}
-    for program_id, assessment in assessments.items():
-        if assessment.status != "insufficient_information":
-            continue
-        weight = 2 if first_need and first_need in categories.get(program_id, []) else 1
-        for missing in assessment.missing_fields:
-            scores[missing] = scores.get(missing, 0) + weight
-
-    best: tuple[int, int, Question] | None = None
-    for order, spec in enumerate(_SPECS):
-        question = spec.question
-        score = scores.get(question.target_field, 0)
-        if score == 0 or _is_settled(question.target_field, profile, intake):
-            continue
-        if not _budget_left(question.id, intake, followup=True):
-            continue
-        # Highest score wins; registry order breaks ties.
-        if best is None or (score, -order) > (best[0], -best[1]):
-            best = (score, order, question)
-    return best[2] if best else None
+    """The head of the open-question list: the one question worth asking next."""
+    for item in open_questions(profile, intake, programs, assessments):
+        if _budget_left(item.question.id, intake, followup=True):
+            return item.question
+    return None

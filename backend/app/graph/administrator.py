@@ -167,6 +167,9 @@ def decide(state: SessionState) -> Decision:
             spec = get_spec(answer.question_id)
             if spec is not None:
                 target = spec.question.target_field
+                # Any open question may be answered, not only the pending one.
+                if answer.question_id not in intake.asked_question_ids:
+                    intake.asked_question_ids.append(answer.question_id)
                 if answer.question_id not in intake.answered_question_ids:
                     intake.answered_question_ids.append(answer.question_id)
                 if answer.skipped:

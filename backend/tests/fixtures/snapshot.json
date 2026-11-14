@@ -3,37 +3,195 @@
   "phase": "awaiting_user",
   "busy": false,
   "pending_question": {
-    "id": "age_60_plus",
-    "prompt": "Are you 60 or older?",
-    "reason": "Some nearby programs are only for people aged 60 and over.",
-    "type": "single_select",
+    "id": "benefits_held",
+    "prompt": "Do you already get any of these?",
+    "reason": "Some programs open up automatically once you have one of these.",
+    "type": "multi_select",
     "options": [
       {
-        "id": "yes",
-        "label": "Yes"
+        "id": "snap",
+        "label": "SNAP (food stamps)"
       },
       {
-        "id": "no",
-        "label": "No"
+        "id": "masshealth",
+        "label": "MassHealth"
+      },
+      {
+        "id": "fuel",
+        "label": "Fuel Assistance"
+      },
+      {
+        "id": "none",
+        "label": "None of these"
       }
     ],
     "allow_other": false,
     "skippable": true,
-    "target_field": "age_60_plus",
+    "target_field": "benefits_held",
     "origin": "eligibility_followup",
     "min": null,
     "max": null
   },
+  "open_questions": [
+    {
+      "question": {
+        "id": "benefits_held",
+        "prompt": "Do you already get any of these?",
+        "reason": "Some programs open up automatically once you have one of these.",
+        "type": "multi_select",
+        "options": [
+          {
+            "id": "snap",
+            "label": "SNAP (food stamps)"
+          },
+          {
+            "id": "masshealth",
+            "label": "MassHealth"
+          },
+          {
+            "id": "fuel",
+            "label": "Fuel Assistance"
+          },
+          {
+            "id": "none",
+            "label": "None of these"
+          }
+        ],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "benefits_held",
+        "origin": "eligibility_followup",
+        "min": null,
+        "max": null
+      },
+      "affects": [
+        "fbwm-brown-bag",
+        "eversource-ma-discount-rate",
+        "capv-weatherization",
+        "ma-good-neighbor-energy-fund"
+      ]
+    },
+    {
+      "question": {
+        "id": "income_band",
+        "prompt": "About how much does your household of 2 make in a year, before taxes?",
+        "reason": "Each cutoff is a published limit for 2 people. A range is all we need.",
+        "type": "single_select",
+        "options": [
+          {
+            "id": "0-43284",
+            "label": "Under $43,284"
+          },
+          {
+            "id": "43284-70073",
+            "label": "$43,284 to $70,073"
+          },
+          {
+            "id": "70073-93431",
+            "label": "$70,073 to $93,431"
+          },
+          {
+            "id": "93431-inf",
+            "label": "Over $93,431"
+          },
+          {
+            "id": "unsure",
+            "label": "Not sure, or prefer not to say"
+          }
+        ],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "income_band",
+        "origin": "eligibility_followup",
+        "min": null,
+        "max": null
+      },
+      "affects": [
+        "fbwm-snap-application-assistance",
+        "capv-fuel-assistance",
+        "ma-good-neighbor-energy-fund"
+      ]
+    },
+    {
+      "question": {
+        "id": "umass_affiliation",
+        "prompt": "Are you part of the UMass Amherst community?",
+        "reason": "The Campus Pantry is for UMass students, staff and affiliates.",
+        "type": "single_select",
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes"
+          },
+          {
+            "id": "no",
+            "label": "No"
+          }
+        ],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "umass_affiliation",
+        "origin": "eligibility_followup",
+        "min": null,
+        "max": null
+      },
+      "affects": [
+        "asc-campus-pantry"
+      ]
+    },
+    {
+      "question": {
+        "id": "eversource_customer",
+        "prompt": "Is Eversource your electric or gas company?",
+        "reason": "The discount rate is only for Eversource customers.",
+        "type": "single_select",
+        "options": [
+          {
+            "id": "yes",
+            "label": "Yes"
+          },
+          {
+            "id": "no",
+            "label": "No"
+          },
+          {
+            "id": "unsure",
+            "label": "Not sure"
+          }
+        ],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "eversource_customer",
+        "origin": "eligibility_followup",
+        "min": null,
+        "max": null
+      },
+      "affects": [
+        "eversource-ma-discount-rate"
+      ]
+    }
+  ],
+  "last_change": {
+    "moved_to_fit": [
+      "capv-rent-utility-assistance",
+      "raft-way-finders"
+    ],
+    "opens_later": [],
+    "no_longer_fit": [
+      "capv-heating-system-repair"
+    ],
+    "updated": []
+  },
   "answered": [
     {
       "question_id": "needs",
-      "prompt": "What are you having the most trouble with right now?",
-      "display_value": "Food & groceries, Utilities",
+      "prompt": "What could use some support right now?",
+      "display_value": "Food & groceries, Heat & utility bills",
       "skipped": false,
       "question": {
         "id": "needs",
-        "prompt": "What are you having the most trouble with right now?",
-        "reason": "Choose everything that applies. This decides which programs we look for.",
+        "prompt": "What could use some support right now?",
+        "reason": "Pick everything that applies. You don't need to know which programs exist.",
         "type": "multi_select",
         "options": [
           {
@@ -42,23 +200,19 @@
           },
           {
             "id": "utilities",
-            "label": "Utilities & energy bills"
+            "label": "Heat & utility bills"
           },
           {
             "id": "housing",
-            "label": "Housing & rent"
+            "label": "Rent or a place to stay"
           },
           {
             "id": "healthcare",
-            "label": "Healthcare"
+            "label": "Medical care"
           },
           {
             "id": "transportation",
-            "label": "Transportation"
-          },
-          {
-            "id": "employment",
-            "label": "Work & income"
+            "label": "Getting around"
           }
         ],
         "allow_other": true,
@@ -72,12 +226,12 @@
     {
       "question_id": "zip",
       "prompt": "What ZIP code do you live in?",
-      "display_value": "00000",
+      "display_value": "01002",
       "skipped": false,
       "question": {
         "id": "zip",
         "prompt": "What ZIP code do you live in?",
-        "reason": "We use your ZIP code to find programs that serve your area.",
+        "reason": "Many programs only serve certain towns or counties. Your ZIP settles that.",
         "type": "zip",
         "options": [],
         "allow_other": false,
@@ -90,17 +244,17 @@
     },
     {
       "question_id": "household_size",
-      "prompt": "How many people live in your household, including you?",
-      "display_value": "1",
+      "prompt": "Who lives with you?",
+      "display_value": "2",
       "skipped": false,
       "question": {
         "id": "household_size",
-        "prompt": "How many people live in your household, including you?",
-        "reason": "Some programs set their limits by household size.",
+        "prompt": "Who lives with you?",
+        "reason": "Income limits depend on household size. Count everyone you share food or bills with, including you.",
         "type": "number",
         "options": [],
         "allow_other": false,
-        "skippable": true,
+        "skippable": false,
         "target_field": "household_size",
         "origin": "core",
         "min": 1.0,
@@ -108,22 +262,75 @@
       }
     },
     {
-      "question_id": "monthly_income",
-      "prompt": "About how much income does your household receive?",
-      "display_value": "$1,400 per month",
+      "question_id": "household_who",
+      "prompt": "Is anyone at home...",
+      "display_value": "Someone 60 or older",
       "skipped": false,
       "question": {
-        "id": "monthly_income",
-        "prompt": "About how much income does your household receive?",
-        "reason": "Some programs have income limits. An estimate is fine.",
-        "type": "currency",
-        "options": [],
+        "id": "household_who",
+        "prompt": "Is anyone at home...",
+        "reason": "Some programs are for older adults or young children.",
+        "type": "multi_select",
+        "options": [
+          {
+            "id": "60",
+            "label": "Someone 60 or older"
+          },
+          {
+            "id": "55",
+            "label": "Someone 55 to 59"
+          },
+          {
+            "id": "child",
+            "label": "A child under 5, or someone pregnant"
+          },
+          {
+            "id": "none",
+            "label": "None of these"
+          }
+        ],
+        "allow_other": false,
+        "skippable": false,
+        "target_field": "household_who",
+        "origin": "core",
+        "min": null,
+        "max": null
+      }
+    },
+    {
+      "question_id": "utility_issues",
+      "prompt": "What's going on with your heat or utilities?",
+      "display_value": "I have a shut-off notice",
+      "skipped": false,
+      "question": {
+        "id": "utility_issues",
+        "prompt": "What's going on with your heat or utilities?",
+        "reason": "A shut-off notice or a broken furnace opens different programs.",
+        "type": "multi_select",
+        "options": [
+          {
+            "id": "heat",
+            "label": "Paying for heat this winter"
+          },
+          {
+            "id": "bills",
+            "label": "My electric or gas bill is too high"
+          },
+          {
+            "id": "shutoff",
+            "label": "I have a shut-off notice"
+          },
+          {
+            "id": "broken",
+            "label": "My heating system is broken"
+          }
+        ],
         "allow_other": false,
         "skippable": true,
-        "target_field": "monthly_income",
-        "origin": "core",
-        "min": 0.0,
-        "max": 1000000.0
+        "target_field": "utility_issues",
+        "origin": "eligibility_followup",
+        "min": null,
+        "max": null
       }
     }
   ],
@@ -131,87 +338,183 @@
     {
       "field": "needs",
       "label": "Needs",
-      "display_value": "Food & groceries, Utilities",
+      "display_value": "Food & groceries, Heat & utility bills",
+      "provenance": "user_reported"
+    },
+    {
+      "field": "zip",
+      "label": "ZIP code",
+      "display_value": "01002",
       "provenance": "user_reported"
     },
     {
       "field": "household_size",
       "label": "Household size",
-      "display_value": "1",
+      "display_value": "2",
       "provenance": "user_reported"
     },
     {
-      "field": "monthly_income",
-      "label": "Monthly income",
-      "display_value": "$1,400",
+      "field": "household_who",
+      "label": "At home",
+      "display_value": "Someone 60 or older",
+      "provenance": "user_reported"
+    },
+    {
+      "field": "utility_issues",
+      "label": "Heat & utilities",
+      "display_value": "I have a shut-off notice",
       "provenance": "user_reported"
     }
   ],
   "coverage": "supported",
   "region": {
-    "zip": "00000",
-    "city": "Fixtureville",
-    "county": "Fixture County",
-    "state": "ZZ"
+    "zip": "01002",
+    "city": "Amherst",
+    "county": "Hampshire County",
+    "state": "MA"
   },
   "programs": [
     {
       "program": {
-        "id": "fixture-food-benefit",
-        "name": "Fixture Food Benefit (not a real program)",
-        "provider": "Fixture State Agency",
-        "type": "government",
+        "id": "asc-food-pantry",
+        "name": "Amherst Survival Center Food Pantry",
+        "provider": "Amherst Survival Center",
+        "type": "community",
         "categories": [
           "food"
         ],
         "service_area": {
-          "statewide": true,
-          "state": "ZZ",
+          "statewide": false,
+          "state": "MA",
           "counties": [],
-          "zips": []
+          "zips": [
+            "01002",
+            "01003",
+            "01007",
+            "01033",
+            "01035",
+            "01075",
+            "01082"
+          ]
         },
-        "description": "Fictional monthly grocery benefit used only for contract tests.",
-        "info_url": "https://example.org/fixture-food-benefit",
-        "apply_url": "https://example.org/fixture-food-benefit/apply",
-        "contact": null,
+        "description": "Free groceries for all household members, including produce, frozen meat, milk, eggs, and shelf-stable goods, at 138 Sunderland Rd., North Amherst. Same-day registration and pickup are available, with curbside pickup and limited delivery.",
+        "info_url": "https://amherstsurvival.org/pantry/",
+        "apply_url": "https://amherstsurvival.org/food-pantry-register/",
+        "contact": "413-549-3968 ext. 104; pantry@amherstsurvival.org",
         "documents_needed": [
-          "Proof of income"
+          "Residency verification showing your name and current address (for example a license, a piece of mail, a bank statement, or a lease). It does not need to be a photo ID. People experiencing homelessness are exempt."
         ],
         "requirements": [
           {
-            "id": "income",
-            "kind": "income_max",
-            "field": "monthly_income",
-            "op": "lte",
-            "value": {
-              "1": 2000,
-              "2": 2700
-            },
-            "period": "month",
-            "text": "Gross monthly income at or below the fixture limit for household size.",
-            "source_url": "https://example.org/fixture-food-benefit/limits",
-            "verified": true
+            "id": "asc-pantry-residency",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "The Food Pantry is for residents of Amherst, Belchertown, Deerfield, Granby, Hadley, Leverett, Pelham, Shutesbury, South Deerfield, South Hadley, Sunderland, Ware, and Whately, and for people experiencing homelessness. People from other towns can get two emergency shops of limited non-perishable food plus information on pantries near them.",
+            "source_url": "https://amherstsurvival.org/pantry/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "asc-pantry-no-income",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "There is no income cap and no citizenship requirement. Services are not subject to the Public Charge rule.",
+            "source_url": "https://amherstsurvival.org/about/frequently-asked-questions/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "asc-pantry-delivery",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Delivery is reserved for seniors or people without transportation, and routes are often full.",
+            "source_url": "https://amherstsurvival.org/pantry/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
           }
         ],
         "unknowns": [
-          "Asset limits"
+          "The provider pages name towns, not ZIP codes or counties; the Hampshire/Franklin county listing is inferred from the town list.",
+          "Visit frequency is stated inconsistently: the pantry page says one full monthly shop plus a monthly Fresh Boost, while the FAQ says access is limited to twice a month.",
+          "Service area limited to ZIP codes whose postal city is a town the pantry lists; residents of other towns can get emergency visits (see requirements)."
         ],
         "verified_on": "2026-11-14",
-        "program_period": "Fixture year 2026"
+        "program_period": null,
+        "track": "local",
+        "access": "register",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Register at the Survival Center Food Pantry",
+          "detail": "Same-day registration and pickup. Bring anything with your name and current address, like a piece of mail."
+        },
+        "document_kinds": [
+          "address"
+        ],
+        "held_benefit": null
       },
       "assessment": {
-        "status": "possibly_eligible",
+        "status": "likely_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "The Food Pantry is for residents of Amherst, Belchertown, Deerfield, Granby, Hadley, Leverett, Pelham, Shutesbury, South Deerfield, South Hadley, Sunderland, Ware, and Whately, and for people experiencing homelessness. People from other towns can get two emergency shops of limited non-perishable food plus information on pantries near them.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "There is no income cap and no citizenship requirement. Services are not subject to the Public Charge rule.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "Delivery is reserved for seniors or people without transportation, and routes are often full.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
         "criteria": [
           {
-            "requirement_id": "income",
+            "requirement_id": "asc-pantry-residency",
             "result": "met",
-            "evidence": "monthly_income = 1400 (user reported), household_size = 1"
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "asc-pantry-no-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "asc-pantry-delivery",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
           }
         ],
         "missing_fields": [],
-        "explanation": "Your reported income is under the listed limit. Other rules could not be verified.",
+        "explanation": "This program is open to people in the area it serves, which includes your ZIP code.",
         "source_urls": [
-          "https://example.org/fixture-food-benefit/limits"
+          "https://amherstsurvival.org/pantry/",
+          "https://amherstsurvival.org/about/frequently-asked-questions/"
         ],
         "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
       },
@@ -219,58 +522,2544 @@
     },
     {
       "program": {
-        "id": "fixture-senior-pantry",
-        "name": "Fixture Senior Pantry (not a real program)",
-        "provider": "Fixture Community Center",
+        "id": "hves-benefits-support",
+        "name": "Benefits Support Program",
+        "provider": "Highland Valley Elder Services",
+        "type": "community",
+        "categories": [
+          "food",
+          "healthcare",
+          "utilities"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [],
+          "zips": [
+            "01002",
+            "01003",
+            "01012",
+            "01026",
+            "01027",
+            "01032",
+            "01035",
+            "01038",
+            "01050",
+            "01060",
+            "01070",
+            "01073",
+            "01096",
+            "01098"
+          ]
+        },
+        "description": "A Benefits Support Specialist can help people access public benefits such as Medicaid (MassHealth), SNAP and Fuel Assistance. Free consultations with a Certified Application Counselor are scheduled by phone.",
+        "info_url": "https://highlandvalley.org/services/benefits-support-program/",
+        "apply_url": null,
+        "contact": "(413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "hves-service-area",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+            "source_url": "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "hves-benefits-free",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+            "source_url": "https://highlandvalley.org/services/benefits-support-program/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "hves-bs-older-adults",
+            "kind": "categorical",
+            "field": "household_who",
+            "op": "in",
+            "value": [
+              "60"
+            ],
+            "period": null,
+            "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+            "source_url": "https://highlandvalley.org/services/benefits-support-program/",
+            "verified": false,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Who is eligible for benefits counseling (age or other criteria) is not stated on the page.",
+          "Eligibility for the underlying benefits (MassHealth, SNAP, Fuel Assistance) is set by those programs, not this page.",
+          "Not every town in Hampshire County is on the agency's 24-town list (e.g. it is unclear whether Belchertown, Granby, South Hadley or Ware residents are served); residency is a town list, not a whole county.",
+          "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "call",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Book a free benefits consultation",
+          "detail": "Call Highland Valley Elder Services at (413) 586-2000 and ask for the Benefits Support Program."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "possibly_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "pass",
+            "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "hves-service-area",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "hves-benefits-free",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "hves-bs-older-adults",
+            "result": "met",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "You appear to meet the requirements we could check. Some of these rules have not been verified against the provider's page.",
+        "source_urls": [
+          "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+          "https://highlandvalley.org/services/benefits-support-program/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "asc-campus-pantry",
+        "name": "Campus Pantry at UMass Amherst",
+        "provider": "Amherst Survival Center",
         "type": "community",
         "categories": [
           "food"
         ],
         "service_area": {
           "statewide": false,
-          "state": "ZZ",
+          "state": "MA",
           "counties": [],
           "zips": [
-            "00000"
+            "01002",
+            "01003"
           ]
         },
-        "description": "Fictional weekly grocery pickup used only for contract tests.",
-        "info_url": "https://example.org/fixture-senior-pantry",
+        "description": "Free groceries for members of the UMass Amherst community at 472 North Pleasant Street, Amherst. Shoppers can register online ahead of time or walk in, and can shop once per week.",
+        "info_url": "https://amherstsurvival.org/campus-pantry/",
         "apply_url": null,
-        "contact": null,
-        "documents_needed": null,
+        "contact": "(413) 545-8880",
+        "documents_needed": [
+          "UMass ID (or other UMass affiliated material)"
+        ],
         "requirements": [
           {
-            "id": "age",
-            "kind": "age_min",
-            "field": "age_60_plus",
+            "id": "asc-campus-affiliation",
+            "kind": "categorical",
+            "field": "umass_affiliation",
             "op": "eq",
-            "value": true,
+            "value": "yes",
             "period": null,
-            "text": "For residents aged 60 and over.",
-            "source_url": "https://example.org/fixture-senior-pantry",
-            "verified": true
+            "text": "For members of the UMass Amherst community; bring your UMass ID or other UMass affiliated material.",
+            "source_url": "https://amherstsurvival.org/campus-pantry/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
           }
         ],
-        "unknowns": [],
+        "unknowns": [
+          "The online registration link for the Campus Pantry was not fetched, so no apply URL is given.",
+          "The app cannot ask about UMass affiliation; the 'student' situation does not cover staff or other affiliates.",
+          "Service area set to Amherst ZIP codes; the pantry serves the UMass Amherst community."
+        ],
         "verified_on": "2026-11-14",
-        "program_period": null
+        "program_period": null,
+        "track": "local",
+        "access": "register",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Use the Campus Pantry",
+          "detail": "472 North Pleasant St. Walk in or register ahead. Bring your UMass ID."
+        },
+        "document_kinds": [
+          "umass"
+        ],
+        "held_benefit": null
       },
       "assessment": {
         "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "ask",
+            "text": "For members of the UMass Amherst community; bring your UMass ID or other UMass affiliated material.",
+            "evidence": null,
+            "question_id": "umass_affiliation"
+          }
+        ],
         "criteria": [
           {
-            "requirement_id": "age",
+            "requirement_id": "asc-campus-affiliation",
             "result": "unknown",
-            "evidence": null
+            "evidence": null,
+            "missing": [
+              "umass_affiliation"
+            ]
           }
         ],
         "missing_fields": [
-          "age_60_plus"
+          "umass_affiliation"
         ],
-        "explanation": "We need to know whether you are 60 or older to check this program.",
+        "explanation": "We need whether you are part of the UMass Amherst community to check this program.",
         "source_urls": [
-          "https://example.org/fixture-senior-pantry"
+          "https://amherstsurvival.org/campus-pantry/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "hves-home-delivered-meals",
+        "name": "Home Delivered Meals",
+        "provider": "Highland Valley Elder Services",
+        "type": "community",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [],
+          "zips": [
+            "01002",
+            "01003",
+            "01012",
+            "01026",
+            "01027",
+            "01032",
+            "01035",
+            "01038",
+            "01050",
+            "01060",
+            "01070",
+            "01073",
+            "01096",
+            "01098"
+          ]
+        },
+        "description": "Meals prepared in Highland Valley Elder Services' kitchen and delivered to older adults at home. Meals are free to those who qualify; donations are accepted. Evening and weekend meals are also available.",
+        "info_url": "https://highlandvalley.org/services/home-delivered-meals/",
+        "apply_url": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
+        "contact": "(413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "hves-service-area",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+            "source_url": "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "hves-meals-age",
+            "kind": "categorical",
+            "field": "household_who",
+            "op": "in",
+            "value": [
+              "60"
+            ],
+            "period": null,
+            "text": "The page says the Nutrition Program aims for every person over 60 to receive at least one nutritionally balanced meal each day; it does not state an exact qualifying age for home-delivered meals.",
+            "source_url": "https://highlandvalley.org/services/home-delivered-meals/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "hves-meals-qualify",
+            "kind": "text_only",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Meals are free to all who qualify. The page does not list the qualification rules; call (413) 586-2000.",
+            "source_url": "https://highlandvalley.org/services/home-delivered-meals/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Exact eligibility rules (homebound status, age cut-off, income) are not stated on the page.",
+          "Delivery days and whether delivery reaches every address in Amherst are not stated on the meals page.",
+          "Private-pay pricing is not stated.",
+          "Not every town in Hampshire County is on the agency's 24-town list (e.g. it is unclear whether Belchertown, Granby, South Hadley or Ware residents are served); residency is a town list, not a whole county.",
+          "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "call",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Ask about home-delivered meals",
+          "detail": "Call Highland Valley Elder Services at (413) 586-2000, or send a referral online."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "possibly_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "pass",
+            "text": "The page says the Nutrition Program aims for every person over 60 to receive at least one nutritionally balanced meal each day; it does not state an exact qualifying age for home-delivered meals.",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "unsure",
+            "text": "Meals are free to all who qualify. The page does not list the qualification rules; call (413) 586-2000.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "hves-service-area",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "hves-meals-age",
+            "result": "met",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "hves-meals-qualify",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "You meet the requirements we could check. The provider lists 1 more condition to confirm with them.",
+        "source_urls": [
+          "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+          "https://highlandvalley.org/services/home-delivered-meals/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "asc-community-meals",
+        "name": "Amherst Survival Center Community Meals",
+        "provider": "Amherst Survival Center",
+        "type": "community",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampshire"
+          ],
+          "zips": []
+        },
+        "description": "Free hot lunch made fresh on site at 138 Sunderland Rd., North Amherst, to eat in the dining room or take to go. No registration is needed.",
+        "info_url": "https://amherstsurvival.org/community-meals/",
+        "apply_url": null,
+        "contact": "413-549-3968",
+        "documents_needed": [],
+        "requirements": [
+          {
+            "id": "asc-meals-open",
+            "kind": "open_access",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "All are welcome; no registration necessary. Meals are served Monday, Tuesday, Thursday, and Friday.",
+            "source_url": "https://amherstsurvival.org/community-meals/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Meal hours differ on the page: the meals section says 12-2:30pm, while the site footer lists Community Center & Meals hours as 12-3pm.",
+          "The page does not state a service area; the county is the meal site's location, not a residency rule."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "walk_in",
+        "hours": [
+          {
+            "label": "Free hot lunch",
+            "days": [
+              0,
+              1,
+              3,
+              4
+            ],
+            "nth_weekday": null,
+            "time": "From 12pm",
+            "source_url": "https://amherstsurvival.org/community-meals/"
+          }
+        ],
+        "guide": null,
+        "first_step": {
+          "title": "Get a free hot lunch at the Survival Center",
+          "detail": "138 Sunderland Rd., North Amherst, on Monday, Tuesday, Thursday or Friday. Eat in or take it to go."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "All are welcome; no registration necessary. Meals are served Monday, Tuesday, Thursday, and Friday.",
+            "evidence": "The provider says this is open to everyone in its area.",
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "asc-meals-open",
+            "result": "met",
+            "evidence": "The provider says this is open to everyone in its area.",
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "This program is open to people in the area it serves, which includes your ZIP code.",
+        "source_urls": [
+          "https://amherstsurvival.org/community-meals/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "fbwm-brown-bag",
+        "name": "Brown Bag: Food for Elders",
+        "provider": "The Food Bank of Western Massachusetts",
+        "type": "community",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampden",
+            "Hampshire",
+            "Berkshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "A free monthly bag of groceries for older adults, picked up at senior centers and community organizations. Recipients must apply; each household gets one bag a month.",
+        "info_url": "https://www.foodbankwma.org/get-help/brown-bag-food-for-elders/",
+        "apply_url": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
+        "contact": "413-247-9738 ext. 3005 (applications); 413-419-0079 (Brown Bag)",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "fbwm-bb-age",
+            "kind": "categorical",
+            "field": "household_who",
+            "op": "in",
+            "value": [
+              "60",
+              "55"
+            ],
+            "period": null,
+            "text": "Participants must be at least 55 years old. People under 55 qualify on age only if they have a documented disability for which they receive SSDI.",
+            "source_url": "https://www.foodbankwma.org/wp-content/uploads/2026/01/INCOME-ELIGIBILITY-GUIDELINES-02.2026.pdf",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "fbwm-bb-income",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "in",
+            "value": [
+              "snap",
+              "masshealth",
+              "fuel"
+            ],
+            "period": null,
+            "text": "Gross monthly income limit by household size (add $947 for each member beyond 8). Households in SNAP, AFDC, WIC, Welfare, Medicaid (MassHealth), SSI, Head Start, Fuel Assistance, or Veteran's Aid also meet the income requirement (but must still meet the age requirement). See the income table on the provider's guidelines.",
+            "source_url": "https://www.foodbankwma.org/wp-content/uploads/2026/01/INCOME-ELIGIBILITY-GUIDELINES-02.2026.pdf",
+            "verified": true,
+            "group": null,
+            "on_unmet": "note",
+            "needs_any": []
+          },
+          {
+            "id": "fbwm-bb-residency",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "All applicants must live in Berkshire, Franklin, Hampden, or Hampshire County in MA.",
+            "source_url": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Documents needed are not listed; the application form says verification may be requested.",
+          "No Brown Bag site in Amherst is listed; the nearest Hampshire County sites listed include Hadley, Belchertown, Granby, South Hadley, and Northampton.",
+          "Because the age rule is 55+ (not 60+), it cannot be expressed with the app's age_60_plus field."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "Eligibility guidelines dated February 2026",
+        "track": "local",
+        "access": "apply",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Apply for Brown Bag monthly groceries",
+          "detail": "Fill out the Brown Bag application (PDF) or call 413-247-9738 ext. 3005."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "Participants must be at least 55 years old. People under 55 qualify on age only if they have a documented disability for which they receive SSDI.",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "ask",
+            "text": "Gross monthly income limit by household size (add $947 for each member beyond 8). Households in SNAP, AFDC, WIC, Welfare, Medicaid (MassHealth), SSI, Head Start, Fuel Assistance, or Veteran's Aid also meet the income requirement (but must still meet the age requirement). See the income table on the provider's guidelines.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          },
+          {
+            "kind": "pass",
+            "text": "All applicants must live in Berkshire, Franklin, Hampden, or Hampshire County in MA.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "fbwm-bb-age",
+            "result": "met",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "fbwm-bb-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          },
+          {
+            "requirement_id": "fbwm-bb-residency",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          }
+        ],
+        "missing_fields": [
+          "benefits_held"
+        ],
+        "explanation": "We need which benefits you already get to check this program.",
+        "source_urls": [
+          "https://www.foodbankwma.org/wp-content/uploads/2026/01/INCOME-ELIGIBILITY-GUIDELINES-02.2026.pdf",
+          "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "fbwm-mobile-food-bank",
+        "name": "Mobile Food Bank",
+        "provider": "The Food Bank of Western Massachusetts",
+        "type": "community",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampden",
+            "Hampshire",
+            "Berkshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "A truck brings free fresh and non-perishable groceries from the Food Bank's warehouse to community sites for same-day distribution. Hampshire County sites include Amherst Survival Center & The Boulders (125 Brittany Manor, Amherst) on the 1st Wednesday, 1:00-2:00 p.m.",
+        "info_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
+        "apply_url": null,
+        "contact": "Mobile Food Bank Hotline 413-419-0079",
+        "documents_needed": [],
+        "requirements": [
+          {
+            "id": "fbwm-mobile-open",
+            "kind": "open_access",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "There are no eligibility requirements to receive food from the Mobile Food Bank. Anyone can attend.",
+            "source_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Dates change monthly and some distributions are cancelled; the page advises calling the hotline for closures."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "walk_in",
+        "hours": [
+          {
+            "label": "Mobile Food Bank truck",
+            "days": [
+              2
+            ],
+            "nth_weekday": 1,
+            "time": "1-2pm",
+            "source_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/"
+          }
+        ],
+        "guide": null,
+        "first_step": {
+          "title": "Put the Mobile Food Bank on your calendar",
+          "detail": "First Wednesday of the month, 1 to 2pm, at the Survival Center and The Boulders. Call 413-419-0079 to check for changes."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "There are no eligibility requirements to receive food from the Mobile Food Bank. Anyone can attend.",
+            "evidence": "The provider says this is open to everyone in its area.",
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "fbwm-mobile-open",
+            "result": "met",
+            "evidence": "The provider says this is open to everyone in its area.",
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "This program is open to people in the area it serves, which includes your ZIP code.",
+        "source_urls": [
+          "https://www.foodbankwma.org/get-help/mobile-food-bank/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "fbwm-snap-application-assistance",
+        "name": "SNAP Application Assistance",
+        "provider": "The Food Bank of Western Massachusetts",
+        "type": "community",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampden",
+            "Hampshire",
+            "Berkshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "The Food Bank's SNAP outreach team can check whether you may be eligible for SNAP and help you apply by phone, online, or in person. Eligibility for SNAP itself is determined by the Massachusetts Department of Transitional Assistance (DTA).",
+        "info_url": "https://www.foodbankwma.org/get-help/snap/",
+        "apply_url": "https://www.foodbankwma.org/snap-referral/",
+        "contact": "Food Bank SNAP line 413-992-6204; Food Bank 413-247-9738 or 888-792-4523",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "fbwm-snap-residency",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "The Food Bank's SNAP help is free to all Western Massachusetts residents (the Food Bank serves Hampden, Hampshire, Berkshire, and Franklin Counties).",
+            "source_url": "https://www.foodbankwma.org/get-help/snap/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "fbwm-snap-income",
+            "kind": "income_max",
+            "field": "monthly_income",
+            "op": "lte",
+            "value": {
+              "1": 2660,
+              "2": 3607,
+              "3": 4553,
+              "4": 5500,
+              "5": 6447,
+              "6": 7393,
+              "7": 8340,
+              "8": 9287
+            },
+            "period": "month",
+            "text": "The Food Bank's page lists SNAP gross monthly income limits by household size (add $947 for each member beyond 8). Meeting these limits does not mean you are definitely eligible; DTA makes the decision.",
+            "source_url": "https://www.foodbankwma.org/get-help/snap/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "fbwm-snap-dta",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "SNAP eligibility is determined by the Massachusetts Department of Transitional Assistance (DTA) based on household size, composition, income, and expenses.",
+            "source_url": "https://www.foodbankwma.org/get-help/snap/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "The page does not state an effective date or program year for the SNAP income table.",
+          "Documents needed for a SNAP application are not listed on the provider page.",
+          "SNAP asset rules are not stated on the provider page.",
+          "The official mass.gov SNAP pages could not be fetched (HTTP 403), so the figures come only from the Food Bank's page.",
+          "The page displays 413-992-6204 but its phone link points to 413-992-6104; the displayed number is used here."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "benefit",
+        "access": null,
+        "hours": null,
+        "guide": {
+          "slug": "snap",
+          "short_name": "SNAP food benefits",
+          "what": "Monthly money for groceries. The Food Bank's SNAP team checks whether you may qualify and helps you apply for free.",
+          "decided_by": "The Massachusetts Department of Transitional Assistance (DTA) decides. The Food Bank helps you apply",
+          "when": "Apply any time",
+          "cost": "Free help",
+          "ways": [
+            {
+              "kind": "phone",
+              "title": "Call the Food Bank",
+              "detail": "SNAP line 413-992-6204. They can apply with you over the phone.",
+              "url": null,
+              "phone": "413-992-6204",
+              "best": true
+            },
+            {
+              "kind": "online",
+              "title": "Send a referral online",
+              "detail": "Fill out a short form and the Food Bank calls you back.",
+              "url": "https://www.foodbankwma.org/snap-referral/",
+              "phone": null,
+              "best": false
+            },
+            {
+              "kind": "in_person",
+              "title": "In person",
+              "detail": "The team also helps in person. Ask where when you call 413-247-9738.",
+              "url": null,
+              "phone": null,
+              "best": false
+            }
+          ],
+          "ask_them": [
+            "Which documents should I have ready?",
+            "Are there limits on savings or other assets?",
+            "Which year are the income limits on your page for?"
+          ],
+          "unlocks": [
+            "eversource-ma-discount-rate",
+            "fbwm-brown-bag",
+            "capv-wic"
+          ],
+          "if_denied": [
+            "asc-food-pantry",
+            "fbwm-mobile-food-bank"
+          ],
+          "tailor_questions": [],
+          "conditional_notes": [],
+          "no_documents_note": "The Food Bank page doesn't list SNAP documents. Ask on your first call so you can gather them before the application.",
+          "safety_note": null,
+          "source_url": "https://www.foodbankwma.org/get-help/snap/"
+        },
+        "first_step": {
+          "title": "Apply for SNAP with free help from the Food Bank",
+          "detail": "Call the Food Bank SNAP line at 413-992-6204, or send a referral online and they will call you."
+        },
+        "document_kinds": [],
+        "held_benefit": "snap"
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "The Food Bank's SNAP help is free to all Western Massachusetts residents (the Food Bank serves Hampden, Hampshire, Berkshire, and Franklin Counties).",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "ask",
+            "text": "The Food Bank's page lists SNAP gross monthly income limits by household size (add $947 for each member beyond 8). Meeting these limits does not mean you are definitely eligible; DTA makes the decision.",
+            "evidence": null,
+            "question_id": "income_band"
+          },
+          {
+            "kind": "note",
+            "text": "SNAP eligibility is determined by the Massachusetts Department of Transitional Assistance (DTA) based on household size, composition, income, and expenses.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "fbwm-snap-residency",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "fbwm-snap-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "monthly_income"
+            ]
+          },
+          {
+            "requirement_id": "fbwm-snap-dta",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [
+          "monthly_income"
+        ],
+        "explanation": "We need your household income to check this program.",
+        "source_urls": [
+          "https://www.foodbankwma.org/get-help/snap/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "capv-wic",
+        "name": "WIC (Women, Infants & Children) Nutrition Program",
+        "provider": "Community Action Pioneer Valley",
+        "type": "government",
+        "categories": [
+          "food"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Franklin",
+            "Hampshire"
+          ],
+          "zips": []
+        },
+        "description": "WIC provides free, healthy food, feeding support, and nutrition consultations for pregnant and postpartum people, infants, and children under 5. Community Action Pioneer Valley runs WIC for Franklin County, Hampshire County, and the North Quabbin area.",
+        "info_url": "https://www.communityaction.us/program/wic/",
+        "apply_url": null,
+        "contact": "413-376-1160; wic@communityaction.us",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "capv-wic-category",
+            "kind": "categorical",
+            "field": "household_who",
+            "op": "in",
+            "value": [
+              "child"
+            ],
+            "period": null,
+            "text": "You must be pregnant, postpartum, chest/breast feeding, an infant, or a child under 5 years old.",
+            "source_url": "https://www.communityaction.us/program/wic/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-wic-residency",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "You must live in Franklin County, Hampshire County, or the North Quabbin area.",
+            "source_url": "https://www.communityaction.us/program/wic/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-wic-income",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "in",
+            "value": [
+              "snap",
+              "masshealth"
+            ],
+            "period": null,
+            "text": "You must make under a certain amount of money each year. The provider page does not list the income limits. People who qualify for SNAP, some MassHealth types, or TAFDC, and all foster children up to age 5, automatically qualify.",
+            "source_url": "https://www.communityaction.us/program/wic/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "note",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "WIC income limits are not listed on the provider page; the mass.gov eligibility page it links to could not be fetched (HTTP 403).",
+          "Documents needed are not listed on the provider page.",
+          "The online application on mass.gov could not be fetched, so no apply URL is given; the provider says to call 413-376-1160 to apply.",
+          "The provider page lists sites in Greenfield, Hadley, and Orange; it does not list an Amherst site."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "benefit",
+        "access": null,
+        "hours": null,
+        "guide": {
+          "slug": "wic",
+          "short_name": "WIC",
+          "what": "Free healthy food, feeding support and nutrition advice for pregnant and postpartum people, infants, and children under 5.",
+          "decided_by": "Community Action Pioneer Valley runs WIC for Franklin and Hampshire Counties and the North Quabbin area",
+          "when": "Apply any time",
+          "cost": "Free",
+          "ways": [
+            {
+              "kind": "phone",
+              "title": "Call to apply",
+              "detail": "413-376-1160. The provider says to call to apply.",
+              "url": null,
+              "phone": "413-376-1160",
+              "best": true
+            },
+            {
+              "kind": "email",
+              "title": "Email a question",
+              "detail": "wic@communityaction.us. Don't send private documents by email.",
+              "url": null,
+              "phone": null,
+              "best": false
+            },
+            {
+              "kind": "in_person",
+              "title": "Visit a site",
+              "detail": "Sites are listed in Greenfield, Hadley and Orange. No Amherst site is listed.",
+              "url": null,
+              "phone": null,
+              "best": false
+            }
+          ],
+          "ask_them": [
+            "What are the income limits for my household size?",
+            "Which documents should I bring?",
+            "Which site is closest to Amherst?"
+          ],
+          "unlocks": [
+            "eversource-ma-discount-rate"
+          ],
+          "if_denied": [
+            "asc-food-pantry"
+          ],
+          "tailor_questions": [
+            "benefits_held"
+          ],
+          "conditional_notes": [
+            {
+              "field": "benefits_held",
+              "any_of": [
+                "snap",
+                "masshealth"
+              ],
+              "text": "You get SNAP or MassHealth. People on SNAP, some MassHealth types or TAFDC automatically meet the income rule."
+            }
+          ],
+          "no_documents_note": "The provider page doesn't list WIC documents. Ask when you call.",
+          "safety_note": null,
+          "source_url": "https://www.communityaction.us/program/wic/"
+        },
+        "first_step": {
+          "title": "Call WIC about food for your young child",
+          "detail": "Call CAPV WIC at 413-376-1160."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_ineligible",
+        "checks": [
+          {
+            "kind": "fail",
+            "text": "You must be pregnant, postpartum, chest/breast feeding, an infant, or a child under 5 years old.",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "pass",
+            "text": "You must live in Franklin County, Hampshire County, or the North Quabbin area.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "ask",
+            "text": "You must make under a certain amount of money each year. The provider page does not list the income limits. People who qualify for SNAP, some MassHealth types, or TAFDC, and all foster children up to age 5, automatically qualify.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "capv-wic-category",
+            "result": "not_met",
+            "evidence": "At home: Someone 60 or older (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "capv-wic-residency",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "capv-wic-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "Based on who lives with you, this program may not fit. The provider says: You must be pregnant, postpartum, chest/breast feeding, an infant, or a child under 5 years old. At home: Someone 60 or older (you told us). If we have that wrong, or your situation changes, edit your answer.",
+        "source_urls": [
+          "https://www.communityaction.us/program/wic/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "eversource-ma-discount-rate",
+        "name": "Eversource Massachusetts Discount Program (discount rate)",
+        "provider": "Eversource",
+        "type": "community",
+        "categories": [
+          "utilities"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [],
+          "zips": [
+            "01002",
+            "01003"
+          ]
+        },
+        "description": "Discount on Eversource electric or gas bills for customers who receive a qualifying public assistance benefit or meet household income requirements. Discounts as of Nov. 1, 2026 range from 22% to 92% depending on income, household size and heating type.",
+        "info_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+        "apply_url": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
+        "contact": "Call 211 or visit https://www.masscap.org/agencies/ to find your local Community Action Agency (income-based applications)",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "ev-customer",
+            "kind": "categorical",
+            "field": "eversource_customer",
+            "op": "eq",
+            "value": "yes",
+            "period": null,
+            "text": "Must be an Eversource electric or gas customer. (Eversource is listed as the electric company for Amherst by UMass Amherst.)",
+            "source_url": "https://www.umass.edu/global-affairs/international-students-scholars/resources/basics/utilities",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "ev-benefit-or-income",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "in",
+            "value": [
+              "snap",
+              "masshealth",
+              "fuel"
+            ],
+            "period": null,
+            "text": "Qualify by receiving a public assistance benefit (e.g. HEAP/Fuel Assistance, SNAP, MassHealth Basic or Standard, TAFDC, EAEDC, WIC, Head Start, public or subsidized housing, SSP, Veterans' Chapter 115 benefits) OR by meeting household income requirements.",
+            "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+            "verified": true,
+            "group": "qualify",
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "ev-income",
+            "kind": "income_max",
+            "field": "monthly_income",
+            "op": "lte",
+            "value": {
+              "1": 53586,
+              "2": 70074,
+              "3": 86562,
+              "4": 103050,
+              "5": 119537,
+              "6": 136025,
+              "7": 139117,
+              "8": 142208
+            },
+            "period": "year",
+            "text": "Annual household income for all adults 18+ (combined gross income of all persons in the household) must be at or below 60% of State Median Income. Benefit recipients may qualify without meeting this test. Households receiving a qualifying public benefit can also qualify; see the provider page. Dollar amounts by household size: the 2026-2027 60% of State Median Income figures published by the Massachusetts Good Neighbor Energy Fund (see its income floor).",
+            "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+            "verified": true,
+            "group": "qualify",
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "The income table columns are not labelled on the page; the encoded limits are the highest (60% SMI) column",
+          "Whether the income test applies to someone who qualifies through a public assistance benefit (page presents them as alternatives)",
+          "Limits for households larger than 8",
+          "Specific documents required",
+          "Eversource phone number for this program (not shown on the page)",
+          "Whether the account must be in the applicant's name / primary residence (not stated on the page)",
+          "Amherst coverage confirmed only via a UMass Amherst page, not an Eversource service-territory page",
+          "Service area set to Amherst ZIP codes, the only area where Eversource service was confirmed from a fetched page."
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "Discount percentages as of Nov. 1, 2026",
+        "track": "benefit",
+        "access": null,
+        "hours": null,
+        "guide": {
+          "slug": "discount",
+          "short_name": "Eversource discount rate",
+          "what": "A 22% to 92% discount on your Eversource electric or gas bill, depending on income, household size and heating type.",
+          "decided_by": "Eversource. Income-based applications go through your local Community Action Agency",
+          "when": "Apply any time",
+          "cost": "Free",
+          "ways": [
+            {
+              "kind": "online",
+              "title": "Apply online",
+              "detail": "Use Eversource's discount rate form. Best if you get a benefit like SNAP, Fuel Assistance, MassHealth or WIC.",
+              "url": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
+              "phone": null,
+              "best": true
+            },
+            {
+              "kind": "phone",
+              "title": "Qualify by income",
+              "detail": "Call 211, or find your Community Action Agency at masscap.org/agencies.",
+              "url": null,
+              "phone": null,
+              "best": false
+            }
+          ],
+          "ask_them": [
+            "Which documents do you need from me?",
+            "Does the account have to be in my name?",
+            "Is there a phone number for this program?"
+          ],
+          "unlocks": [],
+          "if_denied": [
+            "capv-fuel-assistance"
+          ],
+          "tailor_questions": [
+            "eversource_customer",
+            "benefits_held"
+          ],
+          "conditional_notes": [],
+          "no_documents_note": "Eversource doesn't list documents for this form. Have a recent bill handy for your account number.",
+          "safety_note": null,
+          "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate"
+        },
+        "first_step": {
+          "title": "Sign up for the Eversource discount rate",
+          "detail": "Apply online with Eversource. A benefit like Fuel Assistance or SNAP can qualify you."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "ask",
+            "text": "Must be an Eversource electric or gas customer. (Eversource is listed as the electric company for Amherst by UMass Amherst.)",
+            "evidence": null,
+            "question_id": "eversource_customer"
+          },
+          {
+            "kind": "ask",
+            "text": "Qualify by receiving a public assistance benefit (e.g. HEAP/Fuel Assistance, SNAP, MassHealth Basic or Standard, TAFDC, EAEDC, WIC, Head Start, public or subsidized housing, SSP, Veterans' Chapter 115 benefits) OR by meeting household income requirements.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "ev-customer",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "eversource_customer"
+            ]
+          },
+          {
+            "requirement_id": "ev-benefit-or-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          },
+          {
+            "requirement_id": "ev-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "monthly_income"
+            ]
+          }
+        ],
+        "missing_fields": [
+          "eversource_customer",
+          "benefits_held"
+        ],
+        "explanation": "We need whether Eversource is your utility company and which benefits you already get to check this program.",
+        "source_urls": [
+          "https://www.umass.edu/global-affairs/international-students-scholars/resources/basics/utilities",
+          "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "capv-fuel-assistance",
+        "name": "Fuel Assistance (Home Energy Assistance / LIHEAP)",
+        "provider": "Community Action Pioneer Valley",
+        "type": "community",
+        "categories": [
+          "utilities"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "Free program that helps pay part of winter heating costs. Covers deliverable fuels (oil, kerosene, propane, coal, wood, pellets, biobricks), natural gas and electricity, and may help with heat included in rent. Expedited help for heating emergencies (November 1 - April 30), such as running out of fuel or a gas/electric shut-off notice.",
+        "info_url": "https://www.communityaction.us/program/fuel-assistance",
+        "apply_url": "https://www.toapply.org/CA",
+        "contact": "413-774-2310 or 800-370-0940 (toll-free); fuelassistance@communityaction.us (do not email confidential information)",
+        "documents_needed": [
+          "State or federally-issued photo ID for the applicant",
+          "Proof of citizenship or qualified alien status",
+          "Verification of all sources of income for the 30 days prior to the appointment",
+          "Dates of birth for all household members",
+          "Heating vendor, account number, and name of account holder",
+          "Renters: copy of lease (and verification of rental subsidy, if applicable)",
+          "Homeowners: mortgage, homeowner's insurance, and property tax bills",
+          "College students: current financial aid awards"
+        ],
+        "requirements": [
+          {
+            "id": "capv-fa-income",
+            "kind": "income_max",
+            "field": "monthly_income",
+            "op": "lte",
+            "value": {
+              "1": 53585,
+              "2": 70073,
+              "3": 86561,
+              "4": 103049,
+              "5": 119536,
+              "6": 136024,
+              "7": 139116,
+              "8": 142207,
+              "9": 145299,
+              "10": 148390
+            },
+            "period": "year",
+            "text": "2026-2027 income guidelines, based on the size of the entire household (everyone who benefits from the heat): 1: $53,585; 2: $70,073; 3: $86,561; 4: $103,049; 5: $119,536; 6: $136,024; 7: $139,116; 8: $142,207; 9: $145,299; 10: $148,390. The page does not state whether these are yearly or gross amounts.",
+            "source_url": "https://www.communityaction.us/program/fuel-assistance",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-fa-heat-in-rent",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Fuel Assistance may pay for heat included in rent; renters provide a copy of their lease.",
+            "source_url": "https://www.communityaction.us/program/fuel-assistance",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-fa-season",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Apply anytime between October 1st and April 30th in person, on the phone or online.",
+            "source_url": "https://www.communityaction.us/program/fuel-assistance",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-fa-citizenship",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Proof of citizenship, qualified alien status or unqualified alien status is requested for all household members.",
+            "source_url": "https://www.communityaction.us/program/fuel-assistance",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "capv-fa-area",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Community Action Pioneer Valley serves Hampshire County (it took on responsibility for Hampshire County in 2005) and Franklin County; offices in Greenfield, Northampton and Orange.",
+            "source_url": "https://www.communityaction.us/about/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Whether the income limits are annual and gross or net (page does not label the period)",
+          "Asset limits (none stated)",
+          "Benefit amounts",
+          "Whether CAPV is the officially designated LIHEAP agency for Amherst (mass.gov agency list could not be fetched; CAPV pages do not name Amherst)",
+          "Northampton office hours (page gives conflicting hours)"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "2026-2027 heating season (applications October 1 - April 30)",
+        "track": "benefit",
+        "access": null,
+        "hours": null,
+        "guide": {
+          "slug": "fuel",
+          "short_name": "Fuel Assistance",
+          "what": "Helps pay part of your winter heating costs: oil, propane, wood, pellets, natural gas or electric heat, and sometimes heat included in rent.",
+          "decided_by": "Community Action Pioneer Valley reviews it for Hampshire and Franklin Counties",
+          "when": "Apply Oct 1 to Apr 30",
+          "cost": "Free",
+          "ways": [
+            {
+              "kind": "online",
+              "title": "Online",
+              "detail": "Apply at toapply.org/CA. You can save and come back.",
+              "url": "https://www.toapply.org/CA",
+              "phone": null,
+              "best": true
+            },
+            {
+              "kind": "phone",
+              "title": "By phone",
+              "detail": "413-774-2310, or toll-free 800-370-0940.",
+              "url": null,
+              "phone": "413-774-2310",
+              "best": false
+            },
+            {
+              "kind": "in_person",
+              "title": "In person",
+              "detail": "CAPV has offices in Greenfield, Northampton and Orange. Call ahead: the Northampton hours are listed two ways.",
+              "url": null,
+              "phone": null,
+              "best": false
+            }
+          ],
+          "ask_them": [
+            "Are the income limits yearly, and are they before or after taxes?",
+            "Is there a limit on savings or other assets?",
+            "About how much help could my household get?",
+            "What are the Northampton office hours?"
+          ],
+          "unlocks": [
+            "eversource-ma-discount-rate",
+            "capv-weatherization",
+            "capv-heating-system-repair"
+          ],
+          "if_denied": [
+            "ma-good-neighbor-energy-fund",
+            "capv-rent-utility-assistance"
+          ],
+          "tailor_questions": [
+            "housing_status",
+            "college_student"
+          ],
+          "conditional_notes": [
+            {
+              "field": "utility_issues",
+              "any_of": [
+                "shutoff"
+              ],
+              "text": "You mentioned a shut-off notice. Say so when you apply: heating emergencies, like running out of fuel or a gas or electric shut-off notice, get expedited help from November 1 to April 30."
+            }
+          ],
+          "no_documents_note": null,
+          "safety_note": "Don't email confidential documents to the Fuel Assistance inbox. Upload them through the application or bring them.",
+          "source_url": "https://www.communityaction.us/program/fuel-assistance"
+        },
+        "first_step": {
+          "title": "Apply for Fuel Assistance",
+          "detail": "Apply online at toapply.org/CA, by phone at 413-774-2310, or in person. Approval also unlocks the utility discount and free weatherization."
+        },
+        "document_kinds": [
+          "id",
+          "status",
+          "income",
+          "dob",
+          "heat",
+          "lease",
+          "owner",
+          "aid"
+        ],
+        "held_benefit": "fuel"
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "ask",
+            "text": "2026-2027 income guidelines, based on the size of the entire household (everyone who benefits from the heat): 1: $53,585; 2: $70,073; 3: $86,561; 4: $103,049; 5: $119,536; 6: $136,024; 7: $139,116; 8: $142,207; 9: $145,299; 10: $148,390. The page does not state whether these are yearly or gross amounts.",
+            "evidence": null,
+            "question_id": "income_band"
+          },
+          {
+            "kind": "note",
+            "text": "Fuel Assistance may pay for heat included in rent; renters provide a copy of their lease.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "Apply anytime between October 1st and April 30th in person, on the phone or online.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "Proof of citizenship, qualified alien status or unqualified alien status is requested for all household members.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "pass",
+            "text": "Community Action Pioneer Valley serves Hampshire County (it took on responsibility for Hampshire County in 2005) and Franklin County; offices in Greenfield, Northampton and Orange.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "capv-fa-income",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "monthly_income"
+            ]
+          },
+          {
+            "requirement_id": "capv-fa-heat-in-rent",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "capv-fa-season",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "capv-fa-citizenship",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "capv-fa-area",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          }
+        ],
+        "missing_fields": [
+          "monthly_income"
+        ],
+        "explanation": "We need your household income to check this program.",
+        "source_urls": [
+          "https://www.communityaction.us/program/fuel-assistance",
+          "https://www.communityaction.us/about/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "capv-heating-system-repair",
+        "name": "Heating System Repair and Replacement",
+        "provider": "Community Action Pioneer Valley",
+        "type": "community",
+        "categories": [
+          "utilities",
+          "housing"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "Helps homeowners by repairing or replacing heating systems that no longer work. Emergency (no-heat) program runs November 1 - April 30.",
+        "info_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+        "apply_url": null,
+        "contact": "413-376-1115; Energyprog@communityaction.us",
+        "documents_needed": [
+          "Name, address, phone, email and LIHEAP number (if you have one)",
+          "Copies of electric and natural gas bills"
+        ],
+        "requirements": [
+          {
+            "id": "hs-broken",
+            "kind": "categorical",
+            "field": "utility_issues",
+            "op": "in",
+            "value": [
+              "broken"
+            ],
+            "period": null,
+            "text": "Helps homeowners by repairing or replacing heating systems that no longer work.",
+            "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "hs-benefit",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "in",
+            "value": [
+              "fuel"
+            ],
+            "period": null,
+            "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+            "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "later",
+            "needs_any": []
+          },
+          {
+            "id": "hs-owner",
+            "kind": "categorical",
+            "field": "housing_status",
+            "op": "in",
+            "value": [
+              "own"
+            ],
+            "period": null,
+            "text": "For homeowners; tenants should contact their landlord.",
+            "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Income limits (none stated)",
+          "Program year",
+          "Cost to the homeowner, if any"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "Applications from October 1; emergency program November 1 - April 30",
+        "track": "local",
+        "access": "apply",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Call about your broken heating system",
+          "detail": "Call CAPV energy programs at 413-376-1115. Have your electric and gas bills ready."
+        },
+        "document_kinds": [
+          "liheap",
+          "heat"
+        ],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_ineligible",
+        "checks": [
+          {
+            "kind": "fail",
+            "text": "Helps homeowners by repairing or replacing heating systems that no longer work.",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "ask",
+            "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          },
+          {
+            "kind": "ask",
+            "text": "For homeowners; tenants should contact their landlord.",
+            "evidence": null,
+            "question_id": "housing_status"
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "hs-broken",
+            "result": "not_met",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "hs-benefit",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          },
+          {
+            "requirement_id": "hs-owner",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "housing_status"
+            ]
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "Based on what is going on with your heat or utilities, this program may not fit. The provider says: Helps homeowners by repairing or replacing heating systems that no longer work. Heat & utilities: I have a shut-off notice (you told us). If we have that wrong, or your situation changes, edit your answer.",
+        "source_urls": [
+          "https://www.communityaction.us/program/help-my-heating-system-is-broken/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "capv-rent-utility-assistance",
+        "name": "Rent and Utility Help (Community Resources & Advocacy)",
+        "provider": "Community Action Pioneer Valley",
+        "type": "community",
+        "categories": [
+          "utilities",
+          "housing"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "CAPV's Community Resources & Advocacy program may be able to help with rent and utility bills, including a metered utility in danger of being shut off because of late payment. Complete an application to find out if you are eligible.",
+        "info_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+        "apply_url": null,
+        "contact": "413-475-1570 (Info & Referral; leave name, phone, town, help needed; calls returned Mon-Fri)",
+        "documents_needed": [
+          "Proof of identity for head of household",
+          "Proof of Massachusetts address",
+          "Proof of working income from within the last 90 days that covers 4 weeks in a row",
+          "Proof of non-working income (e.g. Social Security, unemployment, child support, disability)",
+          "Utility shut-off notice in an adult household member's name",
+          "Notices from landlord or court (for rent help)"
+        ],
+        "requirements": [
+          {
+            "id": "ru-area",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Serves Hampshire and Franklin Counties and the North Quabbin Region of Massachusetts.",
+            "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "ru-shutoff",
+            "kind": "categorical",
+            "field": "utility_issues",
+            "op": "in",
+            "value": [
+              "shutoff"
+            ],
+            "period": null,
+            "text": "Utility help applies when a metered utility is in danger of being shut off because you are late paying; in Hampshire County, less than 4 weeks before shutoff.",
+            "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+            "verified": true,
+            "group": "crisis",
+            "on_unmet": "fail",
+            "needs_any": [
+              "utilities"
+            ]
+          },
+          {
+            "id": "ru-fuel-first",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "For fuel delivery during the Fuel Assistance season, you must apply to that program first.",
+            "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "ru-behind-rent",
+            "kind": "categorical",
+            "field": "housing_need",
+            "op": "eq",
+            "value": "behind",
+            "period": null,
+            "text": "May be able to help with rent and utility bills. Complete an application to find out if you are eligible.",
+            "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+            "verified": true,
+            "group": "crisis",
+            "on_unmet": "fail",
+            "needs_any": [
+              "housing"
+            ]
+          }
+        ],
+        "unknowns": [
+          "Income limits (an eligibility chart is referenced on another page, not fetched)",
+          "Amount of assistance",
+          "Funding availability"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "call",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Call CAPV's Info & Referral line",
+          "detail": "Call 413-475-1570 and leave your name, phone, town and the help you need. Calls are returned Monday to Friday."
+        },
+        "document_kinds": [
+          "id",
+          "address",
+          "income",
+          "income",
+          "shutoff",
+          "notices"
+        ],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "Serves Hampshire and Franklin Counties and the North Quabbin Region of Massachusetts.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "pass",
+            "text": "Utility help applies when a metered utility is in danger of being shut off because you are late paying; in Hampshire County, less than 4 weeks before shutoff.",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "For fuel delivery during the Fuel Assistance season, you must apply to that program first.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "ru-area",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "ru-shutoff",
+            "result": "met",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "ru-fuel-first",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "Based on your answers, you meet every requirement this program lists.",
+        "source_urls": [
+          "https://www.communityaction.us/program/rent-utility-assistance/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "raft-way-finders",
+        "name": "Residential Assistance for Families in Transition (RAFT)",
+        "provider": "Commonwealth of Massachusetts; application help from Way Finders",
+        "type": "government",
+        "categories": [
+          "housing",
+          "utilities"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampden",
+            "Hampshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "The Commonwealth's RAFT program helps households stay in stable housing when facing eviction, loss of utilities, foreclosure, and other housing emergencies. It provides qualifying households up to $7,000 in a 12-month period to preserve current housing or move to new housing, and can cover overdue utilities, moving costs, and overdue rent or mortgage payments. Way Finders helps tenants and homeowners with the online application at its Housing Centers or by phone.",
+        "info_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+        "apply_url": null,
+        "contact": "Way Finders: 413-233-1500, info@wayfinders.org; Northampton Housing Center, 256 Pleasant Street, Northampton, MA 01060",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "raft-housing-emergency",
+            "kind": "categorical",
+            "field": "housing_need",
+            "op": "eq",
+            "value": "behind",
+            "period": null,
+            "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
+            "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+            "verified": true,
+            "group": "crisis",
+            "on_unmet": "fail",
+            "needs_any": [
+              "housing"
+            ]
+          },
+          {
+            "id": "raft-utility-emergency",
+            "kind": "categorical",
+            "field": "utility_issues",
+            "op": "in",
+            "value": [
+              "shutoff"
+            ],
+            "period": null,
+            "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
+            "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+            "verified": true,
+            "group": "crisis",
+            "on_unmet": "fail",
+            "needs_any": [
+              "utilities"
+            ]
+          },
+          {
+            "id": "raft-who-applies",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "RAFT requires an application from both the tenant or homeowner and the landlord. For other emergency needs such as overdue utilities or moving costs, only the household must apply.",
+            "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "raft-online-application",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "The Commonwealth requires renter, homeowner, and landlord applications and documents to be uploaded directly into its online system. Way Finders can help if you need assistance applying.",
+            "source_url": "https://www.wayfinders.org/housing-providers/support-for-landlords/emergency-financial-housing-assistance-raft/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Income limits (none stated on the fetched Way Finders pages; mass.gov pages could not be fetched)",
+          "Official apply URL: Way Finders links to a mass.gov 'Apply for RAFT' page, but mass.gov returned 403 to our fetch, so it is not recorded",
+          "Required documents",
+          "Whether people experiencing homelessness qualify for move-in costs beyond Way Finders' note that it helps them apply for RAFT for move-in costs",
+          "Whether RAFT is available statewide (fetched pages only state Way Finders serves Hampden, Hampshire, and Franklin counties)"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "Up to $7,000 per household in a 12-month period",
+        "track": "benefit",
+        "access": null,
+        "hours": null,
+        "guide": {
+          "slug": "raft",
+          "short_name": "RAFT emergency housing help",
+          "what": "Up to $7,000 in 12 months to keep your housing: overdue rent or mortgage, overdue utilities, or moving costs.",
+          "decided_by": "The Commonwealth of Massachusetts runs RAFT. Way Finders helps you apply",
+          "when": "Apply when the emergency happens",
+          "cost": "Free help",
+          "ways": [
+            {
+              "kind": "phone",
+              "title": "Call Way Finders",
+              "detail": "413-233-1500. They can help with the online application.",
+              "url": null,
+              "phone": "413-233-1500",
+              "best": true
+            },
+            {
+              "kind": "walk_in",
+              "title": "Walk in for RAFT",
+              "detail": "Northampton Housing Center, 256 Pleasant St. Mondays and Wednesdays, 8:30am to 1pm.",
+              "url": null,
+              "phone": null,
+              "best": false
+            },
+            {
+              "kind": "online",
+              "title": "Apply online yourself",
+              "detail": "The Commonwealth's online system takes the application and documents. Way Finders links to it from its site.",
+              "url": null,
+              "phone": null,
+              "best": false
+            }
+          ],
+          "ask_them": [
+            "What are the income limits?",
+            "Which documents do I need to upload?",
+            "How long does a decision usually take?"
+          ],
+          "unlocks": [],
+          "if_denied": [
+            "capv-rent-utility-assistance",
+            "way-finders-housing-centers"
+          ],
+          "tailor_questions": [
+            "raft_use"
+          ],
+          "conditional_notes": [
+            {
+              "field": "raft_use",
+              "any_of": [
+                "rent"
+              ],
+              "text": "Your landlord must send in their own application too. Tell them early so it doesn't hold yours up."
+            },
+            {
+              "field": "raft_use",
+              "any_of": [
+                "mortgage",
+                "utilities",
+                "moving"
+              ],
+              "text": "For this need, only your household has to apply."
+            }
+          ],
+          "no_documents_note": "The pages we checked don't list RAFT documents. Every document is uploaded into the state's online system, so ask Way Finders which ones you need.",
+          "safety_note": null,
+          "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/"
+        },
+        "first_step": {
+          "title": "Start a RAFT application with Way Finders",
+          "detail": "Call Way Finders at 413-233-1500, or walk in to the Northampton Housing Center (Mon and Wed, 8:30am to 1pm, for RAFT)."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "likely_eligible",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "RAFT requires an application from both the tenant or homeowner and the landlord. For other emergency needs such as overdue utilities or moving costs, only the household must apply.",
+            "evidence": null,
+            "question_id": null
+          },
+          {
+            "kind": "note",
+            "text": "The Commonwealth requires renter, homeowner, and landlord applications and documents to be uploaded directly into its online system. Way Finders can help if you need assistance applying.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "raft-utility-emergency",
+            "result": "met",
+            "evidence": "Heat & utilities: I have a shut-off notice (you told us).",
+            "missing": []
+          },
+          {
+            "requirement_id": "raft-who-applies",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          },
+          {
+            "requirement_id": "raft-online-application",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "Based on your answers, you meet every requirement this program lists.",
+        "source_urls": [
+          "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+          "https://www.wayfinders.org/housing-providers/support-for-landlords/emergency-financial-housing-assistance-raft/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "capv-weatherization",
+        "name": "Weatherization and Energy Efficiency Programs",
+        "provider": "Community Action Pioneer Valley",
+        "type": "community",
+        "categories": [
+          "utilities",
+          "housing"
+        ],
+        "service_area": {
+          "statewide": false,
+          "state": "MA",
+          "counties": [
+            "Hampshire",
+            "Franklin"
+          ],
+          "zips": []
+        },
+        "description": "Free major home improvements to reduce energy usage (weatherization) and electric efficiency audits, for homeowners and renters who receive fuel assistance or the utility discount rate.",
+        "info_url": "https://www.communityaction.us/program/weatherization/",
+        "apply_url": "https://forms.monday.com/forms/0172eaed3ccf243cfac7464cba1fc6b9?r=use1",
+        "contact": "413-376-1140; energyprog@communityaction.us",
+        "documents_needed": [
+          "Name, LIHEAP application number (if you have one), home address, phone and email",
+          "Copy of electric bill (and natural gas account number/bill if not on fuel assistance)"
+        ],
+        "requirements": [
+          {
+            "id": "wx-benefit",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "in",
+            "value": [
+              "fuel"
+            ],
+            "period": null,
+            "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+            "source_url": "https://www.communityaction.us/program/weatherization/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "later",
+            "needs_any": []
+          },
+          {
+            "id": "wx-landlord",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Renters can apply but need landlord authorization; for 2-4 unit properties at least half of the tenants must meet the income-eligibility requirement; buildings over 4 units are referred to Lean Multifamily.",
+            "source_url": "https://www.communityaction.us/program/weatherization/",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Income limits (none stated beyond fuel assistance / discount rate participation)",
+          "Program year",
+          "Wait times",
+          "Whether this is the federal Weatherization Assistance Program (WAP) (page does not name it)"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": null,
+        "track": "local",
+        "access": "apply",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "Ask about free weatherization",
+          "detail": "Fill out CAPV's weatherization form or call 413-376-1140."
+        },
+        "document_kinds": [
+          "liheap",
+          "heat"
+        ],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "ask",
+            "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          },
+          {
+            "kind": "note",
+            "text": "Renters can apply but need landlord authorization; for 2-4 unit properties at least half of the tenants must meet the income-eligibility requirement; buildings over 4 units are referred to Lean Multifamily.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "wx-benefit",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          },
+          {
+            "requirement_id": "wx-landlord",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [
+          "benefits_held"
+        ],
+        "explanation": "We need which benefits you already get to check this program.",
+        "source_urls": [
+          "https://www.communityaction.us/program/weatherization/"
+        ],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "ma-good-neighbor-energy-fund",
+        "name": "Massachusetts Good Neighbor Energy Fund",
+        "provider": "The Salvation Army (Massachusetts Good Neighbor Energy Fund)",
+        "type": "community",
+        "categories": [
+          "utilities"
+        ],
+        "service_area": {
+          "statewide": true,
+          "state": "MA",
+          "counties": [],
+          "zips": []
+        },
+        "description": "Energy bill help for Massachusetts residents who, because of temporary financial difficulty, cannot meet a month's energy expense and are not eligible for state or federal energy assistance. Qualifying households may receive up to $400 per household per heating season. Requests go through The Salvation Army.",
+        "info_url": "https://www.magoodneighbor.org/assistance.html",
+        "apply_url": null,
+        "contact": "Contact your local Salvation Army Corps Community Center; if none is listed nearby, 413 area code: 800-262-1320",
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "gn-residency",
+            "kind": "residency",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Must be a Massachusetts resident.",
+            "source_url": "https://www.magoodneighbor.org/assistance.html",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "gn-income-max",
+            "kind": "income_max",
+            "field": "monthly_income",
+            "op": "lte",
+            "value": {
+              "1": 71447,
+              "2": 93431,
+              "3": 115415,
+              "4": 137399,
+              "5": 159382,
+              "6": 181366,
+              "7": 185488,
+              "8": 189610,
+              "9": 193732,
+              "10": 197854,
+              "11": 201976,
+              "12": 206098,
+              "13": 210220,
+              "14": 214342,
+              "15": 218464,
+              "16": 222586,
+              "17": 226708
+            },
+            "period": "year",
+            "text": "Total gross yearly income must be no more than 80% of state median income (2026-2027 guidelines).",
+            "source_url": "https://www.magoodneighbor.org/assistance.html",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "gn-income-floor",
+            "kind": "income_min",
+            "field": "monthly_income",
+            "op": "gte",
+            "value": {
+              "1": 53586,
+              "2": 70074,
+              "3": 86562,
+              "4": 103050,
+              "5": 119537,
+              "6": 136025,
+              "7": 139117,
+              "8": 142208,
+              "9": 145300,
+              "10": 148391,
+              "11": 151483,
+              "12": 154574,
+              "13": 157666,
+              "14": 160757,
+              "15": 163849,
+              "16": 166940,
+              "17": 170032
+            },
+            "period": "year",
+            "text": "Income must fall between 60 and 80 percent of state median income; 2026-2027 lower bounds: 1: $53,586; 2: $70,074; 3: $86,562; 4: $103,050; 5: $119,537; 6: $136,025; 7: $139,117; 8: $142,208; 9: $145,300; 10: $148,391; 11: $151,483; 12: $154,574; 13: $157,666; 14: $160,757; 15: $163,849; 16: $166,940; 17: $170,032.",
+            "source_url": "https://www.magoodneighbor.org/assistance.html",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "gn-not-eligible-other",
+            "kind": "categorical",
+            "field": "benefits_held",
+            "op": "nin",
+            "value": [
+              "fuel"
+            ],
+            "period": null,
+            "text": "Applicant is not eligible for state or federal energy assistance.",
+            "source_url": "https://www.magoodneighbor.org/assistance.html",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          },
+          {
+            "id": "gn-hardship",
+            "kind": "info",
+            "field": null,
+            "op": null,
+            "value": null,
+            "period": null,
+            "text": "Because of temporary financial difficulty, cannot meet a month's energy expense.",
+            "source_url": "https://www.magoodneighbor.org/assistance.html",
+            "verified": true,
+            "group": null,
+            "on_unmet": "fail",
+            "needs_any": []
+          }
+        ],
+        "unknowns": [
+          "Documents required",
+          "Whether the bill must be past due or facing shutoff",
+          "Whether payment goes directly to the utility or vendor",
+          "Nearest Salvation Army location for Amherst (none listed in Amherst/Northampton; Holyoke and Greenfield are listed)",
+          "Exact season start/end dates (funds disbursed until end of summer or while funds last)"
+        ],
+        "verified_on": "2026-11-14",
+        "program_period": "2026-2027 season",
+        "track": "local",
+        "access": "call",
+        "hours": null,
+        "guide": null,
+        "first_step": {
+          "title": "If Fuel Assistance says no, try the Good Neighbor Energy Fund",
+          "detail": "Contact your local Salvation Army. In the 413 area code, call 800-262-1320 if none is listed nearby."
+        },
+        "document_kinds": [],
+        "held_benefit": null
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "checks": [
+          {
+            "kind": "pass",
+            "text": "Must be a Massachusetts resident.",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "question_id": null
+          },
+          {
+            "kind": "ask",
+            "text": "Total gross yearly income must be no more than 80% of state median income (2026-2027 guidelines).",
+            "evidence": null,
+            "question_id": "income_band"
+          },
+          {
+            "kind": "ask",
+            "text": "Income must fall between 60 and 80 percent of state median income; 2026-2027 lower bounds: 1: $53,586; 2: $70,074; 3: $86,562; 4: $103,050; 5: $119,537; 6: $136,025; 7: $139,117; 8: $142,208; 9: $145,300; 10: $148,391; 11: $151,483; 12: $154,574; 13: $157,666; 14: $160,757; 15: $163,849; 16: $166,940; 17: $170,032.",
+            "evidence": null,
+            "question_id": "income_band"
+          },
+          {
+            "kind": "ask",
+            "text": "Applicant is not eligible for state or federal energy assistance.",
+            "evidence": null,
+            "question_id": "benefits_held"
+          },
+          {
+            "kind": "note",
+            "text": "Because of temporary financial difficulty, cannot meet a month's energy expense.",
+            "evidence": null,
+            "question_id": null
+          }
+        ],
+        "criteria": [
+          {
+            "requirement_id": "gn-residency",
+            "result": "met",
+            "evidence": "Your ZIP code 01002 is in the area this program serves.",
+            "missing": []
+          },
+          {
+            "requirement_id": "gn-income-max",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "monthly_income"
+            ]
+          },
+          {
+            "requirement_id": "gn-income-floor",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "monthly_income"
+            ]
+          },
+          {
+            "requirement_id": "gn-not-eligible-other",
+            "result": "unknown",
+            "evidence": null,
+            "missing": [
+              "benefits_held"
+            ]
+          },
+          {
+            "requirement_id": "gn-hardship",
+            "result": "unknown",
+            "evidence": null,
+            "missing": []
+          }
+        ],
+        "missing_fields": [
+          "monthly_income",
+          "benefits_held"
+        ],
+        "explanation": "We need your household income and which benefits you already get to check this program.",
+        "source_urls": [
+          "https://www.magoodneighbor.org/assistance.html"
         ],
         "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
       },
@@ -280,53 +3069,221 @@
   "action_plan": [
     {
       "rank": 1,
-      "program_id": "fixture-food-benefit",
-      "action_type": "confirm_eligibility",
-      "rationale": "Your reported income is under the listed limit.",
-      "next_step": "Review the requirements on the provider's page, then start an application.",
+      "program_id": "capv-rent-utility-assistance",
+      "action_type": "apply_now",
+      "rationale": "Helps with heat & utility bills. You appear to meet the requirements it lists.",
+      "next_step": "To apply, contact them: 413-475-1570 (Info & Referral; leave name, phone, town, help needed; calls returned Mon-Fri)",
       "documents": [
-        "Proof of income"
+        "Proof of identity for head of household",
+        "Proof of Massachusetts address",
+        "Proof of working income from within the last 90 days that covers 4 weeks in a row",
+        "Proof of non-working income (e.g. Social Security, unemployment, child support, disability)",
+        "Utility shut-off notice in an adult household member's name",
+        "Notices from landlord or court (for rent help)"
       ],
-      "link": "https://example.org/fixture-food-benefit/apply",
-      "urgency": "unknown",
+      "link": "https://www.communityaction.us/program/rent-utility-assistance/",
+      "urgency": "high",
       "depends_on": [],
-      "uncertainty": "Asset limits were not verified."
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
     {
       "rank": 2,
-      "program_id": "fixture-senior-pantry",
-      "action_type": "get_more_information",
-      "rationale": "This pantry serves your ZIP code but has an age requirement we have not checked.",
-      "next_step": "Answer the age question, or contact the provider.",
+      "program_id": "raft-way-finders",
+      "action_type": "apply_now",
+      "rationale": "Helps with heat & utility bills. You appear to meet the requirements it lists.",
+      "next_step": "To apply, contact them: Way Finders: 413-233-1500, info@wayfinders.org; Northampton Housing Center, 256 Pleasant Street, Northampton, MA 01060",
       "documents": null,
-      "link": "https://example.org/fixture-senior-pantry",
+      "link": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Up to $7,000 per household in a 12-month period. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 3,
+      "program_id": "asc-community-meals",
+      "action_type": "apply_now",
+      "rationale": "Helps with food & groceries. You appear to meet the requirements it lists.",
+      "next_step": "It's open to everyone it serves. Check the provider's page for times and places.",
+      "documents": [],
+      "link": "https://amherstsurvival.org/community-meals/",
       "urgency": "unknown",
       "depends_on": [],
-      "uncertainty": "Age not yet provided."
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 4,
+      "program_id": "fbwm-mobile-food-bank",
+      "action_type": "apply_now",
+      "rationale": "Helps with food & groceries. You appear to meet the requirements it lists.",
+      "next_step": "It's open to everyone it serves. Check the provider's page for times and places.",
+      "documents": [],
+      "link": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 5,
+      "program_id": "asc-food-pantry",
+      "action_type": "apply_now",
+      "rationale": "Helps with food & groceries. You appear to meet the requirements it lists.",
+      "next_step": "Apply online using the link below.",
+      "documents": [
+        "Residency verification showing your name and current address (for example a license, a piece of mail, a bank statement, or a lease). It does not need to be a photo ID. People experiencing homelessness are exempt."
+      ],
+      "link": "https://amherstsurvival.org/food-pantry-register/",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 6,
+      "program_id": "hves-benefits-support",
+      "action_type": "confirm_eligibility",
+      "rationale": "Helps with food & groceries, heat & utility bills. You may qualify; some conditions need checking with the provider.",
+      "next_step": "To confirm the conditions and ask how to apply, contact them: (413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+      "documents": null,
+      "link": "https://highlandvalley.org/services/benefits-support-program/",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 7,
+      "program_id": "hves-home-delivered-meals",
+      "action_type": "confirm_eligibility",
+      "rationale": "Helps with food & groceries. You may qualify; some conditions need checking with the provider.",
+      "next_step": "Check the conditions listed for this program, then apply online using the link below.",
+      "documents": null,
+      "link": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 8,
+      "program_id": "eversource-ma-discount-rate",
+      "action_type": "get_more_information",
+      "rationale": "Helps with heat & utility bills. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: Call 211 or visit https://www.masscap.org/agencies/ to find your local Community Action Agency (income-based applications)",
+      "documents": null,
+      "link": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Discount percentages as of Nov. 1, 2026. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 9,
+      "program_id": "capv-fuel-assistance",
+      "action_type": "get_more_information",
+      "rationale": "Helps with heat & utility bills. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: 413-774-2310 or 800-370-0940 (toll-free); fuelassistance@communityaction.us (do not email confidential information)",
+      "documents": [
+        "State or federally-issued photo ID for the applicant",
+        "Proof of citizenship or qualified alien status",
+        "Verification of all sources of income for the 30 days prior to the appointment",
+        "Dates of birth for all household members",
+        "Heating vendor, account number, and name of account holder",
+        "Renters: copy of lease (and verification of rental subsidy, if applicable)",
+        "Homeowners: mortgage, homeowner's insurance, and property tax bills",
+        "College students: current financial aid awards"
+      ],
+      "link": "https://www.toapply.org/CA",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "Provider note: 2026-2027 heating season (applications October 1 - April 30). No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 10,
+      "program_id": "ma-good-neighbor-energy-fund",
+      "action_type": "get_more_information",
+      "rationale": "Helps with heat & utility bills. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: Contact your local Salvation Army Corps Community Center; if none is listed nearby, 413 area code: 800-262-1320",
+      "documents": null,
+      "link": "https://www.magoodneighbor.org/assistance.html",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: 2026-2027 season. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 11,
+      "program_id": "capv-weatherization",
+      "action_type": "get_more_information",
+      "rationale": "Helps with heat & utility bills. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: 413-376-1140; energyprog@communityaction.us",
+      "documents": [
+        "Name, LIHEAP application number (if you have one), home address, phone and email",
+        "Copy of electric bill (and natural gas account number/bill if not on fuel assistance)"
+      ],
+      "link": "https://forms.monday.com/forms/0172eaed3ccf243cfac7464cba1fc6b9?r=use1",
+      "urgency": "high",
+      "depends_on": [],
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 12,
+      "program_id": "fbwm-brown-bag",
+      "action_type": "get_more_information",
+      "rationale": "Helps with food & groceries. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: 413-247-9738 ext. 3005 (applications); 413-419-0079 (Brown Bag)",
+      "documents": null,
+      "link": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Eligibility guidelines dated February 2026. No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 13,
+      "program_id": "asc-campus-pantry",
+      "action_type": "get_more_information",
+      "rationale": "Helps with food & groceries. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: (413) 545-8880",
+      "documents": [
+        "UMass ID (or other UMass affiliated material)"
+      ],
+      "link": "https://amherstsurvival.org/campus-pantry/",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "No application deadline is listed; confirm timing with the provider."
+    },
+    {
+      "rank": 14,
+      "program_id": "fbwm-snap-application-assistance",
+      "action_type": "get_more_information",
+      "rationale": "Helps with food & groceries. We need a little more information to check whether it fits.",
+      "next_step": "To ask whether you qualify, contact them: Food Bank SNAP line 413-992-6204; Food Bank 413-247-9738 or 888-792-4523",
+      "documents": null,
+      "link": "https://www.foodbankwma.org/snap-referral/",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
     }
   ],
   "plan_stale": false,
   "agent_statuses": {
     "user_intelligence": {
       "status": "completed",
-      "updated_at": "2026-11-14T15:00:01Z"
+      "updated_at": "2026-11-14T12:00:00Z"
     },
     "program_discovery": {
       "status": "completed",
-      "updated_at": "2026-11-14T15:00:02Z"
+      "updated_at": "2026-11-14T12:00:00Z"
     },
     "eligibility": {
       "status": "completed",
-      "updated_at": "2026-11-14T15:00:03Z"
+      "updated_at": "2026-11-14T12:00:00Z"
     },
     "action_planning": {
       "status": "completed",
-      "updated_at": "2026-11-14T15:00:04Z"
+      "updated_at": "2026-11-14T12:00:00Z"
     }
   },
   "financial_summary": null,
   "notices": [],
   "field_labels": {
-    "age_60_plus": "Aged 60 or older"
+    "umass_affiliation": "UMass Amherst community",
+    "benefits_held": "Benefits you get",
+    "monthly_income": "Monthly income",
+    "eversource_customer": "Eversource customer"
   }
 }

@@ -26,15 +26,31 @@
   ],
   "requirements": [
     {
+      "id": "hs-broken",
+      "kind": "categorical",
+      "field": "utility_issues",
+      "op": "in",
+      "value": [
+        "broken"
+      ],
+      "period": null,
+      "text": "Helps homeowners by repairing or replacing heating systems that no longer work.",
+      "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+      "verified": true
+    },
+    {
       "id": "hs-benefit",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "in",
+      "value": [
+        "fuel"
+      ],
       "period": null,
       "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
       "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
-      "verified": true
+      "verified": true,
+      "on_unmet": "later"
     },
     {
       "id": "hs-owner",
@@ -56,5 +72,15 @@
     "Cost to the homeowner, if any"
   ],
   "verified_on": "2026-11-14",
-  "program_period": "Applications from October 1; emergency program November 1 - April 30"
+  "program_period": "Applications from October 1; emergency program November 1 - April 30",
+  "track": "local",
+  "access": "apply",
+  "document_kinds": [
+    "liheap",
+    "heat"
+  ],
+  "first_step": {
+    "title": "Call about your broken heating system",
+    "detail": "Call CAPV energy programs at 413-376-1115. Have your electric and gas bills ready."
+  }
 }

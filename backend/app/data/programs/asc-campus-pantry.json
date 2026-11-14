@@ -25,10 +25,10 @@
   "requirements": [
     {
       "id": "asc-campus-affiliation",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "umass_affiliation",
+      "op": "eq",
+      "value": "yes",
       "period": null,
       "text": "For members of the UMass Amherst community; bring your UMass ID or other UMass affiliated material.",
       "source_url": "https://amherstsurvival.org/campus-pantry/",
@@ -41,5 +41,14 @@
     "Service area set to Amherst ZIP codes; the pantry serves the UMass Amherst community."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "register",
+  "document_kinds": [
+    "umass"
+  ],
+  "first_step": {
+    "title": "Use the Campus Pantry",
+    "detail": "472 North Pleasant St. Walk in or register ahead. Bring your UMass ID."
+  }
 }

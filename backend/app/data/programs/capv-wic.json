@@ -23,10 +23,12 @@
   "requirements": [
     {
       "id": "capv-wic-category",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "household_who",
+      "op": "in",
+      "value": [
+        "child"
+      ],
       "period": null,
       "text": "You must be pregnant, postpartum, chest/breast feeding, an infant, or a child under 5 years old.",
       "source_url": "https://www.communityaction.us/program/wic/",
@@ -45,14 +47,18 @@
     },
     {
       "id": "capv-wic-income",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "in",
+      "value": [
+        "snap",
+        "masshealth"
+      ],
       "period": null,
       "text": "You must make under a certain amount of money each year. The provider page does not list the income limits. People who qualify for SNAP, some MassHealth types, or TAFDC, and all foster children up to age 5, automatically qualify.",
       "source_url": "https://www.communityaction.us/program/wic/",
-      "verified": true
+      "verified": true,
+      "on_unmet": "note"
     }
   ],
   "unknowns": [
@@ -62,5 +68,70 @@
     "The provider page lists sites in Greenfield, Hadley, and Orange; it does not list an Amherst site."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "benefit",
+  "guide": {
+    "slug": "wic",
+    "short_name": "WIC",
+    "what": "Free healthy food, feeding support and nutrition advice for pregnant and postpartum people, infants, and children under 5.",
+    "decided_by": "Community Action Pioneer Valley runs WIC for Franklin and Hampshire Counties and the North Quabbin area",
+    "when": "Apply any time",
+    "cost": "Free",
+    "ways": [
+      {
+        "kind": "phone",
+        "title": "Call to apply",
+        "detail": "413-376-1160. The provider says to call to apply.",
+        "url": null,
+        "phone": "413-376-1160",
+        "best": true
+      },
+      {
+        "kind": "email",
+        "title": "Email a question",
+        "detail": "wic@communityaction.us. Don't send private documents by email.",
+        "url": null,
+        "phone": null,
+        "best": false
+      },
+      {
+        "kind": "in_person",
+        "title": "Visit a site",
+        "detail": "Sites are listed in Greenfield, Hadley and Orange. No Amherst site is listed.",
+        "url": null,
+        "phone": null,
+        "best": false
+      }
+    ],
+    "no_documents_note": "The provider page doesn't list WIC documents. Ask when you call.",
+    "ask_them": [
+      "What are the income limits for my household size?",
+      "Which documents should I bring?",
+      "Which site is closest to Amherst?"
+    ],
+    "unlocks": [
+      "eversource-ma-discount-rate"
+    ],
+    "if_denied": [
+      "asc-food-pantry"
+    ],
+    "tailor_questions": [
+      "benefits_held"
+    ],
+    "conditional_notes": [
+      {
+        "field": "benefits_held",
+        "any_of": [
+          "snap",
+          "masshealth"
+        ],
+        "text": "You get SNAP or MassHealth. People on SNAP, some MassHealth types or TAFDC automatically meet the income rule."
+      }
+    ],
+    "source_url": "https://www.communityaction.us/program/wic/"
+  },
+  "first_step": {
+    "title": "Call WIC about food for your young child",
+    "detail": "Call CAPV WIC at 413-376-1160."
+  }
 }

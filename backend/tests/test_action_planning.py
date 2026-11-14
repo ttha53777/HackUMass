@@ -125,20 +125,24 @@ def curated():
 
 
 def test_curated_persona_plan(curated):
-    profile = make_profile(needs=["food", "utilities"], zip="01002", utility_urgency="behind",
-                           household_size=1, monthly_income=1400.0)
+    profile = make_profile(needs=["food", "utilities"], zip="01002", utility_issues=["shutoff"],
+                           household_size=1, household_who=["none"], monthly_income=1400.0)
     programs = curated.list("01002", ["food", "utilities"])
     assessments = {p.id: assess(p, profile) for p in programs}
     plan = build_plan(programs, assessments, profile)
     by_id = {p.id: p for p in programs}
 
     planned = [i.program_id for i in plan]
-    assert planned[:2] == ["asc-community-meals", "fbwm-mobile-food-bank"]  # open access first
+    # Urgent utility help comes first; open-access food follows in the "apply now" tier.
+    assert planned[0] == "capv-fuel-assistance"
+    assert planned.index("asc-community-meals") < planned.index("hves-benefits-support")
+    assert {"asc-community-meals", "fbwm-mobile-food-bank"} <= set(planned)
     assert "ma-good-neighbor-energy-fund" not in planned  # likely ineligible
-    assert planned[-1] == "capv-heating-system-repair"  # needs the housing answer
+    assert "hves-home-delivered-meals" not in planned  # likely ineligible
     for item in plan:
         record = by_id[item.program_id]
         assert item.link in {record.info_url, record.apply_url}
         assert item.documents == record.documents_needed
+    # A shut-off notice makes the utility help urgent; it is answered by the person, never guessed.
     utilities = [i for i in plan if "utilities" in by_id[i.program_id].categories]
-    assert utilities and all(i.urgency == "medium" for i in utilities)
+    assert utilities and all(i.urgency == "high" for i in utilities)

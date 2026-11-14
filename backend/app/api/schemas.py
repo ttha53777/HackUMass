@@ -29,6 +29,9 @@ __all__ = [
     "AnswerIn",
     "AnsweredItem",
     "AssessmentView",
+    "CheckView",
+    "LastChange",
+    "OpenQuestionView",
     "ErrorBody",
     "ErrorDetail",
     "FinancialSummaryView",
@@ -82,10 +85,20 @@ class ProfileSummaryItem(BaseModel):
     provenance: Provenance
 
 
+class CheckView(BaseModel):
+    """One line of the "why" list: a requirement and where the person stands on it."""
+
+    kind: Literal["pass", "ask", "fail", "later", "have", "note", "unsure"]
+    text: str  # the requirement, as the provider states it
+    evidence: str | None = None  # how the person's answer compares, if known
+    question_id: str | None = None  # set when kind is "ask"
+
+
 class AssessmentView(BaseModel):
     """EligibilityAssessment without internal fields such as inputs_hash."""
 
     status: EligibilityStatus
+    checks: list[CheckView] = Field(default_factory=list)
     criteria: list[CriterionResult] = Field(default_factory=list)
     missing_fields: list[str] = Field(default_factory=list)
     explanation: str
@@ -97,6 +110,22 @@ class ProgramCard(BaseModel):
     program: Program
     assessment: AssessmentView | None = None
     stale: bool = False
+
+
+class OpenQuestionView(BaseModel):
+    """A question the person may answer now, and the programs it could settle."""
+
+    question: Question
+    affects: list[str] = Field(default_factory=list)  # program ids
+
+
+class LastChange(BaseModel):
+    """What the most recent answer did, for the "Got it. 2 moved..." message."""
+
+    moved_to_fit: list[str] = Field(default_factory=list)
+    opens_later: list[str] = Field(default_factory=list)
+    no_longer_fit: list[str] = Field(default_factory=list)
+    updated: list[str] = Field(default_factory=list)  # changed status, any other way
 
 
 class FinancialSummaryView(BaseModel):
@@ -130,6 +159,10 @@ class SessionSnapshot(BaseModel):
     phase: WorkflowPhase
     busy: bool = False
     pending_question: Question | None = None
+    # Every follow-up the person may answer now, most useful first. The head
+    # equals pending_question while the session is waiting on one.
+    open_questions: list[OpenQuestionView] = Field(default_factory=list)
+    last_change: LastChange | None = None
     answered: list[AnsweredItem] = Field(default_factory=list)
     profile_summary: list[ProfileSummaryItem] = Field(default_factory=list)
     coverage: Coverage = "unknown"

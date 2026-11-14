@@ -89,10 +89,12 @@
     },
     {
       "id": "gn-not-eligible-other",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "nin",
+      "value": [
+        "fuel"
+      ],
       "period": null,
       "text": "Applicant is not eligible for state or federal energy assistance.",
       "source_url": "https://www.magoodneighbor.org/assistance.html",
@@ -100,7 +102,7 @@
     },
     {
       "id": "gn-hardship",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -118,5 +120,11 @@
     "Exact season start/end dates (funds disbursed until end of summer or while funds last)"
   ],
   "verified_on": "2026-11-14",
-  "program_period": "2026-2027 season"
+  "program_period": "2026-2027 season",
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "If Fuel Assistance says no, try the Good Neighbor Energy Fund",
+    "detail": "Contact your local Salvation Army. In the 413 area code, call 800-262-1320 if none is listed nearby."
+  }
 }

@@ -23,10 +23,12 @@
   "requirements": [
     {
       "id": "dar-age-60",
-      "kind": "age_min",
-      "field": "age_60_plus",
-      "op": "eq",
-      "value": true,
+      "kind": "categorical",
+      "field": "household_who",
+      "op": "in",
+      "value": [
+        "60"
+      ],
       "period": null,
       "text": "For seniors aged 60 and older.",
       "source_url": "https://www.pvta.com/van_service/senior_dial_a_ride.php",
@@ -51,5 +53,39 @@
     "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "benefit",
+  "guide": {
+    "slug": "dialaride",
+    "short_name": "Senior Dial-A-Ride",
+    "what": "Van rides for adults 60 and older across PVTA's 24 member communities, including Amherst.",
+    "decided_by": "PVTA. There is no application",
+    "when": "Register when you book",
+    "cost": "Ask about fares",
+    "ways": [
+      {
+        "kind": "phone",
+        "title": "Call to book your first ride",
+        "detail": "Van Service Reservation Office, 413-739-7436. They register you on the same call.",
+        "url": null,
+        "phone": "413-739-7436",
+        "best": true
+      }
+    ],
+    "no_documents_note": "No application or documents are listed. You register by phone.",
+    "ask_them": [
+      "What are the service hours in Amherst?",
+      "How far ahead do I need to book?",
+      "Are senior van rides free this year?"
+    ],
+    "unlocks": [],
+    "if_denied": [
+      "pvta-fare-free-fy27"
+    ],
+    "source_url": "https://www.pvta.com/van_service/senior_dial_a_ride.php"
+  },
+  "first_step": {
+    "title": "Book your first Senior Dial-A-Ride trip",
+    "detail": "Call the Van Service Reservation Office at 413-739-7436. They register you on that call."
+  }
 }

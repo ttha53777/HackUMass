@@ -44,7 +44,11 @@ export type EligibilityStatus =
   | "likely_eligible"
   | "possibly_eligible"
   | "likely_ineligible"
-  | "insufficient_information";
+  | "insufficient_information"
+  /** The person said they already get this benefit. */
+  | "already_receiving"
+  /** Opens once the person has another benefit. */
+  | "opens_later";
 
 export type Option = { id: string; label: string };
 
@@ -91,15 +95,67 @@ export type Requirement = {
     | "household"
     | "categorical"
     | "open_access"
-    | "text_only";
+    | "text_only"
+    /** Shown, but never decides a status. */
+    | "info";
   field: string | null;
-  op: "lte" | "gte" | "eq" | "in" | null;
+  op: "lte" | "gte" | "eq" | "in" | "nin" | null;
   value: unknown;
   period: string | null;
   text: string;
   source_url: string;
   verified: boolean;
+  /** Requirements sharing a group are alternatives: any one met is enough. */
+  group: string | null;
+  on_unmet: "fail" | "later" | "note";
+  /** Only applies when the person chose one of these needs. */
+  needs_any: string[];
 };
+
+export type HoursEntry = {
+  label: string;
+  /** 0 = Monday ... 6 = Sunday. */
+  days: number[];
+  /** With one day: the nth such weekday of the month. */
+  nth_weekday: number | null;
+  time: string;
+  source_url: string;
+};
+
+export type GuideWay = {
+  kind: "online" | "phone" | "in_person" | "mail" | "walk_in" | "email";
+  title: string;
+  detail: string;
+  url: string | null;
+  phone: string | null;
+  best: boolean;
+};
+
+export type GuideNote = { field: string; any_of: string[]; text: string };
+
+export type Guide = {
+  slug: string;
+  short_name: string;
+  what: string;
+  decided_by: string;
+  when: string;
+  cost: string;
+  ways: GuideWay[];
+  ask_them: string[];
+  unlocks: string[];
+  if_denied: string[];
+  /** Question ids whose answers tailor this guide. */
+  tailor_questions: string[];
+  conditional_notes: GuideNote[];
+  no_documents_note: string | null;
+  safety_note: string | null;
+  source_url: string;
+};
+
+export type FirstStep = { title: string; detail: string };
+
+export type ProgramTrack = "benefit" | "local";
+export type LocalAccess = "walk_in" | "register" | "call" | "apply";
 
 export type Program = {
   id: string;
@@ -119,16 +175,41 @@ export type Program = {
   /** ISO date the record was last checked against the provider's page. */
   verified_on: string;
   program_period: string | null;
+  /** How the app presents it: a benefit to apply for, or local help to visit. */
+  track: ProgramTrack;
+  access: LocalAccess | null;
+  /** null means unknown, not "always open". */
+  hours: HoursEntry[] | null;
+  guide: Guide | null;
+  first_step: FirstStep | null;
+  /** Kind of paper for each documents_needed entry, same order. */
+  document_kinds: string[];
+  /** Benefit id (as in the benefits_held answer) that means "you already get this". */
+  held_benefit: string | null;
 };
 
 export type CriterionResult = {
   requirement_id: string;
-  result: "met" | "not_met" | "unknown";
+  result: "met" | "not_met" | "unknown" | "later";
   evidence: string | null;
+  /** Profile fields whose answer would decide this criterion. */
+  missing: string[];
+};
+
+/** One line of the "why" list. */
+export type CheckKind = "pass" | "ask" | "fail" | "later" | "have" | "note" | "unsure";
+
+export type CheckView = {
+  kind: CheckKind;
+  text: string;
+  evidence: string | null;
+  /** Set when kind is "ask": the open question that settles it. */
+  question_id: string | null;
 };
 
 export type AssessmentView = {
   status: EligibilityStatus;
+  checks: CheckView[];
   criteria: CriterionResult[];
   missing_fields: string[];
   explanation: string;
@@ -190,12 +271,26 @@ export type Notice = { code: string; message: string };
 
 export type RegionView = { zip: string; city: string; county: string; state: string };
 
+/** A question the person may answer now, and the programs it could settle. */
+export type OpenQuestionView = { question: Question; affects: string[] };
+
+/** What the latest input changed, as program ids. */
+export type LastChange = {
+  moved_to_fit: string[];
+  opens_later: string[];
+  no_longer_fit: string[];
+  updated: string[];
+};
+
 export type SessionSnapshot = {
   session_id: string;
   phase: WorkflowPhase;
   /** A graph run is active; keep polling. */
   busy: boolean;
   pending_question: Question | null;
+  /** Every follow-up that may be answered now, most useful first. Head equals pending_question. */
+  open_questions: OpenQuestionView[];
+  last_change: LastChange | null;
   answered: AnsweredItem[];
   profile_summary: ProfileSummaryItem[];
   coverage: Coverage;

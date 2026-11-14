@@ -1,0 +1,343 @@
+{
+ "maya_core": {
+  "pf": {
+   "name": "Maya",
+   "lang": "en",
+   "needs": [
+    "food",
+    "utilities"
+   ],
+   "zip": "01002",
+   "hh": {
+    "n": 2,
+    "who": [
+     "60"
+    ]
+   },
+   "a": {}
+  },
+  "statuses": {
+   "capv-rent-utility-assistance": "maybe",
+   "raft-way-finders": "maybe",
+   "asc-community-meals": "open",
+   "asc-food-pantry": "fit",
+   "capv-fuel-assistance": "maybe",
+   "fbwm-snap-application-assistance": "maybe",
+   "eversource-ma-discount-rate": "maybe",
+   "capv-weatherization": "maybe",
+   "capv-heating-system-repair": "maybe",
+   "ma-good-neighbor-energy-fund": "maybe",
+   "fbwm-brown-bag": "maybe",
+   "fbwm-mobile-food-bank": "open",
+   "capv-wic": "out",
+   "asc-campus-pantry": "maybe",
+   "hves-home-delivered-meals": "maybe",
+   "hves-benefits-support": "fit"
+  },
+  "queue": [
+   [
+    "benefits",
+    [
+     "capv-heating-system-repair",
+     "eversource-ma-discount-rate",
+     "capv-weatherization",
+     "fbwm-brown-bag"
+    ]
+   ],
+   [
+    "income",
+    [
+     "capv-fuel-assistance",
+     "fbwm-snap-application-assistance",
+     "ma-good-neighbor-energy-fund"
+    ]
+   ],
+   [
+    "util",
+    [
+     "capv-rent-utility-assistance",
+     "raft-way-finders",
+     "capv-heating-system-repair"
+    ]
+   ],
+   [
+    "home",
+    [
+     "capv-heating-system-repair"
+    ]
+   ],
+   [
+    "eversource",
+    [
+     "eversource-ma-discount-rate"
+    ]
+   ],
+   [
+    "umass",
+    [
+     "asc-campus-pantry"
+    ]
+   ]
+  ]
+ },
+ "maya_income": {
+  "pf": {
+   "name": "Maya",
+   "lang": "en",
+   "needs": [
+    "food",
+    "utilities"
+   ],
+   "zip": "01002",
+   "hh": {
+    "n": 2,
+    "who": [
+     "60"
+    ]
+   },
+   "a": {
+    "income": "0-70073"
+   }
+  },
+  "statuses": {
+   "capv-rent-utility-assistance": "maybe",
+   "raft-way-finders": "maybe",
+   "asc-community-meals": "open",
+   "asc-food-pantry": "fit",
+   "capv-fuel-assistance": "fit",
+   "fbwm-snap-application-assistance": "maybe",
+   "eversource-ma-discount-rate": "maybe",
+   "capv-weatherization": "maybe",
+   "capv-heating-system-repair": "maybe",
+   "ma-good-neighbor-energy-fund": "out",
+   "fbwm-brown-bag": "maybe",
+   "fbwm-mobile-food-bank": "open",
+   "capv-wic": "out",
+   "asc-campus-pantry": "maybe",
+   "hves-home-delivered-meals": "maybe",
+   "hves-benefits-support": "fit"
+  },
+  "queue": [
+   [
+    "benefits",
+    [
+     "capv-heating-system-repair",
+     "capv-weatherization",
+     "fbwm-brown-bag"
+    ]
+   ],
+   [
+    "util",
+    [
+     "capv-rent-utility-assistance",
+     "raft-way-finders",
+     "capv-heating-system-repair"
+    ]
+   ],
+   [
+    "home",
+    [
+     "capv-heating-system-repair"
+    ]
+   ],
+   [
+    "eversource",
+    [
+     "eversource-ma-discount-rate"
+    ]
+   ],
+   [
+    "umass",
+    [
+     "asc-campus-pantry"
+    ]
+   ]
+  ]
+ },
+ "shutoff_owner": {
+  "pf": {
+   "name": "Sam",
+   "lang": "en",
+   "needs": [
+    "utilities"
+   ],
+   "zip": "01002",
+   "hh": {
+    "n": 1,
+    "who": [
+     "none"
+    ]
+   },
+   "a": {
+    "util": [
+     "shutoff",
+     "broken"
+    ],
+    "home": "own",
+    "benefits": [
+     "none"
+    ],
+    "income": "0-53585"
+   }
+  },
+  "statuses": {
+   "capv-rent-utility-assistance": "fit",
+   "raft-way-finders": "fit",
+   "capv-fuel-assistance": "fit",
+   "eversource-ma-discount-rate": "maybe",
+   "capv-weatherization": "later",
+   "capv-heating-system-repair": "later",
+   "ma-good-neighbor-energy-fund": "out",
+   "hves-benefits-support": "out"
+  },
+  "queue": [
+   [
+    "eversource",
+    [
+     "eversource-ma-discount-rate"
+    ]
+   ]
+  ]
+ },
+ "fuel_holder": {
+  "pf": {
+   "name": "Lee",
+   "lang": "en",
+   "needs": [
+    "utilities",
+    "food"
+   ],
+   "zip": "01002",
+   "hh": {
+    "n": 3,
+    "who": [
+     "child"
+    ]
+   },
+   "a": {
+    "benefits": [
+     "fuel",
+     "snap"
+    ],
+    "home": "rent",
+    "eversource": "yes"
+   }
+  },
+  "statuses": {
+   "capv-rent-utility-assistance": "maybe",
+   "raft-way-finders": "maybe",
+   "asc-community-meals": "open",
+   "asc-food-pantry": "fit",
+   "capv-fuel-assistance": "have",
+   "fbwm-snap-application-assistance": "have",
+   "eversource-ma-discount-rate": "fit",
+   "capv-weatherization": "fit",
+   "capv-heating-system-repair": "out",
+   "ma-good-neighbor-energy-fund": "out",
+   "fbwm-brown-bag": "out",
+   "fbwm-mobile-food-bank": "open",
+   "capv-wic": "fit",
+   "asc-campus-pantry": "maybe",
+   "hves-home-delivered-meals": "out",
+   "hves-benefits-support": "out"
+  },
+  "queue": [
+   [
+    "util",
+    [
+     "capv-rent-utility-assistance",
+     "raft-way-finders"
+    ]
+   ],
+   [
+    "umass",
+    [
+     "asc-campus-pantry"
+    ]
+   ]
+  ]
+ },
+ "housing_tonight": {
+  "pf": {
+   "name": "Jo",
+   "lang": "en",
+   "needs": [
+    "housing",
+    "transport",
+    "health"
+   ],
+   "zip": "01002",
+   "hh": {
+    "n": 1,
+    "who": [
+     "55"
+    ]
+   },
+   "a": {
+    "housing": "tonight",
+    "disability": "yes",
+    "busroute": "yes"
+   }
+  },
+  "statuses": {
+   "craigs-doors-shelter": "fit",
+   "capv-rent-utility-assistance": "out",
+   "raft-way-finders": "out",
+   "pvta-fare-free-fy27": "open",
+   "amherst-survival-center-health-clinic": "open",
+   "hves-benefits-support": "out",
+   "pvta-senior-dial-a-ride": "out",
+   "pvta-ada-paratransit": "fit",
+   "hves-information-referral": "out",
+   "way-finders-housing-centers": "fit"
+  },
+  "queue": []
+ },
+ "student": {
+  "pf": {
+   "name": "Al",
+   "lang": "en",
+   "needs": [
+    "food",
+    "transport"
+   ],
+   "zip": "01003",
+   "hh": {
+    "n": 1,
+    "who": [
+     "none"
+    ]
+   },
+   "a": {
+    "umass": "yes",
+    "disability": "no",
+    "benefits": [
+     "masshealth"
+    ]
+   }
+  },
+  "statuses": {
+   "pvta-fare-free-fy27": "open",
+   "asc-community-meals": "open",
+   "asc-food-pantry": "fit",
+   "fbwm-snap-application-assistance": "maybe",
+   "fbwm-brown-bag": "out",
+   "fbwm-mobile-food-bank": "open",
+   "capv-wic": "out",
+   "asc-campus-pantry": "fit",
+   "hves-home-delivered-meals": "out",
+   "hves-benefits-support": "out",
+   "pvta-senior-dial-a-ride": "out",
+   "pvta-ada-paratransit": "out",
+   "hves-information-referral": "out"
+  },
+  "queue": [
+   [
+    "income",
+    [
+     "fbwm-snap-application-assistance"
+    ]
+   ]
+  ]
+ }
+}

@@ -125,6 +125,7 @@ def to_results(client, *, income=True) -> str:
         {"question_id": "needs", "selected_option_ids": ["food"]},
         {"question_id": "zip", "value": "00000"},
         {"question_id": "household_size", "value": 1},
+        {"question_id": "household_who", "selected_option_ids": ["none"]},
         {"question_id": "monthly_income", "value": 1400, "period": "month"} if income
         else {"question_id": "monthly_income", "skipped": True},
     ):

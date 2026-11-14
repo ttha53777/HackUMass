@@ -12,16 +12,19 @@ from app.agents.eligibility import inputs_hash
 from app.api.schemas import (
     AnsweredItem,
     AssessmentView,
+    CheckView,
     FinancialSummaryView,
+    LastChange,
     Notice,
+    OpenQuestionView,
     ProfileSummaryItem,
     ProgramCard,
     RegionView,
     SessionSnapshot,
 )
 from app.graph.answers import display_value
-from app.graph.questions import get_spec, spec_for_field
-from app.graph.state import DirtyFlags, IntakeState, Profile
+from app.graph.questions import get_spec, open_questions, question_for_field, spec_for_field
+from app.graph.state import DirtyFlags, EligibilityAssessment, IntakeState, Profile, Program
 from app.services.session_store import SessionMeta
 
 UNSUPPORTED_MESSAGE = (
@@ -47,6 +50,27 @@ def _shown_with_note(spec, profile: Profile) -> str:
         names = ", ".join(labels.get(i, i) for i in matched.value)
         shown += f" (we also matched this to {names})"
     return shown
+
+
+def check_views(
+    assessment: EligibilityAssessment, profile: Profile, programs: list[Program]
+) -> list[CheckView]:
+    """Eligibility's "why" lines, with each missing field turned into the question that settles it."""
+    views: list[CheckView] = []
+    for line in assessment.checks:
+        question = (
+            question_for_field(line.missing_field, profile, programs) if line.missing_field else None
+        )
+        kind = line.kind if line.kind != "ask" or question else "unsure"
+        views.append(
+            CheckView(
+                kind=kind,
+                text=line.text,
+                evidence=line.evidence,
+                question_id=question.id if question and kind == "ask" else None,
+            )
+        )
+    return views
 
 
 def build_snapshot(
@@ -103,7 +127,10 @@ def build_snapshot(
         cards.append(
             ProgramCard(
                 program=program,
-                assessment=AssessmentView(**assessment.model_dump(exclude={"program_id", "inputs_hash"}))
+                assessment=AssessmentView(
+                    **assessment.model_dump(exclude={"program_id", "inputs_hash", "checks"}),
+                    checks=check_views(assessment, profile, programs),
+                )
                 if assessment
                 else None,
                 # Second guard (plan B.3): an assessment computed from different
@@ -148,6 +175,11 @@ def build_snapshot(
         phase=values.get("workflow_phase") or "intake",
         busy=meta.busy,
         pending_question=values.get("pending_question"),
+        open_questions=[
+            OpenQuestionView(question=item.question, affects=item.affects)
+            for item in open_questions(profile, intake, programs, assessments)
+        ],
+        last_change=LastChange(**meta.last_change) if meta.last_change else None,
         answered=answered,
         profile_summary=profile_summary,
         coverage=coverage,

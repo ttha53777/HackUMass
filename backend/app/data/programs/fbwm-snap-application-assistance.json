@@ -56,7 +56,7 @@
     },
     {
       "id": "fbwm-snap-dta",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -74,5 +74,61 @@
     "The page displays 413-992-6204 but its phone link points to 413-992-6104; the displayed number is used here."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "benefit",
+  "held_benefit": "snap",
+  "guide": {
+    "slug": "snap",
+    "short_name": "SNAP food benefits",
+    "what": "Monthly money for groceries. The Food Bank's SNAP team checks whether you may qualify and helps you apply for free.",
+    "decided_by": "The Massachusetts Department of Transitional Assistance (DTA) decides. The Food Bank helps you apply",
+    "when": "Apply any time",
+    "cost": "Free help",
+    "ways": [
+      {
+        "kind": "phone",
+        "title": "Call the Food Bank",
+        "detail": "SNAP line 413-992-6204. They can apply with you over the phone.",
+        "url": null,
+        "phone": "413-992-6204",
+        "best": true
+      },
+      {
+        "kind": "online",
+        "title": "Send a referral online",
+        "detail": "Fill out a short form and the Food Bank calls you back.",
+        "url": "https://www.foodbankwma.org/snap-referral/",
+        "phone": null,
+        "best": false
+      },
+      {
+        "kind": "in_person",
+        "title": "In person",
+        "detail": "The team also helps in person. Ask where when you call 413-247-9738.",
+        "url": null,
+        "phone": null,
+        "best": false
+      }
+    ],
+    "no_documents_note": "The Food Bank page doesn't list SNAP documents. Ask on your first call so you can gather them before the application.",
+    "ask_them": [
+      "Which documents should I have ready?",
+      "Are there limits on savings or other assets?",
+      "Which year are the income limits on your page for?"
+    ],
+    "unlocks": [
+      "eversource-ma-discount-rate",
+      "fbwm-brown-bag",
+      "capv-wic"
+    ],
+    "if_denied": [
+      "asc-food-pantry",
+      "fbwm-mobile-food-bank"
+    ],
+    "source_url": "https://www.foodbankwma.org/get-help/snap/"
+  },
+  "first_step": {
+    "title": "Apply for SNAP with free help from the Food Bank",
+    "detail": "Call the Food Bank SNAP line at 413-992-6204, or send a referral online and they will call you."
+  }
 }

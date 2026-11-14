@@ -104,8 +104,12 @@ async def submit_answer(request: Request, session_id: str, answer: AnswerIn) -> 
 
     values = manager.values(session_id)
     intake: IntakeState = values.get("intake") or IntakeState()
-    if answer.question_id not in intake.asked_question_ids:
-        # Only the pending question or one already asked can be answered.
+    # Already-asked questions can always be answered again (edits). A follow-up
+    # that was never asked is accepted once intake is over and there are results:
+    # the app lists every open follow-up and guide-tailoring question.
+    results_ready = values.get("workflow_phase") not in (None, "intake") and bool(values.get("programs"))
+    open_followup = spec.question.origin == "eligibility_followup" and results_ready
+    if answer.question_id not in intake.asked_question_ids and not open_followup:
         raise ApiError(409, "stale_question", "That question is no longer open. Refresh to continue.")
 
     try:

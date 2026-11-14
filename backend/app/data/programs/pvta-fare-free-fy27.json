@@ -34,7 +34,7 @@
     },
     {
       "id": "pvta-member-communities",
-      "kind": "text_only",
+      "kind": "residency",
       "field": null,
       "op": null,
       "value": null,
@@ -50,5 +50,44 @@
     "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
   ],
   "verified_on": "2026-11-14",
-  "program_period": "FY27"
+  "program_period": "FY27",
+  "track": "benefit",
+  "guide": {
+    "slug": "farefree",
+    "short_name": "Fare-free PVTA buses",
+    "what": "No fares or passes needed on PVTA buses and vans for FY27. The B79 premium service is not included.",
+    "decided_by": "Nothing to apply for",
+    "when": "Ride any day",
+    "cost": "Free in FY27",
+    "ways": [
+      {
+        "kind": "walk_in",
+        "title": "Just get on",
+        "detail": "No pass, card or sign-up. Board any regular PVTA bus.",
+        "url": null,
+        "phone": null,
+        "best": true
+      },
+      {
+        "kind": "phone",
+        "title": "Route questions",
+        "detail": "PVTA Customer Service, 413-781-7882, Monday to Friday, 9am to 4:45pm.",
+        "url": null,
+        "phone": "413-781-7882",
+        "best": false
+      }
+    ],
+    "no_documents_note": "No documents needed.",
+    "ask_them": [
+      "When does fare-free service end?",
+      "Which fares apply after FY27?"
+    ],
+    "unlocks": [],
+    "if_denied": [],
+    "source_url": "https://www.pvta.com/bus_service/fares.php"
+  },
+  "first_step": {
+    "title": "Ride PVTA buses for free",
+    "detail": "No fares or passes are needed for buses and vans this year, except the B79 premium service."
+  }
 }

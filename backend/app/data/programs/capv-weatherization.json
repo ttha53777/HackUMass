@@ -27,18 +27,21 @@
   "requirements": [
     {
       "id": "wx-benefit",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "in",
+      "value": [
+        "fuel"
+      ],
       "period": null,
       "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
       "source_url": "https://www.communityaction.us/program/weatherization/",
-      "verified": true
+      "verified": true,
+      "on_unmet": "later"
     },
     {
       "id": "wx-landlord",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -55,5 +58,15 @@
     "Whether this is the federal Weatherization Assistance Program (WAP) (page does not name it)"
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "apply",
+  "document_kinds": [
+    "liheap",
+    "heat"
+  ],
+  "first_step": {
+    "title": "Ask about free weatherization",
+    "detail": "Fill out CAPV's weatherization form or call 413-376-1140."
+  }
 }

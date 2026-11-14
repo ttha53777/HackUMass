@@ -31,7 +31,7 @@
   "requirements": [
     {
       "id": "ru-area",
-      "kind": "text_only",
+      "kind": "residency",
       "field": null,
       "op": null,
       "value": null,
@@ -43,7 +43,7 @@
     {
       "id": "ru-shutoff",
       "kind": "categorical",
-      "field": "utility_urgency",
+      "field": "utility_issues",
       "op": "in",
       "value": [
         "shutoff"
@@ -51,11 +51,15 @@
       "period": null,
       "text": "Utility help applies when a metered utility is in danger of being shut off because you are late paying; in Hampshire County, less than 4 weeks before shutoff.",
       "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
-      "verified": true
+      "verified": true,
+      "group": "crisis",
+      "needs_any": [
+        "utilities"
+      ]
     },
     {
       "id": "ru-fuel-first",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -63,6 +67,21 @@
       "text": "For fuel delivery during the Fuel Assistance season, you must apply to that program first.",
       "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
       "verified": true
+    },
+    {
+      "id": "ru-behind-rent",
+      "kind": "categorical",
+      "field": "housing_need",
+      "op": "eq",
+      "value": "behind",
+      "period": null,
+      "text": "May be able to help with rent and utility bills. Complete an application to find out if you are eligible.",
+      "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+      "verified": true,
+      "group": "crisis",
+      "needs_any": [
+        "housing"
+      ]
     }
   ],
   "unknowns": [
@@ -71,5 +90,19 @@
     "Funding availability"
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "document_kinds": [
+    "id",
+    "address",
+    "income",
+    "income",
+    "shutoff",
+    "notices"
+  ],
+  "first_step": {
+    "title": "Call CAPV's Info & Referral line",
+    "detail": "Call 413-475-1570 and leave your name, phone, town and the help you need. Calls are returned Monday to Friday."
+  }
 }

@@ -32,7 +32,14 @@ QuestionType = Literal["single_select", "multi_select", "text", "number", "curre
 QuestionOrigin = Literal["core", "eligibility_followup", "conflict", "evidence_offer"]
 
 EligibilityStatus = Literal[
-    "likely_eligible", "possibly_eligible", "likely_ineligible", "insufficient_information"
+    "likely_eligible",
+    "possibly_eligible",
+    "likely_ineligible",
+    "insufficient_information",
+    # Added for the app shell: the person already gets the benefit, or the
+    # program opens once they have another benefit.
+    "already_receiving",
+    "opens_later",
 ]
 
 DISCLAIMER = (
@@ -155,14 +162,78 @@ class Requirement(BaseModel):
         "categorical",
         "open_access",
         "text_only",
+        # Provider-stated context that is shown but never decides a status.
+        "info",
     ]
     field: str | None = None
-    op: Literal["lte", "gte", "eq", "in"] | None = None
+    op: Literal["lte", "gte", "eq", "in", "nin"] | None = None
     value: Any | None = None
     period: str | None = None
     text: str
     source_url: str
     verified: bool
+    # Requirements sharing a group id are alternatives: met if any one is met,
+    # not met only if every one is not met.
+    group: str | None = None
+    # What an unmet requirement means: ends the match ("fail"), means the
+    # program opens later ("later"), or is only worth mentioning ("note").
+    on_unmet: Literal["fail", "later", "note"] = "fail"
+    # Only applies when the person chose one of these needs. Empty = always.
+    needs_any: list[str] = Field(default_factory=list)
+
+
+class HoursEntry(BaseModel):
+    """When a place is open. Absent hours mean unknown, never "always"."""
+
+    label: str
+    days: list[int] = Field(default_factory=list)  # 0 = Monday ... 6 = Sunday
+    nth_weekday: int | None = None  # with one day: the nth such weekday of the month
+    time: str
+    source_url: str
+
+
+class GuideWay(BaseModel):
+    kind: Literal["online", "phone", "in_person", "mail", "walk_in", "email"]
+    title: str
+    detail: str
+    url: str | None = None
+    phone: str | None = None
+    best: bool = False
+
+
+class GuideNote(BaseModel):
+    """A sentence from the provider that applies only to people who gave a certain answer."""
+
+    field: str  # profile field, e.g. "utility_issues"
+    any_of: list[str]  # shown when the answer includes one of these
+    text: str
+
+
+class Guide(BaseModel):
+    """Step-by-step help for applying. Every line is copied from provider pages."""
+
+    slug: str
+    short_name: str
+    what: str
+    decided_by: str
+    when: str
+    cost: str
+    ways: list[GuideWay] = Field(default_factory=list)
+    ask_them: list[str] = Field(default_factory=list)
+    unlocks: list[str] = Field(default_factory=list)
+    if_denied: list[str] = Field(default_factory=list)
+    tailor_questions: list[str] = Field(default_factory=list)
+    conditional_notes: list[GuideNote] = Field(default_factory=list)
+    no_documents_note: str | None = None
+    safety_note: str | None = None
+    source_url: str
+
+
+class FirstStep(BaseModel):
+    """The one thing to do first, in plain words, built from the provider's own contact details."""
+
+    title: str
+    detail: str
 
 
 class Program(BaseModel):
@@ -181,6 +252,17 @@ class Program(BaseModel):
     unknowns: list[str] = Field(default_factory=list)
     verified_on: date
     program_period: str | None = None
+    # How the app presents it: a benefit to apply for, or local help to visit.
+    track: Literal["benefit", "local"] = "local"
+    # Local help only: how a person gets started.
+    access: Literal["walk_in", "register", "call", "apply"] | None = None
+    hours: list[HoursEntry] | None = None  # None means unknown
+    guide: Guide | None = None
+    first_step: FirstStep | None = None
+    # Kind of paper for each entry of documents_needed, same order.
+    document_kinds: list[str] = Field(default_factory=list)
+    # Benefit id (as in the benefits_held answer) that means "you already get this".
+    held_benefit: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -190,13 +272,30 @@ class Program(BaseModel):
 
 class CriterionResult(BaseModel):
     requirement_id: str
-    result: Literal["met", "not_met", "unknown"]
+    result: Literal["met", "not_met", "unknown", "later"]
     evidence: str | None = None
+    # Profile fields whose answer would decide this criterion.
+    missing: list[str] = Field(default_factory=list)
+
+
+class CheckLine(BaseModel):
+    """One line of the "why" list: a requirement, or a group of alternatives, and its result.
+
+    Built by Eligibility (the only place that knows how groups combine); the API
+    only turns `missing_field` into the question that would settle it.
+    """
+
+    kind: Literal["pass", "ask", "fail", "later", "have", "note", "unsure"]
+    requirement_id: str | None = None
+    text: str
+    evidence: str | None = None
+    missing_field: str | None = None  # set when kind is "ask"
 
 
 class EligibilityAssessment(BaseModel):
     program_id: str
     status: EligibilityStatus
+    checks: list[CheckLine] = Field(default_factory=list)
     criteria: list[CriterionResult] = Field(default_factory=list)
     missing_fields: list[str] = Field(default_factory=list)
     explanation: str

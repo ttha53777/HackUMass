@@ -23,10 +23,10 @@
   "requirements": [
     {
       "id": "ev-customer",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "eversource_customer",
+      "op": "eq",
+      "value": "yes",
       "period": null,
       "text": "Must be an Eversource electric or gas customer. (Eversource is listed as the electric company for Amherst by UMass Amherst.)",
       "source_url": "https://www.umass.edu/global-affairs/international-students-scholars/resources/basics/utilities",
@@ -34,25 +34,40 @@
     },
     {
       "id": "ev-benefit-or-income",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "in",
+      "value": [
+        "snap",
+        "masshealth",
+        "fuel"
+      ],
       "period": null,
       "text": "Qualify by receiving a public assistance benefit (e.g. HEAP/Fuel Assistance, SNAP, MassHealth Basic or Standard, TAFDC, EAEDC, WIC, Head Start, public or subsidized housing, SSP, Veterans' Chapter 115 benefits) OR by meeting household income requirements.",
       "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
-      "verified": true
+      "verified": true,
+      "group": "qualify"
     },
     {
       "id": "ev-income",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
-      "period": null,
-      "text": "Annual household income for all adults 18+ (combined gross income of all persons in the household) must be at or below 60% of State Median Income. Benefit recipients may qualify without meeting this test. Households receiving a qualifying public benefit can also qualify; see the provider page.",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 53586,
+        "2": 70074,
+        "3": 86562,
+        "4": 103050,
+        "5": 119537,
+        "6": 136025,
+        "7": 139117,
+        "8": 142208
+      },
+      "period": "year",
+      "text": "Annual household income for all adults 18+ (combined gross income of all persons in the household) must be at or below 60% of State Median Income. Benefit recipients may qualify without meeting this test. Households receiving a qualifying public benefit can also qualify; see the provider page. Dollar amounts by household size: the 2026-2027 60% of State Median Income figures published by the Massachusetts Good Neighbor Energy Fund (see its income floor).",
       "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
-      "verified": true
+      "verified": true,
+      "group": "qualify"
     }
   ],
   "unknowns": [
@@ -66,5 +81,51 @@
     "Service area set to Amherst ZIP codes, the only area where Eversource service was confirmed from a fetched page."
   ],
   "verified_on": "2026-11-14",
-  "program_period": "Discount percentages as of Nov. 1, 2026"
+  "program_period": "Discount percentages as of Nov. 1, 2026",
+  "track": "benefit",
+  "guide": {
+    "slug": "discount",
+    "short_name": "Eversource discount rate",
+    "what": "A 22% to 92% discount on your Eversource electric or gas bill, depending on income, household size and heating type.",
+    "decided_by": "Eversource. Income-based applications go through your local Community Action Agency",
+    "when": "Apply any time",
+    "cost": "Free",
+    "ways": [
+      {
+        "kind": "online",
+        "title": "Apply online",
+        "detail": "Use Eversource's discount rate form. Best if you get a benefit like SNAP, Fuel Assistance, MassHealth or WIC.",
+        "url": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
+        "phone": null,
+        "best": true
+      },
+      {
+        "kind": "phone",
+        "title": "Qualify by income",
+        "detail": "Call 211, or find your Community Action Agency at masscap.org/agencies.",
+        "url": null,
+        "phone": null,
+        "best": false
+      }
+    ],
+    "no_documents_note": "Eversource doesn't list documents for this form. Have a recent bill handy for your account number.",
+    "ask_them": [
+      "Which documents do you need from me?",
+      "Does the account have to be in my name?",
+      "Is there a phone number for this program?"
+    ],
+    "unlocks": [],
+    "if_denied": [
+      "capv-fuel-assistance"
+    ],
+    "tailor_questions": [
+      "eversource_customer",
+      "benefits_held"
+    ],
+    "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate"
+  },
+  "first_step": {
+    "title": "Sign up for the Eversource discount rate",
+    "detail": "Apply online with Eversource. A benefit like Fuel Assistance or SNAP can qualify you."
+  }
 }

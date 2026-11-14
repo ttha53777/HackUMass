@@ -46,10 +46,12 @@
     },
     {
       "id": "hves-meals-age",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "household_who",
+      "op": "in",
+      "value": [
+        "60"
+      ],
       "period": null,
       "text": "The page says the Nutrition Program aims for every person over 60 to receive at least one nutritionally balanced meal each day; it does not state an exact qualifying age for home-delivered meals.",
       "source_url": "https://highlandvalley.org/services/home-delivered-meals/",
@@ -75,5 +77,11 @@
     "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Ask about home-delivered meals",
+    "detail": "Call Highland Valley Elder Services at (413) 586-2000, or send a referral online."
+  }
 }

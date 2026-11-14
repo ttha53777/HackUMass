@@ -32,18 +32,29 @@
   "requirements": [
     {
       "id": "capv-fa-income",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
-      "period": null,
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 53585,
+        "2": 70073,
+        "3": 86561,
+        "4": 103049,
+        "5": 119536,
+        "6": 136024,
+        "7": 139116,
+        "8": 142207,
+        "9": 145299,
+        "10": 148390
+      },
+      "period": "year",
       "text": "2026-2027 income guidelines, based on the size of the entire household (everyone who benefits from the heat): 1: $53,585; 2: $70,073; 3: $86,561; 4: $103,049; 5: $119,536; 6: $136,024; 7: $139,116; 8: $142,207; 9: $145,299; 10: $148,390. The page does not state whether these are yearly or gross amounts.",
       "source_url": "https://www.communityaction.us/program/fuel-assistance",
       "verified": true
     },
     {
       "id": "capv-fa-heat-in-rent",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -54,7 +65,7 @@
     },
     {
       "id": "capv-fa-season",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -65,7 +76,7 @@
     },
     {
       "id": "capv-fa-citizenship",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -76,7 +87,7 @@
     },
     {
       "id": "capv-fa-area",
-      "kind": "text_only",
+      "kind": "residency",
       "field": null,
       "op": null,
       "value": null,
@@ -94,5 +105,85 @@
     "Northampton office hours (page gives conflicting hours)"
   ],
   "verified_on": "2026-11-14",
-  "program_period": "2026-2027 heating season (applications October 1 - April 30)"
+  "program_period": "2026-2027 heating season (applications October 1 - April 30)",
+  "track": "benefit",
+  "held_benefit": "fuel",
+  "document_kinds": [
+    "id",
+    "status",
+    "income",
+    "dob",
+    "heat",
+    "lease",
+    "owner",
+    "aid"
+  ],
+  "guide": {
+    "slug": "fuel",
+    "short_name": "Fuel Assistance",
+    "what": "Helps pay part of your winter heating costs: oil, propane, wood, pellets, natural gas or electric heat, and sometimes heat included in rent.",
+    "decided_by": "Community Action Pioneer Valley reviews it for Hampshire and Franklin Counties",
+    "when": "Apply Oct 1 to Apr 30",
+    "cost": "Free",
+    "ways": [
+      {
+        "kind": "online",
+        "title": "Online",
+        "detail": "Apply at toapply.org/CA. You can save and come back.",
+        "url": "https://www.toapply.org/CA",
+        "phone": null,
+        "best": true
+      },
+      {
+        "kind": "phone",
+        "title": "By phone",
+        "detail": "413-774-2310, or toll-free 800-370-0940.",
+        "url": null,
+        "phone": "413-774-2310",
+        "best": false
+      },
+      {
+        "kind": "in_person",
+        "title": "In person",
+        "detail": "CAPV has offices in Greenfield, Northampton and Orange. Call ahead: the Northampton hours are listed two ways.",
+        "url": null,
+        "phone": null,
+        "best": false
+      }
+    ],
+    "ask_them": [
+      "Are the income limits yearly, and are they before or after taxes?",
+      "Is there a limit on savings or other assets?",
+      "About how much help could my household get?",
+      "What are the Northampton office hours?"
+    ],
+    "unlocks": [
+      "eversource-ma-discount-rate",
+      "capv-weatherization",
+      "capv-heating-system-repair"
+    ],
+    "if_denied": [
+      "ma-good-neighbor-energy-fund",
+      "capv-rent-utility-assistance"
+    ],
+    "tailor_questions": [
+      "housing_status",
+      "college_student"
+    ],
+    "safety_note": "Don't email confidential documents to the Fuel Assistance inbox. Upload them through the application or bring them.",
+    "conditional_notes": [
+      {
+        "field": "utility_issues",
+        "any_of": [
+          "shutoff"
+        ],
+        "text": "You mentioned a shut-off notice. Say so when you apply: heating emergencies, like running out of fuel or a gas or electric shut-off notice, get expedited help from November 1 to April 30."
+      }
+    ],
+    "source_url": "https://www.communityaction.us/program/fuel-assistance"
+  },
+  "first_step": {
+    "title": "Apply for Fuel Assistance",
+    "detail": "Apply online at toapply.org/CA, by phone at 413-774-2310, or in person. Approval also unlocks the utility discount and free weatherization."
+  }
 }

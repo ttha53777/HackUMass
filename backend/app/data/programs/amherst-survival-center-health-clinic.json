@@ -3,17 +3,34 @@
   "name": "Free Drop-In Health Clinic",
   "provider": "Amherst Survival Center",
   "type": "community",
-  "categories": ["healthcare"],
-  "service_area": {"statewide": false, "state": "MA", "counties": ["Hampshire"], "zips": []},
+  "categories": [
+    "healthcare"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
   "description": "A free weekly medical clinic at the Amherst Survival Center. All are welcome (ages 2+); no insurance or appointment needed. Offers school and camp physicals for children. Open Mondays 12pm-2pm.",
   "info_url": "https://amherstsurvival.org/programs/free-drop-in-health-clinic/",
   "apply_url": null,
   "contact": "Amherst Survival Center, 138 Sunderland Rd., North Amherst, MA 01059; 413-549-3968",
   "documents_needed": null,
   "requirements": [
-    {"id": "asc-clinic-open", "kind": "open_access", "field": null, "op": null, "value": null, "period": null,
-     "text": "All are welcome (ages 2+). No insurance, no appointment necessary.",
-     "source_url": "https://amherstsurvival.org/programs/free-drop-in-health-clinic/", "verified": true}
+    {
+      "id": "asc-clinic-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "All are welcome (ages 2+). No insurance, no appointment necessary.",
+      "source_url": "https://amherstsurvival.org/programs/free-drop-in-health-clinic/",
+      "verified": true
+    }
   ],
   "unknowns": [
     "Which medical services beyond physicals are offered",
@@ -21,5 +38,22 @@
     "A clinic-specific phone number"
   ],
   "verified_on": "2026-11-14",
-  "program_period": "Mondays 12pm-2pm"
+  "program_period": "Mondays 12pm-2pm",
+  "track": "local",
+  "access": "walk_in",
+  "hours": [
+    {
+      "label": "Free drop-in clinic",
+      "days": [
+        0
+      ],
+      "time": "12-2pm",
+      "source_url": "https://amherstsurvival.org/programs/free-drop-in-health-clinic/",
+      "nth_weekday": null
+    }
+  ],
+  "first_step": {
+    "title": "Visit the free drop-in clinic on Monday",
+    "detail": "Amherst Survival Center, 138 Sunderland Rd., between 12 and 2pm. No insurance or appointment needed."
+  }
 }

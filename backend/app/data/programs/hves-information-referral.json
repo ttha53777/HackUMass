@@ -46,14 +46,16 @@
     },
     {
       "id": "hves-ir-audience",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "household_who",
+      "op": "in",
+      "value": [
+        "60"
+      ],
       "period": null,
       "text": "Offered to those age 60 and over, to their caregivers, and to interested individuals.",
       "source_url": "https://highlandvalley.org/services/information-referral/",
-      "verified": true
+      "verified": false
     }
   ],
   "unknowns": [
@@ -62,5 +64,11 @@
     "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Ask about the Transportation Concierge",
+    "detail": "Call Highland Valley Elder Services Information & Referral at (413) 586-2000."
+  }
 }

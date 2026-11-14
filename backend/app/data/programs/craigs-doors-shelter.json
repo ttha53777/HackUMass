@@ -3,20 +3,71 @@
   "name": "Craig's Doors Emergency Shelter",
   "provider": "Craig's Doors",
   "type": "community",
-  "categories": ["housing"],
-  "service_area": {"statewide": false, "state": "MA", "counties": ["Hampshire"], "zips": []},
+  "categories": [
+    "housing"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
   "description": "Craig's Doors provides vulnerable and unhoused community members with emergency shelter, food, and safety. Its congregate overnight shelter for individual adults experiencing homelessness is open year-round, 7 days a week, and case managers work with guests to find permanent re-housing. Call to check availability.",
   "info_url": "https://craigsdoors.org/active-sites",
   "apply_url": null,
   "contact": "413-256-0704 (ext. 1 for shelter); admin@craigsdoors.org; Resource Center, 434 N Pleasant St, Amherst, MA 01002",
   "documents_needed": null,
   "requirements": [
-    {"id": "cd-individual-adult", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
-     "text": "Overnight shelter is for individual adults experiencing homelessness. Call 413-256-0704 ext. 1; if space is available, staff give instructions on where to go.",
-     "source_url": "https://craigsdoors.org/active-sites", "verified": true},
-    {"id": "cd-location", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
-     "text": "Located in Amherst, MA (Resource Center at 434 N Pleasant St). No residency restriction is stated.",
-     "source_url": "https://craigsdoors.org/active-sites", "verified": true}
+    {
+      "id": "cd-tonight",
+      "kind": "categorical",
+      "field": "housing_need",
+      "op": "eq",
+      "value": "tonight",
+      "period": null,
+      "text": "Congregate overnight shelter for individual adults experiencing homelessness, open year-round, 7 days a week.",
+      "source_url": "https://craigsdoors.org/active-sites",
+      "verified": true,
+      "group": "tonight"
+    },
+    {
+      "id": "cd-no-housing",
+      "kind": "categorical",
+      "field": "housing_status",
+      "op": "in",
+      "value": [
+        "no_stable_housing"
+      ],
+      "period": null,
+      "text": "Congregate overnight shelter for individual adults experiencing homelessness, open year-round, 7 days a week.",
+      "source_url": "https://craigsdoors.org/active-sites",
+      "verified": true,
+      "group": "tonight"
+    },
+    {
+      "id": "cd-individual-adult",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Overnight shelter is for individual adults experiencing homelessness. Call 413-256-0704 ext. 1; if space is available, staff give instructions on where to go.",
+      "source_url": "https://craigsdoors.org/active-sites",
+      "verified": true
+    },
+    {
+      "id": "cd-location",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Located in Amherst, MA (Resource Center at 434 N Pleasant St). No residency restriction is stated.",
+      "source_url": "https://craigsdoors.org/active-sites",
+      "verified": true
+    }
   ],
   "unknowns": [
     "Shelter street address and hours",
@@ -25,5 +76,11 @@
     "Formal service area"
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call Craig's Doors about a bed tonight",
+    "detail": "Call 413-256-0704 and press 1 for shelter. If space is open, staff tell you where to go."
+  }
 }

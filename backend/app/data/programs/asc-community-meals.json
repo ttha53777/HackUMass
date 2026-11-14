@@ -37,5 +37,25 @@
     "The page does not state a service area; the county is the meal site's location, not a residency rule."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "walk_in",
+  "hours": [
+    {
+      "label": "Free hot lunch",
+      "days": [
+        0,
+        1,
+        3,
+        4
+      ],
+      "time": "From 12pm",
+      "source_url": "https://amherstsurvival.org/community-meals/",
+      "nth_weekday": null
+    }
+  ],
+  "first_step": {
+    "title": "Get a free hot lunch at the Survival Center",
+    "detail": "138 Sunderland Rd., North Amherst, on Monday, Tuesday, Thursday or Friday. Eat in or take it to go."
+  }
 }

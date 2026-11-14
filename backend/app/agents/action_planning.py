@@ -50,6 +50,10 @@ URGENCY_RULES = [
     ("utilities", "utility_urgency", "reduce", "low"),
     ("housing", "housing_status", "no_stable_housing", "high"),
     ("housing", "housing_status", "staying_with_others", "medium"),
+    # Answers from the app shell's follow-ups (multi-select answers are lists).
+    ("utilities", "utility_issues", "shutoff", "high"),
+    ("housing", "housing_need", "tonight", "high"),
+    ("housing", "housing_need", "behind", "medium"),
 ]
 
 NO_DOCUMENTS_LISTED = "The provider doesn't list required documents; ask when you contact them."
@@ -71,7 +75,10 @@ def urgency_for(program: Program, profile: Profile) -> str:
     best = "unknown"
     for category, name, answer, level in URGENCY_RULES:
         fact = profile.facts.get(name)
-        if category in program.categories and fact is not None and fact.value == answer:
+        answered = fact is not None and (
+            answer in fact.value if isinstance(fact.value, list) else fact.value == answer
+        )
+        if category in program.categories and answered:
             if URGENCY_ORDER[level] < URGENCY_ORDER[best]:
                 best = level
     return best

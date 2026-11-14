@@ -32,6 +32,7 @@ def run_food_intake(client) -> tuple[str, dict]:
     answer(client, session_id, question_id="needs", selected_option_ids=["food"])
     answer(client, session_id, question_id="zip", value="00000")
     answer(client, session_id, question_id="household_size", value=1)
+    answer(client, session_id, question_id="household_who", selected_option_ids=["none"])
     snapshot = answer(client, session_id, question_id="monthly_income", value=1400, period="month")
     return session_id, snapshot
 
@@ -100,6 +101,7 @@ def test_skipping_income_still_gives_qualified_results(client):
     answer(client, session_id, question_id="needs", selected_option_ids=["food"])
     answer(client, session_id, question_id="zip", value="00000")
     answer(client, session_id, question_id="household_size", value=1)
+    answer(client, session_id, question_id="household_who", selected_option_ids=["none"])
     snapshot = answer(client, session_id, question_id="monthly_income", skipped=True)
 
     assert snapshot["programs"] and snapshot["action_plan"]
@@ -123,8 +125,8 @@ def test_editing_zip_to_unsupported_area_clears_results(client):
     # Changing back restores results without restarting the interview.
     snapshot = answer(client, session_id, question_id="zip", value="00000")
     assert snapshot["coverage"] == "supported" and len(snapshot["programs"]) == 2
-    assert [i["question_id"] for i in snapshot["answered"]][:4] == [
-        "needs", "zip", "household_size", "monthly_income",
+    assert [i["question_id"] for i in snapshot["answered"]][:5] == [
+        "needs", "zip", "household_size", "household_who", "monthly_income",
     ]
 
 
@@ -227,7 +229,9 @@ def test_slow_run_returns_202_then_409_while_busy_then_finishes(repo, monkeypatc
         while (snapshot := client.get(f"/api/sessions/{session_id}").json())["busy"]:
             assert time.monotonic() < deadline, "run never finished"
             time.sleep(0.02)
-        assert snapshot["phase"] == "complete"
+        # Discovery finished; the household questions come before any results.
+        assert snapshot["phase"] == "intake"
+        assert snapshot["pending_question"]["id"] == "household_size"
         assert [card["program"]["id"] for card in snapshot["programs"]] == ["fixture-ride-service"]
 
 
@@ -257,6 +261,7 @@ def test_snapshot_names_the_region_and_labels_missing_facts(client):
         "zip": "00000", "city": "Fixtureville", "county": "Fixture County", "state": "ZZ",
     }
     answer(client, session_id, question_id="household_size", value=1)
+    answer(client, session_id, question_id="household_who", selected_option_ids=["none"])
     snapshot = answer(client, session_id, question_id="monthly_income", skipped=True)
     missing = {f for c in snapshot["programs"] for f in (c["assessment"] or {}).get("missing_fields", [])}
     assert missing and set(snapshot["field_labels"]) == missing
@@ -268,3 +273,71 @@ def test_unsupported_zip_has_no_region(client):
     answer(client, session_id, question_id="needs", selected_option_ids=["food"])
     snapshot = answer(client, session_id, question_id="zip", value="99999")
     assert snapshot["coverage"] == "unsupported" and snapshot["region"] is None
+
+
+# --- open questions: any follow-up may be answered, in any order -----------------
+
+
+def test_core_questions_cannot_be_answered_before_they_are_asked(client):
+    session_id = start(client)["session_id"]
+    stale = answer(client, session_id, expect=409, question_id="household_who", selected_option_ids=["none"])
+    assert stale["error"]["code"] == "stale_question"
+    unknown = answer(client, session_id, expect=422, question_id="nope", value=1)
+    assert unknown["error"]["code"] == "validation_error"
+
+
+def test_snapshot_lists_open_questions_and_what_the_last_answer_changed(client):
+    session_id, snapshot = run_food_intake(client)
+    open_ids = [item["question"]["id"] for item in snapshot["open_questions"]]
+    assert open_ids == ["age_60_plus"]  # income was answered while running the intake
+    assert snapshot["open_questions"][0]["affects"] == ["fixture-senior-pantry"]
+    assert snapshot["pending_question"]["id"] == open_ids[0]
+
+    snapshot = answer(client, session_id, question_id="age_60_plus", selected_option_ids=["yes"])
+    assert snapshot["last_change"]["moved_to_fit"] == ["fixture-senior-pantry"]
+    # The next input clears it, and its own change replaces it.
+    snapshot = answer(client, session_id, question_id="evidence_offer", selected_option_ids=["no"])
+    assert snapshot["last_change"] == {
+        "moved_to_fit": [], "opens_later": [], "no_longer_fit": [], "updated": [],
+    }
+
+
+def test_checks_name_the_question_that_would_settle_them(client):
+    session_id = start(client)["session_id"]
+    answer(client, session_id, question_id="needs", selected_option_ids=["food"])
+    answer(client, session_id, question_id="zip", value="00000")
+    answer(client, session_id, question_id="household_size", value=1)
+    snapshot = answer(client, session_id, question_id="household_who", selected_option_ids=["none"])
+    benefit = next(c for c in snapshot["programs"] if c["program"]["id"] == "fixture-food-benefit")
+    asks = [c for c in benefit["assessment"]["checks"] if c["kind"] == "ask"]
+    assert [c["question_id"] for c in asks] == ["income_band"]
+    queue = {i["question"]["id"]: i["question"] for i in snapshot["open_questions"]}
+    # The income question carries ranges built from the program's own table.
+    assert queue["income_band"]["options"][-1]["id"] == "unsure"
+    assert len(queue["income_band"]["options"]) > 2
+
+    # A band answer settles income: the program is decided.
+    first = queue["income_band"]["options"][0]["id"]
+    snapshot = answer(client, session_id, question_id="income_band", selected_option_ids=[first])
+    benefit = next(c for c in snapshot["programs"] if c["program"]["id"] == "fixture-food-benefit")
+    assert benefit["assessment"]["status"] == "likely_eligible"
+    assert "income_band" not in [i["question"]["id"] for i in snapshot["open_questions"]]
+
+
+def test_followups_are_not_accepted_before_there_are_results(client):
+    session_id = start(client)["session_id"]
+    early = answer(client, session_id, expect=409, question_id="benefits_held", selected_option_ids=["snap"])
+    assert early["error"]["code"] == "stale_question"
+    # Once intake is over, a never-asked follow-up (a guide tailoring question) is fine.
+    session_id, _ = run_food_intake(client)
+    answer(client, session_id, question_id="college_student", selected_option_ids=["no"])
+
+
+def test_status_changes_are_classified_and_ignore_new_programs():
+    from app.services.session_store import status_changes
+
+    change = status_changes(
+        {"a": "insufficient_information", "b": "possibly_eligible", "c": "likely_eligible", "d": "likely_eligible"},
+        {"a": "likely_eligible", "b": "opens_later", "c": "likely_ineligible", "d": "likely_eligible", "new": "likely_eligible"},
+    )
+    assert change == {"moved_to_fit": ["a"], "opens_later": ["b"], "no_longer_fit": ["c"], "updated": []}

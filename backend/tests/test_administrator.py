@@ -19,7 +19,9 @@ from app.graph.state import AnswerIn, DirtyFlags, IntakeState
 from app.services.session_store import get_checkpointer
 from tests.conftest import make_profile
 
-FOOD_PROFILE = dict(needs=["food"], zip="00000", household_size=1, monthly_income=1400.0)
+FOOD_PROFILE = dict(
+    needs=["food"], zip="00000", household_size=1, household_who=["none"], monthly_income=1400.0
+)
 
 
 def settled_state(repo, **overrides):
@@ -31,7 +33,7 @@ def settled_state(repo, **overrides):
         "programs": programs,
         "coverage": "supported",
         "intake": IntakeState(
-            asked_question_ids=["needs", "zip", "household_size", "monthly_income"],
+            asked_question_ids=["needs", "zip", "household_size", "household_who", "monthly_income"],
             core_asked_count=4,
         ),
         "eligibility_assessments": {p.id: assess(p, profile) for p in programs},
@@ -225,9 +227,13 @@ def test_full_run_reaches_results_and_then_completes(repo):
     answer(graph, "s", question_id="needs", selected_option_ids=["food"])
     answer(graph, "s", question_id="zip", value="00000")
     answer(graph, "s", question_id="household_size", value=1)
-    state = answer(graph, "s", question_id="monthly_income", value=1400)
+    state = answer(graph, "s", question_id="household_who", selected_option_ids=["none"])
 
     assert state["workflow_phase"] == "awaiting_user"
+    # Two follow-ups are open; the one asked first is the head of the ranked list.
+    assert state["pending_question"].id == "age_60_plus"
+    # Any open question may be answered, not only the pending one.
+    state = answer(graph, "s", question_id="monthly_income", value=1400)
     assert state["pending_question"].id == "age_60_plus"
     assert {p.type for p in state["programs"]} == {"government", "community"}
     assert len(state["action_plan"]) == 2
@@ -253,13 +259,15 @@ def test_followup_recomputes_only_the_affected_program(repo):
     answer(graph, "s", question_id="needs", selected_option_ids=["food"])
     answer(graph, "s", question_id="zip", value="00000")
     answer(graph, "s", question_id="household_size", value=1)
+    answer(graph, "s", question_id="household_who", selected_option_ids=["none"])
     answer(graph, "s", question_id="monthly_income", value=1400)
     answer(graph, "s", question_id="age_60_plus", selected_option_ids=["yes"])
 
     # Discovery's ordering is its own concern; only the sets matter here.
     assert [sorted(ids) for ids in assessed] == [
         ["fixture-food-benefit", "fixture-senior-pantry"],  # first pass: everything
-        ["fixture-senior-pantry"],  # follow-up: only the program that uses age
+        ["fixture-food-benefit"],  # income: only the program that uses it
+        ["fixture-senior-pantry"],  # age: only the program that uses it
     ]
 
 
@@ -270,7 +278,9 @@ def test_failing_specialist_does_not_crash_or_loop(repo):
     graph = make_graph(repo, eligibility=broken)
     graph.invoke({"session_id": "s", "run_counts": {}}, run_config("s"))
     answer(graph, "s", question_id="needs", selected_option_ids=["transportation"])
-    state = answer(graph, "s", question_id="zip", value="00000")
+    answer(graph, "s", question_id="zip", value="00000")
+    answer(graph, "s", question_id="household_size", value=1)
+    state = answer(graph, "s", question_id="household_who", selected_option_ids=["none"])
 
     assert state["agent_statuses"]["eligibility"].status == "failed"
     assert [error.code for error in state["errors"]] == ["specialist_failed"]

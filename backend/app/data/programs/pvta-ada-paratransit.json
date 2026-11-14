@@ -25,10 +25,10 @@
   "requirements": [
     {
       "id": "ada-disability",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "disability_bus",
+      "op": "eq",
+      "value": "yes",
       "period": null,
       "text": "For individuals whose disabilities prevent them from riding the city bus service. Eligibility is determined through the PVTA ADA application.",
       "source_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
@@ -36,10 +36,10 @@
     },
     {
       "id": "ada-service-area",
-      "kind": "text_only",
-      "field": null,
-      "op": null,
-      "value": null,
+      "kind": "categorical",
+      "field": "near_bus_route",
+      "op": "eq",
+      "value": "yes",
       "period": null,
       "text": "Service is available within 3/4 mile of a city bus route.",
       "source_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
@@ -47,7 +47,7 @@
     },
     {
       "id": "ada-fare-free",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -64,5 +64,50 @@
     "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "benefit",
+  "document_kinds": [
+    "adaapp"
+  ],
+  "guide": {
+    "slug": "paratransit",
+    "short_name": "PVTA ADA paratransit",
+    "what": "Shared-ride, door-to-door van trips for people whose disability keeps them from riding the city bus. Free this year.",
+    "decided_by": "PVTA decides through its application",
+    "when": "Apply any time",
+    "cost": "Free in FY27",
+    "ways": [
+      {
+        "kind": "mail",
+        "title": "Mail or drop off",
+        "detail": "Fill in the whole application, then send it to PVTA, 2808 Main St., Springfield, MA 01107.",
+        "url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
+        "phone": null,
+        "best": true
+      },
+      {
+        "kind": "phone",
+        "title": "Call with questions",
+        "detail": "413-732-6248 ext. 2237, or toll-free 800-752-1638 ext. 2237.",
+        "url": null,
+        "phone": "413-732-6248",
+        "best": false
+      }
+    ],
+    "ask_them": [
+      "How long does a decision take?",
+      "What are the service hours in Amherst?",
+      "Can a personal care attendant ride with me?"
+    ],
+    "unlocks": [],
+    "if_denied": [
+      "pvta-senior-dial-a-ride",
+      "pvta-fare-free-fy27"
+    ],
+    "source_url": "https://www.pvta.com/van_service/ada_paratransit/index.php"
+  },
+  "first_step": {
+    "title": "Send in the PVTA ADA paratransit application",
+    "detail": "Complete the whole application, then mail it or drop it off at PVTA, 2808 Main St., Springfield."
+  }
 }

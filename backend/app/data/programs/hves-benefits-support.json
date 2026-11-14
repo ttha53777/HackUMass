@@ -48,7 +48,7 @@
     },
     {
       "id": "hves-benefits-free",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -56,6 +56,19 @@
       "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
       "source_url": "https://highlandvalley.org/services/benefits-support-program/",
       "verified": true
+    },
+    {
+      "id": "hves-bs-older-adults",
+      "kind": "categorical",
+      "field": "household_who",
+      "op": "in",
+      "value": [
+        "60"
+      ],
+      "period": null,
+      "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+      "source_url": "https://highlandvalley.org/services/benefits-support-program/",
+      "verified": false
     }
   ],
   "unknowns": [
@@ -65,5 +78,11 @@
     "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Book a free benefits consultation",
+    "detail": "Call Highland Valley Elder Services at (413) 586-2000 and ask for the Benefits Support Program."
+  }
 }

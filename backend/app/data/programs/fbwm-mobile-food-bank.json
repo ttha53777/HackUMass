@@ -39,5 +39,22 @@
     "Dates change monthly and some distributions are cancelled; the page advises calling the hotline for closures."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "walk_in",
+  "hours": [
+    {
+      "label": "Mobile Food Bank truck",
+      "days": [
+        2
+      ],
+      "nth_weekday": 1,
+      "time": "1-2pm",
+      "source_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/"
+    }
+  ],
+  "first_step": {
+    "title": "Put the Mobile Food Bank on your calendar",
+    "detail": "First Wednesday of the month, 1 to 2pm, at the Survival Center and The Boulders. Call 413-419-0079 to check for changes."
+  }
 }

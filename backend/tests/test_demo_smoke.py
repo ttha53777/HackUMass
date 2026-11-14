@@ -1,9 +1,10 @@
 """T18: the scripted demo, end to end over HTTP, with real curated data and LLM_MODE=off.
 
 Script (docs/demo-script.md):
-  Food + Utilities -> ZIP 01002 -> "I'm behind on a bill" -> household of 1
-  -> $1,400 a month -> results and plan -> follow-up "I own my home"
-  -> results update -> decline the simulated bank profile -> complete.
+  Food + Utilities -> ZIP 01002 -> household of 1, nobody 60+ -> results and plan
+  right away -> answer open questions in any order (broken heating system, own
+  my home, get Fuel Assistance) -> results move, and the response says what moved
+  -> skip the rest and decline the simulated bank profile -> complete.
 
 Parametrised to run five times in a row; every run uses a fresh app.
 """
@@ -64,50 +65,63 @@ def test_scripted_demo(client, run):
     assert snap["pending_question"]["id"] == "zip"
     snap = post(client, sid, question_id="zip", value="01002")
     assert snap["region"]["city"] == "Amherst"
-    assert snap["pending_question"]["id"] == "utility_urgency"
-    snap = post(client, sid, question_id="utility_urgency", selected_option_ids=["behind"])
     assert snap["pending_question"]["id"] == "household_size"
     snap = post(client, sid, question_id="household_size", value=1)
-    assert snap["pending_question"]["id"] == "monthly_income"
-    snap = post(client, sid, question_id="monthly_income", value=1400, period="month")
+    assert snap["pending_question"]["id"] == "household_who"
+    assert snap["programs"], "programs are found before the household is known"
+    snap = post(client, sid, question_id="household_who", selected_option_ids=["none"])
 
-    # Results and a plan, with both kinds of provider, before any follow-up.
+    # Results and a plan, with both kinds of provider, as soon as the 4 core questions are done.
     assert snap["phase"] == "awaiting_user"
     assert {c["program"]["type"] for c in snap["programs"]} == {"government", "community"}
     assert snap["action_plan"]
     assert_grounded(snap)
+    # The app asks one question at a time, but lists every open one, ranked.
+    queue = [item["question"]["id"] for item in snap["open_questions"]]
+    assert queue and queue[0] == snap["pending_question"]["id"]
+    assert {"income_band", "benefits_held", "utility_issues"} <= set(queue)
     before = statuses(snap)
     assert before[REPAIR] == "insufficient_information"
-    assert before["ma-good-neighbor-energy-fund"] == "likely_ineligible"
-    plan_before = [i["program_id"] for i in snap["action_plan"]]
+    assert before["capv-fuel-assistance"] == "insufficient_information"
 
-    # Exactly one eligibility follow-up, and it changes a result and the plan.
-    assert snap["pending_question"]["id"] == "housing_status"
+    # Open questions can be answered in any order, not only the pending one.
+    snap = post(client, sid, question_id="utility_issues", selected_option_ids=["broken"])
     snap = post(client, sid, question_id="housing_status", selected_option_ids=["own"])
+    snap = post(client, sid, question_id="benefits_held", selected_option_ids=["fuel"])
     after = statuses(snap)
-    assert after[REPAIR] == "possibly_eligible"
-    assert {k for k in before if before[k] != after[k]} == {REPAIR}
-    plan_after = [i["program_id"] for i in snap["action_plan"]]
-    assert plan_after.index(REPAIR) < plan_before.index(REPAIR)
+    assert after["capv-fuel-assistance"] == "already_receiving"
+    assert after[REPAIR] == "likely_eligible"  # a broken system, an owner, and Fuel Assistance
+    assert after["capv-weatherization"] == "likely_eligible"
+    assert after["ma-good-neighbor-energy-fund"] == "likely_ineligible"  # people on Fuel Assistance are out
+    assert REPAIR in snap["last_change"]["moved_to_fit"]
     assert_grounded(snap)
 
-    # Then only the optional simulated bank offer; declining it completes the session.
-    assert snap["pending_question"]["id"] == "evidence_offer"
-    snap = post(client, sid, question_id="evidence_offer", selected_option_ids=["no"])
+    # Every "why" line is typed, and an unanswered line names the question that settles it.
+    repair = next(c for c in snap["programs"] if c["program"]["id"] == REPAIR)
+    assert {c["kind"] for c in repair["assessment"]["checks"]} <= {"pass", "ask", "fail", "later", "have", "note", "unsure"}
+    asks = [c["question_id"] for c in snap["programs"][0]["assessment"]["checks"] if c["kind"] == "ask"]
+    assert all(q in {i["question"]["id"] for i in snap["open_questions"]} for q in asks)
+
+    # Skip what is left; only the optional simulated bank offer remains, and declining completes.
+    for _ in range(30):
+        pending = snap["pending_question"]
+        if pending is None:
+            break
+        if pending["id"] == "evidence_offer":
+            snap = post(client, sid, question_id="evidence_offer", selected_option_ids=["no"])
+        else:
+            snap = post(client, sid, question_id=pending["id"], skipped=True)
     assert snap["phase"] == "complete" and snap["pending_question"] is None
-    followups = [a["question_id"] for a in snap["answered"]
-                 if a["question_id"] not in ("needs", "zip", "utility_urgency", "household_size",
-                                             "monthly_income", "evidence_offer")]
-    assert followups == ["housing_status"]
+    assert snap["open_questions"] == []
     assert_grounded(snap)
 
 
 def test_editing_zip_within_coverage_refreshes_results(client):
     sid = client.post("/api/sessions").json()["session_id"]
     post(client, sid, question_id="needs", selected_option_ids=["food"])
-    snap = post(client, sid, question_id="zip", value="01002")
-    snap = post(client, sid, question_id="household_size", value=1)
-    snap = post(client, sid, question_id="monthly_income", value=1400, period="month")
+    post(client, sid, question_id="zip", value="01002")
+    post(client, sid, question_id="household_size", value=1)
+    snap = post(client, sid, question_id="household_who", selected_option_ids=["none"])
     amherst = {c["program"]["id"] for c in snap["programs"]}
     assert "asc-campus-pantry" in amherst  # Amherst ZIPs only
 

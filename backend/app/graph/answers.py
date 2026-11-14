@@ -10,7 +10,7 @@ import math
 import re
 from typing import Any
 
-from app.graph.questions import OTHER_OPTION_ID, QuestionSpec
+from app.graph.questions import EXCLUSIVE_OPTION_ID, OTHER_OPTION_ID, QuestionSpec
 from app.graph.state import AnswerIn, Fact
 
 # Five digits, optionally ZIP+4. Kept as a string: Massachusetts ZIPs start with 0.
@@ -41,9 +41,20 @@ def _check_options(spec: QuestionSpec, answer: AnswerIn) -> list[str]:
     if question.allow_other:
         valid.add(OTHER_OPTION_ID)
     chosen = list(dict.fromkeys(answer.selected_option_ids))
-    unknown = [option_id for option_id in chosen if option_id not in valid]
+    if spec.option_regex:
+        # Options built per session (income bands): accept ids of the right shape.
+        unknown = [i for i in chosen if not re.fullmatch(spec.option_regex, i)]
+    else:
+        unknown = [option_id for option_id in chosen if option_id not in valid]
     if unknown:
         raise AnswerError("Choose one of the listed options.")
+    if (
+        question.type == "multi_select"
+        and EXCLUSIVE_OPTION_ID in chosen
+        and EXCLUSIVE_OPTION_ID in valid
+        and len(chosen) > 1
+    ):
+        raise AnswerError("Choose “None of these” on its own, or pick the others.")
     if OTHER_OPTION_ID in chosen and not (answer.text or "").strip():
         raise AnswerError("Tell us a little more about “Other”.")
     return chosen
@@ -64,6 +75,8 @@ def normalize_answer(spec: QuestionSpec, answer: AnswerIn) -> Any:
         chosen = _check_options(spec, answer)
         if len(chosen) != 1:
             raise AnswerError("Choose one option.")
+        if spec.parse is not None:
+            return spec.parse(chosen[0])
         return spec.value_map.get(chosen[0], chosen[0])
 
     if kind == "zip":
@@ -114,6 +127,8 @@ def display_value(spec: QuestionSpec, fact: Fact) -> str:
 
     if question.type == "multi_select" and isinstance(value, list):
         return ", ".join(labels.get(item, str(item)) for item in value)
+    if question.target_field == "income_band":
+        return band_text(value)
     if question.type == "single_select":
         for option_id, stored in spec.value_map.items():
             if stored == value and type(stored) is type(value):
@@ -122,3 +137,15 @@ def display_value(spec: QuestionSpec, fact: Fact) -> str:
     if question.type == "currency":
         return f"${value:,.0f} per month"
     return str(value)
+
+
+def band_text(value: Any) -> str:
+    """"Under $53,585 a year", "$53,585 to $71,447 a year", or "Not sure"."""
+    if not isinstance(value, dict):
+        return "Not sure"
+    low, high = float(value.get("lo") or 0), value.get("hi")
+    if high is None:
+        return f"Over ${low:,.0f} a year"
+    if low <= 0:
+        return f"Under ${float(high):,.0f} a year"
+    return f"${low:,.0f} to ${float(high):,.0f} a year"

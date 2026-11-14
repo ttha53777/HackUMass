@@ -3,23 +3,80 @@
   "name": "Residential Assistance for Families in Transition (RAFT)",
   "provider": "Commonwealth of Massachusetts; application help from Way Finders",
   "type": "government",
-  "categories": ["housing", "utilities"],
-  "service_area": {"statewide": false, "state": "MA", "counties": ["Hampden", "Hampshire", "Franklin"], "zips": []},
+  "categories": [
+    "housing",
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampden",
+      "Hampshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
   "description": "The Commonwealth's RAFT program helps households stay in stable housing when facing eviction, loss of utilities, foreclosure, and other housing emergencies. It provides qualifying households up to $7,000 in a 12-month period to preserve current housing or move to new housing, and can cover overdue utilities, moving costs, and overdue rent or mortgage payments. Way Finders helps tenants and homeowners with the online application at its Housing Centers or by phone.",
   "info_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
   "apply_url": null,
   "contact": "Way Finders: 413-233-1500, info@wayfinders.org; Northampton Housing Center, 256 Pleasant Street, Northampton, MA 01060",
   "documents_needed": null,
   "requirements": [
-    {"id": "raft-housing-emergency", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
-     "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
-     "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/", "verified": true},
-    {"id": "raft-who-applies", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
-     "text": "RAFT requires an application from both the tenant or homeowner and the landlord. For other emergency needs such as overdue utilities or moving costs, only the household must apply.",
-     "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/", "verified": true},
-    {"id": "raft-online-application", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
-     "text": "The Commonwealth requires renter, homeowner, and landlord applications and documents to be uploaded directly into its online system. Way Finders can help if you need assistance applying.",
-     "source_url": "https://www.wayfinders.org/housing-providers/support-for-landlords/emergency-financial-housing-assistance-raft/", "verified": true}
+    {
+      "id": "raft-housing-emergency",
+      "kind": "categorical",
+      "field": "housing_need",
+      "op": "eq",
+      "value": "behind",
+      "period": null,
+      "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
+      "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+      "verified": true,
+      "group": "crisis",
+      "needs_any": [
+        "housing"
+      ]
+    },
+    {
+      "id": "raft-utility-emergency",
+      "kind": "categorical",
+      "field": "utility_issues",
+      "op": "in",
+      "value": [
+        "shutoff"
+      ],
+      "period": null,
+      "text": "For households facing eviction, loss of utilities, foreclosure, or other housing emergencies. Up to $7,000 per household in a 12-month period.",
+      "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+      "verified": true,
+      "group": "crisis",
+      "needs_any": [
+        "utilities"
+      ]
+    },
+    {
+      "id": "raft-who-applies",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "RAFT requires an application from both the tenant or homeowner and the landlord. For other emergency needs such as overdue utilities or moving costs, only the household must apply.",
+      "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
+      "verified": true
+    },
+    {
+      "id": "raft-online-application",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "The Commonwealth requires renter, homeowner, and landlord applications and documents to be uploaded directly into its online system. Way Finders can help if you need assistance applying.",
+      "source_url": "https://www.wayfinders.org/housing-providers/support-for-landlords/emergency-financial-housing-assistance-raft/",
+      "verified": true
+    }
   ],
   "unknowns": [
     "Income limits (none stated on the fetched Way Finders pages; mass.gov pages could not be fetched)",
@@ -29,5 +86,77 @@
     "Whether RAFT is available statewide (fetched pages only state Way Finders serves Hampden, Hampshire, and Franklin counties)"
   ],
   "verified_on": "2026-11-14",
-  "program_period": "Up to $7,000 per household in a 12-month period"
+  "program_period": "Up to $7,000 per household in a 12-month period",
+  "track": "benefit",
+  "guide": {
+    "slug": "raft",
+    "short_name": "RAFT emergency housing help",
+    "what": "Up to $7,000 in 12 months to keep your housing: overdue rent or mortgage, overdue utilities, or moving costs.",
+    "decided_by": "The Commonwealth of Massachusetts runs RAFT. Way Finders helps you apply",
+    "when": "Apply when the emergency happens",
+    "cost": "Free help",
+    "ways": [
+      {
+        "kind": "phone",
+        "title": "Call Way Finders",
+        "detail": "413-233-1500. They can help with the online application.",
+        "url": null,
+        "phone": "413-233-1500",
+        "best": true
+      },
+      {
+        "kind": "walk_in",
+        "title": "Walk in for RAFT",
+        "detail": "Northampton Housing Center, 256 Pleasant St. Mondays and Wednesdays, 8:30am to 1pm.",
+        "url": null,
+        "phone": null,
+        "best": false
+      },
+      {
+        "kind": "online",
+        "title": "Apply online yourself",
+        "detail": "The Commonwealth's online system takes the application and documents. Way Finders links to it from its site.",
+        "url": null,
+        "phone": null,
+        "best": false
+      }
+    ],
+    "no_documents_note": "The pages we checked don't list RAFT documents. Every document is uploaded into the state's online system, so ask Way Finders which ones you need.",
+    "ask_them": [
+      "What are the income limits?",
+      "Which documents do I need to upload?",
+      "How long does a decision usually take?"
+    ],
+    "unlocks": [],
+    "if_denied": [
+      "capv-rent-utility-assistance",
+      "way-finders-housing-centers"
+    ],
+    "tailor_questions": [
+      "raft_use"
+    ],
+    "conditional_notes": [
+      {
+        "field": "raft_use",
+        "any_of": [
+          "rent"
+        ],
+        "text": "Your landlord must send in their own application too. Tell them early so it doesn't hold yours up."
+      },
+      {
+        "field": "raft_use",
+        "any_of": [
+          "mortgage",
+          "utilities",
+          "moving"
+        ],
+        "text": "For this need, only your household has to apply."
+      }
+    ],
+    "source_url": "https://www.wayfinders.org/housing-help/housinghelpforrenters/"
+  },
+  "first_step": {
+    "title": "Start a RAFT application with Way Finders",
+    "detail": "Call Way Finders at 413-233-1500, or walk in to the Northampton Housing Center (Mon and Wed, 8:30am to 1pm, for RAFT)."
+  }
 }

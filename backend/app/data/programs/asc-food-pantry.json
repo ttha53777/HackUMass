@@ -41,7 +41,7 @@
     },
     {
       "id": "asc-pantry-no-income",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -52,7 +52,7 @@
     },
     {
       "id": "asc-pantry-delivery",
-      "kind": "text_only",
+      "kind": "info",
       "field": null,
       "op": null,
       "value": null,
@@ -68,5 +68,14 @@
     "Service area limited to ZIP codes whose postal city is a town the pantry lists; residents of other towns can get emergency visits (see requirements)."
   ],
   "verified_on": "2026-11-14",
-  "program_period": null
+  "program_period": null,
+  "track": "local",
+  "access": "register",
+  "document_kinds": [
+    "address"
+  ],
+  "first_step": {
+    "title": "Register at the Survival Center Food Pantry",
+    "detail": "Same-day registration and pickup. Bring anything with your name and current address, like a piece of mail."
+  }
 }
