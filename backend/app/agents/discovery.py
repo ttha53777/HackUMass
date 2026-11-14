@@ -27,8 +27,11 @@ def make_discovery(repository: ProgramsRepository) -> Callable[[SessionState], d
         if not repository.is_supported(zip_code):
             return {"programs": [], "coverage": "unsupported"}
 
-        # "Other" is a note, not a category: it matches nothing on its own.
-        needs = [n for n in needs_fact.value or [] if n != OTHER_OPTION_ID]
+        # "Other" is a note, not a category: it matches nothing on its own. Needs
+        # inferred from the note come after the ones the person chose.
+        matched = facts.get("needs_matched")
+        chosen = [n for n in needs_fact.value or [] if n != OTHER_OPTION_ID]
+        needs = list(dict.fromkeys(chosen + list(matched.value if matched else [])))
         return {"programs": repository.list(zip_code, needs), "coverage": "supported"}
 
     return discovery

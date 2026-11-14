@@ -12,6 +12,7 @@ from app.api.views import build_snapshot
 from app.graph.answers import AnswerError, validate_answer
 from app.graph.questions import get_spec
 from app.graph.state import IntakeState
+from app.services.llm import get_llm
 from app.services.session_store import SessionManager, SessionMeta
 
 router = APIRouter(prefix="/api")
@@ -53,9 +54,9 @@ def _snapshot(request: Request, session_id: str, meta: SessionMeta) -> SessionSn
 
 @router.get("/health", response_model=HealthOut)
 def health() -> HealthOut:
-    llm_mode = "live" if os.environ.get("LLM_MODE", "off").lower() == "live" else "off"
+    # "live" only when a model client is actually configured.
     return HealthOut(
-        llm_mode=llm_mode,
+        llm_mode="live" if get_llm() is not None else "off",
         nessie_configured=bool(os.environ.get("NESSIE_API_KEY")),
     )
 

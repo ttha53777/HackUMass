@@ -1,8 +1,9 @@
 """Action Planning (ticket T11): an ordered list of next steps from the assessments.
 
 Deterministic. Every link, document and contact detail is copied from the
-program record; nothing is generated. A model may later reword `rationale`
-and `next_step` (T14) but never the order, links, documents or urgency.
+program record; nothing is generated. In live mode a model may reword
+`rationale` and `next_step` (services/wording.py, guarded) but never the order,
+links, documents or urgency.
 
 Order (foundation plan B.4, with urgency as a tie-breaker inside a tier):
   1. tier:     apply_now (likely eligible) -> confirm_eligibility (possibly)
@@ -32,6 +33,7 @@ from app.graph.state import (
     Program,
     SessionState,
 )
+from app.services.wording import reword_plan
 
 TIER = {
     "likely_eligible": "apply_now",
@@ -162,11 +164,13 @@ def build_plan(
 
 def action_planning(state: SessionState) -> dict[str, Any]:
     intake = state.get("intake") or IntakeState()
-    return {
-        "action_plan": build_plan(
-            state.get("programs") or [],
-            state.get("eligibility_assessments") or {},
-            state.get("profile") or Profile(),
-            intake.skipped_fields,
-        )
-    }
+    programs = state.get("programs") or []
+    plan = build_plan(
+        programs,
+        state.get("eligibility_assessments") or {},
+        state.get("profile") or Profile(),
+        intake.skipped_fields,
+    )
+    # Live mode only: rephrase rationale and next step. Order, links and
+    # documents are never sent for rewriting.
+    return {"action_plan": reword_plan(plan, {p.id: p for p in programs})}

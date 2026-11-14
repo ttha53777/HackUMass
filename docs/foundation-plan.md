@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13 and T16. Build plan for T10–T18: Gemini replaces Anthropic for D10 (see T14); `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T14 (live mode not yet verified against the real API) and T16. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 
@@ -23,7 +23,7 @@ Items marked **VERIFY** depend on third-party behaviour or real-world facts that
 | D7 | **Background run + polling, with a fast path.** `POST …/answers` starts the graph run and waits up to 0.8 s. If the run finishes it returns `200` with the current snapshot; otherwise it returns `202` with `busy: true` and the frontend polls `GET /sessions/{id}` about once a second until `busy` is false. | One code path for fast and slow turns. Progress is visible because the checkpointer saves after every node. SSE adds failure modes for no demo gain. |
 | D8 | **Next.js proxies `/api/*` to FastAPI** through a `rewrites` entry. | No CORS configuration, no backend URL in browser code, keys stay server-side. |
 | D9 | **Preliminary roadmap first, follow-ups second.** After the first Eligibility pass the plan is produced and shown; up to two eligibility-triggered follow-ups are then offered alongside the results and revise them. | Users get value even if they stop answering; the revision is the visible "new evidence changes the plan" moment. |
-| D10 | **Model provider: Anthropic Claude**, model ID from `LLM_MODEL`, called through one thin wrapper (`services/llm.py`) using the provider SDK directly. No LangChain model or agent abstractions. | Fewer dependencies. Only `langgraph` is needed from that ecosystem. **VERIFY** the current structured-output call shape in the SDK docs when the wrapper is written. |
+| D10 | **Model provider: Google Gemini** (changed from Anthropic during T14), model ID from `LLM_MODEL` (default `gemini-3.5-flash-lite`), called through one thin wrapper (`services/llm.py`) using the `google-genai` SDK's `models.generate_content` with a JSON schema. No LangChain model or agent abstractions. | Fewer dependencies. Only `langgraph` is needed from that ecosystem. Call shape verified against SDK 3.3.0 on 2026-11-14. |
 
 ### A.2 Responsibilities
 
@@ -46,7 +46,7 @@ Items marked **VERIFY** depend on third-party behaviour or real-world facts that
 | Dependency | Verdict |
 |---|---|
 | `langgraph` | Required. |
-| Provider SDK (`anthropic`) | Required for live mode only. |
+| Provider SDK (`google-genai`) | Installed by default; imported only in live mode. |
 | `httpx` | Required (Nessie client, test client). |
 | `pypdf` | Only if the document stretch goal is built. |
 | LangChain model/agent packages, vector stores, LangSmith | Not justified for the MVP. |
@@ -55,7 +55,7 @@ Items marked **VERIFY** depend on third-party behaviour or real-world facts that
 ### A.5 Assumptions for the spec's open questions (§21)
 
 1. **Demo region:** Amherst / Hampshire County, Massachusetts. The supported ZIP list is curated in `regions.json` from an authoritative source (**VERIFY**; do not type ZIPs from memory).
-2. **Model:** Claude via `LLM_MODEL`. Budget per LLM call: 20 s timeout, 1 retry, then template fallback.
+2. **Model:** Gemini via `LLM_MODEL`. One batched call per specialist run, 12 s timeout; a fast error is retried once, a timeout is not; then template fallback. (Reduced from 20 s so two model-using specialists fit the 45 s run budget.)
 3. **Documents:** stretch. Not in the live demo unless everything else is green by hour 27.
 4. **Nessie:** treated as unverified until ticket T12's spike is done. A seeded fallback file exists from the start.
 5. **Categories with full demo coverage:** food and utilities. Housing gets enough records to prove branching. Other categories are best-effort.
@@ -394,7 +394,7 @@ class FinancialSummary(BaseModel):
 
 ### B.8 Security and privacy checklist
 
-- [ ] `ANTHROPIC_API_KEY` and `NESSIE_API_KEY` exist only in `backend/.env`, which is git-ignored; `backend/.env.example` holds names with empty values.
+- [ ] `GEMINI_API_KEY` and `NESSIE_API_KEY` exist only in `backend/.env`, which is git-ignored; `backend/.env.example` holds names with empty values.
 - [ ] No `NEXT_PUBLIC_*` variable carries a secret. The browser only calls same-origin `/api/*`.
 - [ ] Snapshot responses are built from an allow-list view model, never by dumping state.
 - [ ] Consent is recorded in `consents` before any Nessie call or document parse; the endpoints reject requests without it.
@@ -513,7 +513,7 @@ Live web discovery, map view, export/share, accounts and history, MongoDB, SSE s
 - [ ] Team agrees on decisions D1–D10 and the assumptions in A.5.
 - [ ] Workstream owners assigned (A, B, C, D).
 - [ ] Demo region confirmed and an authoritative ZIP source identified.
-- [ ] Anthropic API key available to the team outside the repo; Nessie key requested.
+- [ ] Gemini API key available to the team outside the repo; Nessie key requested.
 - [ ] Package manager choices confirmed at T1 (plan assumes `npm` and `pip` in a venv; `uv` and `pnpm` are not installed on the planning machine).
 - [ ] T1 and T2 merged before any specialist work starts.
 - [ ] `snapshot.json` fixture reviewed by frontend and backend owners.

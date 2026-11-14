@@ -42,7 +42,9 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 - Each answer triggers one graph run. The Administrator picks the next step from state: update the profile, discover programs, assess eligibility, plan, or ask one more question.
 - Specialists never message each other. Each returns a typed update to shared state.
 - Discovery supplies sourced criteria before Eligibility assesses; Action Planning consumes the assessments.
-- Structured eligibility rules are evaluated in code. The language model is used only to interpret free-text answers and to word explanations.
+- Structured eligibility rules are evaluated in code. The language model (Google Gemini, live mode only) is used only to interpret free-text answers and to word explanations.
+- An "Other" answer is kept word for word. Options it clearly names are matched by keyword, or by the model in live mode, which can only choose existing options. The match is shown next to the answer.
+- Model wording is checked before use: it may not add a link, amount, phone number or date missing from the program record, or claim someone is eligible. Otherwise the template text is kept.
 - Each program gets one of four preliminary labels. A rule the provider states but the app cannot check (most rules) can never yield more than *possibly a fit*. Facts from simulated bank data or a document count only once the user confirms them.
 - The frontend polls a session snapshot for progress and results.
 
@@ -50,7 +52,7 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 
 - Node.js 20 or newer and npm
 - Python 3.12 or newer
-- An Anthropic API key (only for live model mode)
+- A Google Gemini API key (only for live model mode)
 - A Capital One Nessie sandbox API key (optional)
 
 ## Setup and run
@@ -107,8 +109,8 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 |---|---|---|
 | `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value (e.g. `curated`) uses the 23 curated records in `backend/app/data/programs/` and the 25 Hampshire County ZIP codes in `backend/app/data/regions.json`. `.env.example` sets `fixtures`. |
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
-| `ANTHROPIC_API_KEY` | Only when `LLM_MODE=live` | Model access for free-text interpretation and explanations. |
-| `LLM_MODEL` | No | Model ID to use in live mode. |
+| `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for matching "Other" answers and for plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
+| `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
 | `NESSIE_API_KEY` | No | Enables the simulated banking profile. Without it, a seeded fallback persona is used and labelled as such. |
 
 The frontend needs no secrets. The browser only calls same-origin `/api/*`, which Next.js forwards to the backend.

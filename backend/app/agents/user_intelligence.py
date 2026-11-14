@@ -11,8 +11,9 @@ Rules
   * `changed_fields` lists every field whose value, provenance or confirmation
     changed, so the Administrator re-assesses exactly what depends on it.
 
-Free-text interpretation ("Other" notes) is ticket T14; until then the note is
-kept verbatim in `<field>_note`. Values are never logged.
+"Other" free text is kept verbatim in `<field>_note`; options it clearly names
+are stored in `<field>_matched` with provenance "inferred" (services/free_text).
+Values are never logged.
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ from typing import Any, Iterable
 from app.graph.answers import normalize_answer
 from app.graph.questions import OTHER_OPTION_ID, QuestionSpec, get_spec
 from app.graph.state import AnswerIn, Conflict, Fact, Profile, SessionState
+from app.services.free_text import match_other
 
 # Two money amounts within this fraction of each other are treated as the same
 # fact (bank deposits rarely match a reported monthly income to the dollar).
@@ -34,6 +36,11 @@ EVIDENCE_PROVENANCES = frozenset({"nessie_sandbox", "document_extracted", "infer
 
 def note_field(field: str) -> str:
     return f"{field}_note"
+
+
+def matched_field(field: str) -> str:
+    """Options inferred from an "Other" note, kept apart from what the user chose."""
+    return f"{field}_matched"
 
 
 # --------------------------------------------------------------------------
@@ -167,15 +174,29 @@ def apply_answer(profile: Profile, spec: QuestionSpec, answer: AnswerIn, now: da
     )
     changed = apply_user_fact(profile, field, fact)
 
-    # Free text given with "Other" is kept verbatim as a note (T14 interprets it).
-    # It is untrusted user text: stored and displayed, never executed or obeyed.
+    # Free text given with "Other" is kept verbatim as a note. It is untrusted
+    # user text: stored, matched to known options and displayed, never obeyed.
     note = " ".join((answer.text or "").split())
+    matched: list[str] = []
     if note and OTHER_OPTION_ID in answer.selected_option_ids:
         changed += apply_user_fact(profile, note_field(field), Fact(
             value=note, provenance="user_reported", updated_at=now
         ))
+        matched = match_other(spec, note, answer.selected_option_ids)
     elif profile.facts.pop(note_field(field), None) is not None:
         changed.append(note_field(field))
+
+    # Inferred options are stored separately and marked "inferred", so the
+    # person's own choice is never rewritten; the UI shows the match.
+    previous = profile.facts.get(matched_field(field))
+    if matched:
+        if previous is None or previous.value != matched:
+            profile.facts[matched_field(field)] = Fact(
+                value=matched, provenance="inferred", updated_at=now, confirmed=False
+            )
+            changed.append(matched_field(field))
+    elif profile.facts.pop(matched_field(field), None) is not None:
+        changed.append(matched_field(field))
     return changed
 
 

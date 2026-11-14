@@ -1,7 +1,7 @@
 """Eligibility (ticket T10): compares the profile with each program's sourced criteria.
 
-Every status here is decided by code; nothing is guessed. A model may later
-reword `explanation` (T14) but never changes a status.
+Every status here is decided by code; nothing is guessed. In live mode a model
+may reword `explanation` (services/wording.py, guarded) but never a status.
 
 Per requirement the result is `met`, `not_met` or `unknown`:
 
@@ -52,6 +52,7 @@ from app.graph.state import (
     Requirement,
     SessionState,
 )
+from app.services.wording import reword_assessments
 
 Result = Literal["met", "not_met", "unknown"]
 
@@ -390,9 +391,9 @@ def eligibility(state: SessionState) -> dict[str, Any]:
 
     # Recompute only what the Administrator marked out of date.
     assessments = dict(state.get("eligibility_assessments") or {})
-    for program_id in dirty.eligibility_ids:
-        if program_id in programs:
-            assessments[program_id] = assess(
-                programs[program_id], profile, skipped_fields=skipped
-            )
+    recomputed = [pid for pid in dirty.eligibility_ids if pid in programs]
+    for program_id in recomputed:
+        assessments[program_id] = assess(programs[program_id], profile, skipped_fields=skipped)
+    # Live mode only: rephrase the new explanations. Statuses never change here.
+    assessments = reword_assessments(assessments, programs, recomputed)
     return {"eligibility_assessments": assessments}

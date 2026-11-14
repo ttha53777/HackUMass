@@ -50,7 +50,9 @@ PLANNING = "action_planning"
 SPECIALISTS = (USER_INTELLIGENCE, DISCOVERY, ELIGIBILITY, PLANNING)
 
 # Fields whose change means the set of candidate programs may be different.
-DISCOVERY_FIELDS = {"needs", "zip"}
+DISCOVERY_FIELDS = {"needs", "zip", "needs_matched"}
+# Both must be known before Discovery can run.
+REQUIRED_FOR_DISCOVERY = {"needs", "zip"}
 
 
 @dataclass
@@ -176,7 +178,7 @@ def decide(state: SessionState) -> Decision:
         update.update(user_answer=None, pending_evidence=None)
 
     # 2. Candidate programs are out of date and we know enough to look.
-    if dirty.discovery and DISCOVERY_FIELDS <= set(profile.facts):
+    if dirty.discovery and REQUIRED_FOR_DISCOVERY <= set(profile.facts):
         decision = dispatch(DISCOVERY, "discovering")
         if decision:
             return decision

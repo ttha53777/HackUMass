@@ -34,6 +34,21 @@ FIXTURE_MESSAGE = (
 )
 
 
+def _shown_with_note(spec, profile: Profile) -> str:
+    """The answer as shown, with any "Other" note and the options it was matched to."""
+    target = spec.question.target_field
+    shown = display_value(spec, profile.facts[target])
+    note = profile.facts.get(f"{target}_note")
+    if note is not None and str(note.value).strip():
+        shown = shown.replace("Other", f"Other: “{note.value}”", 1)
+    matched = profile.facts.get(f"{target}_matched")
+    if matched is not None and matched.value:
+        labels = {option.id: option.label for option in spec.question.options}
+        names = ", ".join(labels.get(i, i) for i in matched.value)
+        shown += f" (we also matched this to {names})"
+    return shown
+
+
 def build_snapshot(
     session_id: str,
     values: dict[str, Any],
@@ -56,7 +71,7 @@ def build_snapshot(
             continue
         target = spec.question.target_field
         if target in profile.facts:
-            shown, skipped = display_value(spec, profile.facts[target]), False
+            shown, skipped = _shown_with_note(spec, profile), False
         elif target in intake.skipped_fields:
             shown, skipped = "Skipped", True
         else:
