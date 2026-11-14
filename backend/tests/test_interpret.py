@@ -41,10 +41,10 @@ def model_says(**fields):
 # --- Deterministic path (LLM_MODE=off) ---------------------------------------
 
 
-def test_off_mode_reads_needs_and_unsupported_needs_without_a_model():
+def test_off_mode_reads_every_need_without_a_model():
     out = interpret("needs", SCREENSHOT, NAMES)
-    assert out.answer.selected_option_ids == ["food"]
-    assert out.unsupported_needs == ["childcare"]
+    assert sorted(out.answer.selected_option_ids) == ["childcare", "food"]
+    assert out.unsupported_needs == []
     assert out.reply is None  # the frontend uses its template
     assert out.safety == "none"
 
@@ -78,11 +78,11 @@ def test_instructions_are_marked_off_topic():
 def test_model_reads_the_whole_message_but_never_guesses_ages():
     llm.set_llm(model_says(
         reply="Raising your kids on your own while working two jobs is a lot to carry.",
-        needs=["food"], unsupported_needs=["childcare"], household_who=[],
+        needs=["food", "childcare"], household_who=[],
     ))
     out = interpret("needs", SCREENSHOT, NAMES)
-    assert out.answer.selected_option_ids == ["food"]
-    assert out.unsupported_needs == ["childcare"]
+    assert out.answer.selected_option_ids == ["food", "childcare"]
+    assert out.unsupported_needs == []
     assert out.noted.household_who == []
     assert out.reply.startswith("Raising your kids")
 
@@ -120,7 +120,7 @@ def test_invented_option_ids_fall_back_to_keywords():
 def test_model_failure_falls_back_to_keywords():
     llm.set_llm(FakeLLM(lambda prompt: None))
     out = interpret("needs", SCREENSHOT, NAMES)
-    assert out.answer.selected_option_ids == ["food"] and out.reply is None
+    assert sorted(out.answer.selected_option_ids) == ["childcare", "food"] and out.reply is None
 
 
 def test_injection_yields_no_model_facts_or_reply():
@@ -166,7 +166,7 @@ def test_endpoint_returns_a_proposal_and_changes_nothing(client):
     before = client.get(f"/api/sessions/{sid}").json()
     r = client.post(f"/api/sessions/{sid}/interpret", json={"question_id": "needs", "text": SCREENSHOT})
     assert r.status_code == 200
-    assert r.json()["answer"]["selected_option_ids"] == ["food"]
+    assert sorted(r.json()["answer"]["selected_option_ids"]) == ["childcare", "food"]
     after = client.get(f"/api/sessions/{sid}").json()
     assert after["answered"] == before["answered"] and after["pending_question"] == before["pending_question"]
 
@@ -215,7 +215,7 @@ def test_places_the_person_did_not_name_are_rejected():
 
 
 def test_unmet_needs_from_the_model_only_on_the_needs_question():
-    llm.set_llm(model_says(household_who=["child"], unsupported_needs=["childcare"]))
+    llm.set_llm(model_says(household_who=["child"], unsupported_needs=["other"]))
     out = interpret("household_who", "my youngest is 3 years old", NAMES)
     assert out.answer.selected_option_ids == ["child"]
     assert out.unsupported_needs == []
@@ -230,3 +230,57 @@ def test_housing_status_from_plain_words_without_a_model():
     }
     for text, expected in cases.items():
         assert interpret("housing_status", text, NAMES).answer.selected_option_ids == [expected], text
+
+
+def test_new_help_areas_from_plain_words_without_a_model():
+    cases = {
+        "I'm so stressed and anxious all the time": "mental_health",
+        "my landlord is threatening eviction and I need a lawyer": "legal",
+        "I can't find daycare for my daughter": "childcare",
+        "I lost my job and need to find work": "employment",
+        "my partner hits me": "safety",
+        "I need help filing my taxes": "taxes",
+        "my phone bill and internet are too expensive": "phone_internet",
+    }
+    for text, expected in cases.items():
+        out = interpret("needs", text, NAMES)
+        assert out.answer and expected in out.answer.selected_option_ids, (text, out.answer)
+
+
+def test_model_only_marks_truly_uncovered_needs():
+    llm.set_llm(model_says(needs=["legal"], unsupported_needs=["other"]))
+    out = interpret("needs", "I need a lawyer and help with my dog's vet bills", NAMES)
+    assert out.answer.selected_option_ids == ["legal"] and out.unsupported_needs == ["other"]
+
+
+def test_urgent_messages_carry_curated_safety_lines(client):
+    sid = start(client)
+    r = client.post(f"/api/sessions/{sid}/interpret", json={"question_id": "needs", "text": "my partner hits me"})
+    body = r.json()
+    assert body["safety"] == "urgent"
+    names = {c["name"] for c in body["safety_contacts"]}
+    programs = {p.name: p for p in client.app.state.programs.all()}
+    assert names <= set(programs)  # every line comes from a record
+    calm = client.post(f"/api/sessions/{sid}/interpret", json={"question_id": "needs", "text": "groceries"}).json()
+    assert calm["safety_contacts"] == []
+
+
+def test_a_landlord_threat_is_not_a_safety_need():
+    out = interpret("needs", "my landlord is threatening eviction", NAMES)
+    assert "safety" not in out.answer.selected_option_ids and out.safety == "none"
+    assert {"housing", "legal"} <= set(out.answer.selected_option_ids)
+
+
+def test_keyword_needs_are_kept_when_the_model_misses_one():
+    llm.set_llm(model_says(needs=["housing"]))
+    out = interpret("needs", "I'm stressed out and my landlord is threatening eviction", NAMES)
+    assert {"housing", "legal", "mental_health"} <= set(out.answer.selected_option_ids)
+
+
+def test_multi_select_labels_have_no_commas():
+    # Answers are displayed joined with ", ", and the chat splits them back apart.
+    from app.graph.questions import REGISTRY
+
+    for spec in REGISTRY.values():
+        if spec.question.type == "multi_select":
+            assert not [o.label for o in spec.question.options if "," in o.label], spec.question.id

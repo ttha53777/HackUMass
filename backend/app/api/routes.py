@@ -11,6 +11,8 @@ from fastapi.responses import JSONResponse
 from app.api.schemas import (
     InterpretIn,
     InterpretOut,
+    SafetyContact,
+    WebResourcesOut,
     AnswerIn,
     ErrorCode,
     HealthOut,
@@ -24,6 +26,7 @@ from app.graph.questions import get_spec
 from app.graph.state import EvidenceRequest, IntakeState
 from app.services.documents import MAX_BYTES, DocumentRejected, extract
 from app.services.conversation import interpret
+from app.services.web_search import search_available, search_needs
 from app.services.llm import get_llm
 from app.services.session_store import SessionManager, SessionMeta
 
@@ -151,7 +154,45 @@ async def interpret_message(request: Request, session_id: str, body: InterpretIn
     programs = request.app.state.programs.all()
     names = [p.name for p in programs] + [p.guide.short_name for p in programs if p.guide]
     names += request.app.state.programs.place_names()  # places are facts too, unless the person named them
-    return await run_in_threadpool(interpret, body.question_id, body.text, names)
+    result = await run_in_threadpool(interpret, body.question_id, body.text, names)
+    if result.safety == "urgent":
+        # Verified lines from the curated records: safety first, then crisis support.
+        lines = sorted(
+            (p for p in programs if p.contact and {"safety", "mental_health"} & set(p.categories)),
+            # Safety lines first; within each, round-the-clock lines before daytime ones.
+            key=lambda p: ("safety" not in p.categories, "24/7" not in (p.contact or "")),
+        )
+        result.safety_contacts = [
+            SafetyContact(name=p.name, contact=p.contact or "", info_url=p.info_url) for p in lines[:4]
+        ]
+    return result
+
+
+@router.get("/sessions/{session_id}/web-resources", response_model=WebResourcesOut)
+async def web_resources(request: Request, session_id: str) -> WebResourcesOut:
+    """Unverified web results for the person's needs that no curated program nearby covers.
+
+    Shown apart from the plan. The search query holds only the need's label and the
+    person's city and county, never anything they typed.
+    """
+    meta = _session(request, session_id)
+    if not search_available():
+        return WebResourcesOut(available=False)
+    values = _manager(request).values(session_id)
+    profile = values.get("profile")
+    facts = profile.facts if profile else {}
+    zip_fact, needs_fact = facts.get("zip"), facts.get("needs")
+    region = request.app.state.programs.region(str(zip_fact.value)) if zip_fact else None
+    if not region or not needs_fact:
+        return WebResourcesOut(available=True)
+    matched = facts.get("needs_matched")
+    chosen = list(dict.fromkeys([*(needs_fact.value or []), *(matched.value if matched else [])]))
+    covered = {c for p in values.get("programs") or [] for c in p.categories}
+    spec = get_spec("needs")
+    labels = {o.id: o.label for o in spec.question.options} if spec else {}
+    uncovered = [(n, labels[n]) for n in chosen if n in labels and n not in covered]
+    groups = await run_in_threadpool(search_needs, uncovered, {**region, "zip": str(zip_fact.value)}, meta.web_cache)
+    return WebResourcesOut(available=True, groups=groups)
 
 
 @router.get("/nessie/personas", response_model=list[PersonaOut])

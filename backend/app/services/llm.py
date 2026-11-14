@@ -37,6 +37,14 @@ class LLMClient(Protocol):
     def generate_json(self, prompt: str, schema: type[T]) -> T | None: ...
 
 
+class SearchSource(BaseModel):
+    """One web page Google Search grounding returned. Never the model's own text."""
+
+    title: str
+    uri: str
+    domain: str | None = None
+
+
 class GeminiClient:
     def __init__(self, api_key: str, model: str, *, timeout: float = CALL_TIMEOUT_SECONDS,
                  retries: int = RETRIES) -> None:
@@ -74,6 +82,32 @@ class GeminiClient:
                 if elapsed >= self._timeout * 0.9:
                     return None  # timed out: do not spend the run budget again
         return None
+
+    def search_sources(self, query: str) -> list[SearchSource] | None:
+        """Pages Google Search grounding found for `query`, or None on any failure.
+
+        Only grounding metadata is read; the generated answer is discarded, so no
+        model-written fact or link can reach the person.
+        """
+        types = self._types
+        config = types.GenerateContentConfig(
+            tools=[types.Tool(google_search=types.GoogleSearch())],
+            temperature=0.0,
+            http_options=types.HttpOptions(timeout=int(self._timeout * 1000)),
+        )
+        try:
+            response = self._client.models.generate_content(model=self._model, contents=query, config=config)
+        except Exception as exc:  # quota (search grounding may need billing), network, SDK errors
+            logger.warning("web search failed (%s)", exc.__class__.__name__)
+            return None
+        sources: list[SearchSource] = []
+        for candidate in response.candidates or []:
+            metadata = candidate.grounding_metadata
+            for chunk in (metadata.grounding_chunks or []) if metadata else []:
+                web = chunk.web
+                if web and web.uri:
+                    sources.append(SearchSource(title=web.title or web.domain or "", uri=web.uri, domain=web.domain))
+        return sources
 
 
 _client: LLMClient | None = None

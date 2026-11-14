@@ -91,6 +91,8 @@ class SessionMeta:
     last_change: dict[str, list[str]] | None = None
     # Typed chat messages read so far (POST .../interpret), capped per session.
     interpret_count: int = 0
+    # Web-search backup results, "<need>:<zip>" -> results. Lives and dies with the session.
+    web_cache: dict[str, Any] = field(default_factory=dict)
 
 
 class SessionManager:

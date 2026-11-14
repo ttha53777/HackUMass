@@ -200,7 +200,7 @@ def test_prompt_puts_record_text_in_a_data_block():
     ("text", "expected"),
     [
         ("I can't pay my electric bill", ["utilities"]),
-        ("behind on rent and might be evicted", ["housing"]),
+        ("behind on rent and might be evicted", ["housing", "legal"]),  # eviction is also a legal-aid need
         ("need diapers", []),
         ("my business is struggling", []),  # "bus" inside a word is not transportation
         ("rides to the doctor", ["healthcare", "transportation"]),
