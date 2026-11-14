@@ -245,7 +245,8 @@ def test_followup_recomputes_only_the_affected_program(repo):
     answer(graph, "s", question_id="monthly_income", value=1400)
     answer(graph, "s", question_id="age_60_plus", selected_option_ids=["yes"])
 
-    assert assessed == [
+    # Discovery's ordering is its own concern; only the sets matter here.
+    assert [sorted(ids) for ids in assessed] == [
         ["fixture-food-benefit", "fixture-senior-pantry"],  # first pass: everything
         ["fixture-senior-pantry"],  # follow-up: only the program that uses age
     ]
