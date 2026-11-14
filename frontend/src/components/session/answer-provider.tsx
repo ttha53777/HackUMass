@@ -20,7 +20,7 @@ const Ctx = createContext<AnswerController | null>(null);
 const MOVED_MS = 2600;
 
 /** "Got it. 2 moved to likely fit, 1 no longer fits." Built only from the backend's last_change. */
-export function changeMessage(change: LastChange | null, tailoring = false): string {
+export function changeMessage(change: LastChange | null, tailoring = false, added = 0, removed = 0): string {
   const ups = change?.moved_to_fit.length ?? 0;
   const laters = change?.opens_later.length ?? 0;
   const outs = change?.no_longer_fit.length ?? 0;
@@ -28,6 +28,9 @@ export function changeMessage(change: LastChange | null, tailoring = false): str
   if (ups) parts.push(`${ups} moved to likely fit`);
   if (laters) parts.push(`${laters} ${laters === 1 ? "opens" : "open"} later`);
   if (outs) parts.push(`${outs} no longer ${outs === 1 ? "fits" : "fit"}`);
+  // New programs are not in last_change (it compares statuses); count them from the list itself.
+  if (added) parts.push(`${added} new ${added === 1 ? "program" : "programs"} to look at`);
+  if (removed) parts.push(`${removed} no longer ${removed === 1 ? "applies" : "apply"}`);
   if (parts.length) return `Got it. ${parts.join(", ")}.`;
   if (change?.updated.length) return "Got it. Your matches are updated.";
   if (tailoring) return "Got it. Your guide is tailored to you.";
@@ -63,12 +66,17 @@ export function AnswerProvider({ children }: { children: ReactNode }) {
       setSending(true);
       try {
         await whenIdle();
+        const before = new Set(latest.current.snapshot?.programs.map((c) => c.program.id) ?? []);
         const ok = await submit(body);
         if (!ok) return false;
         await whenIdle();
+        const after = latest.current.snapshot?.programs.map((c) => c.program.id) ?? [];
+        const added = after.filter((id) => !before.has(id));
+        const removed = [...before].filter((id) => !after.includes(id)).length;
         const change = latest.current.snapshot?.last_change ?? null;
-        if (!options.quiet) toast(body.skipped ? "Skipped. You can answer it any time on About you." : changeMessage(change, options.tailoring));
-        const ids = change ? [...change.moved_to_fit, ...change.opens_later, ...change.no_longer_fit, ...change.updated] : [];
+        if (!options.quiet)
+          toast(body.skipped ? "Skipped. You can answer it any time on About you." : changeMessage(change, options.tailoring, added.length, removed));
+        const ids = [...(change ? [...change.moved_to_fit, ...change.opens_later, ...change.no_longer_fit, ...change.updated] : []), ...added];
         setMoved(new Set(ids));
         window.clearTimeout(timer.current);
         timer.current = window.setTimeout(() => setMoved(new Set()), MOVED_MS);

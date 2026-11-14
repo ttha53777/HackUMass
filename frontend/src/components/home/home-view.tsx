@@ -25,6 +25,7 @@ import {
   stageOf,
   stepOf,
   walletKinds,
+  walletTexts,
   weekEvents,
 } from "@/lib/derive";
 import { readName, STAGE_LABEL } from "@/lib/device-state";
@@ -340,7 +341,7 @@ export function HomeView() {
             tint="bg-leaf text-leaf-ink"
             small="Documents"
             title={`${walletGot} of ${wallet.length} ready`}
-            note={firstMissing ? `Next: ${docLabel(firstMissing.kind, firstMissing.texts)}` : "You have everything"}
+            note={firstMissing ? `Next: ${docLabel(firstMissing.kind, walletTexts(firstMissing))}` : "You have everything"}
             href="/documents"
           />
         ) : (

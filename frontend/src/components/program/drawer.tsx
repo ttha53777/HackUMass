@@ -5,17 +5,17 @@ import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 
 import { useApp } from "@/components/session/session-provider";
-import type { Question } from "@/lib/types";
+import type { AnsweredItem, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 import { ProgramDetail } from "./program-detail";
 import { QuestionForm } from "./question-form";
 
-type Open = { kind: "program"; id: string } | { kind: "question"; question: Question; tailoring?: boolean } | null;
+type Open = { kind: "program"; id: string } | { kind: "question"; question: Question; tailoring?: boolean; current?: AnsweredItem } | null;
 
 type DrawerController = {
   openProgram: (id: string) => void;
-  openQuestion: (question: Question, options?: { tailoring?: boolean }) => void;
+  openQuestion: (question: Question, options?: { tailoring?: boolean; current?: AnsweredItem }) => void;
   close: () => void;
 };
 
@@ -49,7 +49,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       },
       openQuestion: (question, options) => {
         remember();
-        setOpen({ kind: "question", question, tailoring: options?.tailoring });
+        setOpen({ kind: "question", question, tailoring: options?.tailoring, current: options?.current });
       },
       close,
     }),
@@ -94,7 +94,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const eyebrow =
     open?.kind === "program"
       ? (card?.program.categories.map((c) => c[0].toUpperCase() + c.slice(1)).join(" · ") ?? "")
-      : "One quick question";
+      : open?.kind === "question" && open.current ? "Change your answer" : "One quick question";
   const sub = open?.kind === "program" ? card?.program.provider : open?.kind === "question" ? open.question.reason : null;
 
   return (
@@ -148,7 +148,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
                   <p className="text-muted-foreground">This program is no longer in your results.</p>
                 )
               ) : (
-                <QuestionForm question={open.question} tailoring={open.tailoring} showSkip onDone={close} />
+                <QuestionForm key={open.question.id} question={open.question} tailoring={open.tailoring} current={open.current} showSkip={!open.current} onDone={close} />
               )}
             </div>
           </>

@@ -1,5 +1,5 @@
-import { PageHead } from "@/components/shell/page-head";
+import { WalletView } from "@/components/documents/wallet-view";
 
 export default function DocumentsPage() {
-  return <PageHead title="Your documents">The wallet is built in Phase 5.</PageHead>;
+  return <WalletView />;
 }

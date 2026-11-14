@@ -18,7 +18,11 @@ export function saveName(name: string): void {
   } catch {
     // ignore
   }
+  window.dispatchEvent(new Event(NAME_EVENT));
 }
+
+/** Fired after the name changes, so the sidebar can update without a reload. */
+export const NAME_EVENT = "od:name";
 
 export const cleanName = (raw: string) => raw.trim().replace(/\s+/g, " ").slice(0, 40);
 
@@ -71,5 +75,15 @@ export function savePlan(plan: PlanState): void {
     window.localStorage.setItem(PLAN_KEY, JSON.stringify(plan));
   } catch {
     // ignore: the plan still works for this visit
+  }
+}
+
+/** "Start over": forget the plan and the name on this device. */
+export function clearDevice(): void {
+  try {
+    window.localStorage.removeItem(PLAN_KEY);
+    window.localStorage.removeItem(NAME_KEY);
+  } catch {
+    // ignore
   }
 }

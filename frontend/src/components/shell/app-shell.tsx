@@ -6,8 +6,9 @@ import { useEffect, useState, type ReactNode } from "react";
 import { DoorOpen } from "lucide-react";
 
 import { useApp } from "@/components/session/session-provider";
-import { benefits, liveCount, localHelp } from "@/lib/derive";
-import { readName } from "@/lib/device-state";
+import { usePlan } from "@/components/session/plan-state";
+import { benefits, liveCount, localHelp, walletKinds } from "@/lib/derive";
+import { NAME_EVENT, readName } from "@/lib/device-state";
 import { cn } from "@/lib/utils";
 
 import { NAV } from "./nav";
@@ -27,8 +28,10 @@ function Logo() {
 
 function useCounts() {
   const { snapshot } = useApp();
+  const { plan } = usePlan();
   if (!snapshot) return {} as Record<string, number>;
   return {
+    "/documents": walletKinds(snapshot, plan).filter((d) => !plan.docs.includes(d.kind)).length,
     "/benefits": liveCount(benefits(snapshot)),
     "/local": liveCount(localHelp(snapshot)),
     "/home": snapshot.open_questions.length,
@@ -46,6 +49,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- device storage is only readable after mount
     setName(readName());
+    const onName = () => setName(readName());
+    window.addEventListener(NAME_EVENT, onName);
+    return () => window.removeEventListener(NAME_EVENT, onName);
   }, []);
 
   return (
@@ -80,7 +86,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                       "ml-auto rounded-full px-2 py-0.5 text-[11px] tabular-nums",
                       href === "/home" ? "bg-amber text-amber-ink" : "bg-surface-2",
                     )}
-                    aria-label={href === "/home" ? `${n} open questions` : `${n} options`}
+                    aria-label={href === "/home" ? `${n} open questions` : href === "/documents" ? `${n} documents to find` : `${n} options`}
                   >
                     {n}
                   </span>

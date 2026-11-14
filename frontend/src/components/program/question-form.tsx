@@ -5,7 +5,8 @@ import { Check } from "lucide-react";
 
 import { btn } from "@/components/od/ui";
 import { useAnswer } from "@/components/session/answer-provider";
-import type { AnswerIn, Question } from "@/lib/types";
+import { answerIncludes } from "@/lib/derive";
+import type { AnswerIn, AnsweredItem, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const EXCLUSIVE = "none";
@@ -20,6 +21,7 @@ export function QuestionForm({
   surface = "plain",
   tailoring,
   showSkip,
+  current,
   onDone,
 }: {
   question: Question;
@@ -27,11 +29,22 @@ export function QuestionForm({
   surface?: "plain" | "tinted";
   tailoring?: boolean;
   showSkip?: boolean;
+  /** The stored answer, when editing: its choices start selected. */
+  current?: AnsweredItem;
   onDone?: () => void;
 }) {
   const { answer, working } = useAnswer();
-  const [picked, setPicked] = useState<string[]>([]);
-  const [value, setValue] = useState("");
+  const stored = current && !current.skipped ? current : undefined;
+  const [picked, setPicked] = useState<string[]>(() =>
+    stored ? question.options.filter((o) => answerIncludes(stored, [o.id])).map((o) => o.id) : [],
+  );
+  const [value, setValue] = useState(() =>
+    stored && question.type !== "single_select" && question.type !== "multi_select"
+      ? question.type === "text"
+        ? stored.display_value
+        : stored.display_value.replace(/[^\d.]/g, "")
+      : "",
+  );
 
   const send = async (body: Omit<AnswerIn, "question_id">) => {
     const ok = await answer({ question_id: question.id, ...body }, { tailoring });
@@ -65,9 +78,10 @@ export function QuestionForm({
             <button
               key={o.id}
               type="button"
+              aria-pressed={stored ? picked.includes(o.id) : undefined}
               disabled={working}
               onClick={() => void send({ selected_option_ids: [o.id] })}
-              className={cn(optionClass(false), o.id === "unsure" && "text-muted-foreground")}
+              className={cn(optionClass(picked.includes(o.id)), o.id === "unsure" && "text-muted-foreground")}
             >
               {o.label}
             </button>

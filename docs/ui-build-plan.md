@@ -1,6 +1,6 @@
 # OpenDoor: Demo-to-App Build Plan
 
-> **Status (2026-11-14): Phases 0-4 done.** See "Build log" at the end for what changed, deviations and open items.
+> **Status (2026-11-14): Phases 0-5 done.** See "Build log" at the end for what changed, deviations and open items.
 
 Source of truth for the look and behavior: the "OpenDoor Welcome Flow" artifact (claude.ai/artifact/UjUZ8vsSvz7kbsUQ1MB6bM).
 Companion to `docs/foundation-plan.md` (architecture). This plan covers only the product shell, UX and the contract changes needed to support it.
@@ -218,7 +218,7 @@ Phases 0-2, then Phase 3 steps 1-3, then Phase 4 Home + one Guide (Fuel Assistan
 
 **Phase 2.** `/` is the front door: Welcome (language chips, name kept on device, "Try a sample" through the real API), the 3 core questions, Building (never outlasts the backend), then `/home`. Refresh resumes; an outside-coverage ZIP shows the backend's notice instead of asking more.
 
-**Open items:** Phase 5-7 as planned; real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
+**Open items:** Phase 6-7 as planned; real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
 
 ### Architecture review (after Phase 3)
 
@@ -248,3 +248,14 @@ Gaps noticed:
 - Matching `conditional_notes` compares option labels with `display_value`, because `AnsweredItem` carries no option ids. An additive `selected_option_ids` on `AnsweredItem` would make this exact.
 - ~~After answering `benefits_held = snap`, `last_change.moved_to_fit` listed the SNAP program itself.~~ Fixed: `already_receiving` is now reported under `updated`, not as a new fit.
 - The demo's dated timing strip (deadlines) and "other programs outside what you picked" are not built: the snapshot has neither the dates as data nor the unmatched programs.
+
+### Phase 5 (frontend only, no contract change)
+
+- **Documents wallet** (`components/documents/wallet-view.tsx`): one card per kind of paper across live programs and started applications (`walletPrograms` / `walletKinds` in `derive.ts`), "I have it" toggles, which programs use each paper, the providers' own wording, readiness per application, a per-application filter, "Still to find" / "Ready", a never-email warning, and "Ask about documents on your call" for benefits whose provider lists none. Papers the provider marks conditional in its own text ("Renters: ...") get an "only if it applies" tag.
+- **About you** (`components/about/about-view.tsx`): name (device only, edited in place) and language rows, then every answered item with a source badge from `provenance`. Edit opens the shared question form already filled in; skipped answers show "Answer". Open questions are listed with the programs each affects. "Start over" asks twice, then clears the device plan and name and starts a new session.
+- **Device state:** the per-session plan (stages, done, documents) from Phase 4. A new session starts empty, and `clearDevice()` removes it on Start over. The sidebar name updates when it changes.
+- **Badges:** the Documents nav badge counts papers still to find; Home's glance strip and the guide read the same wallet.
+- **Toast:** when an answer adds or removes programs (for example, adding a need), the toast now counts them, because `last_change` only compares statuses of programs that were already listed.
+- Verified: lint, typecheck, `next build`, plus edits to every core answer (needs, ZIP, household size, who is home) through the API, with results recomputed. **Not clicked through in a browser.**
+
+Gap: which conditional papers apply is not decided yet (for example, the lease only for renters). That needs `applies_if` on requirements or documents in the backend (planned in §4, not built), so every listed paper is shown for now.

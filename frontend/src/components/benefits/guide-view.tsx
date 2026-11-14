@@ -269,7 +269,7 @@ export function GuideView({ card }: { card: ProgramCard }) {
                     <br />
                     <strong>{a.display_value}</strong>
                   </div>
-                  <button type="button" className={btn("ghost", "sm")} onClick={() => openQuestion(a.question, { tailoring: true })}>
+                  <button type="button" className={btn("ghost", "sm")} onClick={() => openQuestion(a.question, { tailoring: true, current: a })}>
                     Change
                   </button>
                 </div>

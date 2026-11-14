@@ -231,22 +231,32 @@ export function docsFor(p: Program): DocNeed[] {
   return out;
 }
 
-/** Every kind of paper the person's live programs (and started applications) ask for, most-used first. */
-export function walletKinds(s: SessionSnapshot, plan: PlanState): { kind: string; texts: string[]; uses: string[] }[] {
-  const out = new Map<string, { kind: string; texts: string[]; uses: string[] }>();
-  for (const card of s.programs) {
+/** Programs the wallet covers: live ones that list documents, plus any application the person started. */
+export function walletPrograms(s: SessionSnapshot, plan: PlanState): ProgramCard[] {
+  return s.programs.filter((card) => {
+    if (!docsFor(card.program).length) return false;
     const tone = toneOf(card);
-    const started = !!plan.apps[card.program.id] && tone !== "have";
-    if (!(["fit", "maybe", "later"].includes(tone) || started)) continue;
+    return ["fit", "maybe", "later"].includes(tone) || (!!plan.apps[card.program.id] && tone !== "have");
+  });
+}
+
+export type WalletDoc = { kind: string; uses: { id: string; texts: string[] }[] };
+
+/** Every kind of paper those programs ask for, one entry per kind, most-used first. */
+export function walletKinds(s: SessionSnapshot, plan: PlanState): WalletDoc[] {
+  const out = new Map<string, WalletDoc>();
+  for (const card of walletPrograms(s, plan)) {
     for (const d of docsFor(card.program)) {
-      const entry = out.get(d.kind) ?? { kind: d.kind, texts: [], uses: [] };
-      entry.texts.push(...d.texts);
-      entry.uses.push(card.program.id);
+      const entry = out.get(d.kind) ?? { kind: d.kind, uses: [] };
+      entry.uses.push({ id: card.program.id, texts: d.texts });
       out.set(d.kind, entry);
     }
   }
   return [...out.values()].sort((a, b) => b.uses.length - a.uses.length);
 }
+
+/** All the provider wording for one kind of paper, for labels that fall back to it. */
+export const walletTexts = (d: WalletDoc) => d.uses.flatMap((u) => u.texts);
 
 export function readiness(p: Program, plan: PlanState) {
   const docs = docsFor(p);
