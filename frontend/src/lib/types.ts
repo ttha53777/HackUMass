@@ -312,7 +312,8 @@ export type ErrorCode =
   | "session_busy"
   | "validation_error"
   | "consent_required"
-  | "unsupported_file";
+  | "unsupported_file"
+  | "too_many_messages";
 
 export type ErrorBody = { error: { code: ErrorCode; message: string } };
 
@@ -325,3 +326,31 @@ export type HealthOut = {
 export type NessieEvidenceIn = { persona_id: string; consent: true };
 
 export type PersonaOut = { id: string; label: string; description: string };
+
+// --- Chat intake: understanding a typed message (POST /sessions/{id}/interpret) ---
+
+export type UnsupportedNeed = "childcare" | "mental_health" | "legal" | "job" | "other";
+
+export type InterpretIn = { question_id: string; text: string };
+
+/** Facts stated for questions not asked yet. Confirmed by the person before use. */
+export type NotedFacts = {
+  household_size: number | null;
+  household_who: string[];
+  zip: string | null;
+};
+
+/** A proposal only: interpreting a message never changes the session. */
+export type InterpretOut = {
+  /** One or two warm sentences that passed the output guard; null means use a template. */
+  reply: string | null;
+  /** A valid answer to the pending question, if the message gives one. */
+  answer: AnswerIn | null;
+  noted: NotedFacts;
+  /** Needs mentioned that the app cannot search for yet. */
+  unsupported_needs: UnsupportedNeed[];
+  /** "urgent": show the fixed safety message first. */
+  safety: "none" | "urgent";
+  /** Not about getting help, or an attempt to instruct the app. */
+  off_topic: boolean;
+};
