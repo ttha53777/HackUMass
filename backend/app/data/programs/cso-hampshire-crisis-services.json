@@ -1,0 +1,70 @@
+{
+  "id": "cso-hampshire-crisis-services",
+  "name": "Emergency & Crisis Stabilization Services (Hampshire County)",
+  "provider": "Clinical & Support Options (CSO)",
+  "type": "community",
+  "categories": [
+    "mental_health"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "CSO's crisis team for Northampton/Hampshire County is staffed 24 hours a day, 365 days a year, for youth, families and adults. Crisis services are available regardless of insurance or ability to pay. Clinicians can do mobile crisis assessments at home, school, a clinical office or an emergency department.",
+  "info_url": "https://www.csoinc.org/emergency-crisis-stabilization-services",
+  "apply_url": null,
+  "contact": "Hampshire County crisis line 413.586.5555; 8 Atwood Drive, Suite 101, Northampton, MA",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "cso-crisis-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Crisis services are available to all individuals regardless of insurance or ability to pay.",
+      "source_url": "https://www.csoinc.org/emergency-crisis-stabilization-services",
+      "verified": true
+    },
+    {
+      "id": "cso-crisis-24h",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "The Northampton/Hampshire County crisis office (413.586.5555) is staffed 24 hours/day, 365 days/year and serves youth, families and adults.",
+      "source_url": "https://www.csoinc.org/emergency-crisis-stabilization-services",
+      "verified": true
+    },
+    {
+      "id": "cso-crisis-mobile",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Adult and youth mobile crisis: clinicians can assess people at home, school, a clinical office or an emergency department.",
+      "source_url": "https://www.csoinc.org/emergency-crisis-stabilization-services",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Walk-in crisis hours at the Northampton office",
+    "An Amherst location",
+    "Full list of towns served"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call CSO's Hampshire County crisis line",
+    "detail": "Call 413.586.5555. It is staffed 24 hours a day, 365 days a year, and you do not need insurance."
+  }
+}

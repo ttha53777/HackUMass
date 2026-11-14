@@ -1,0 +1,96 @@
+{
+  "id": "safe-passage-helpline",
+  "name": "Safe Passage Domestic Violence Services",
+  "provider": "Safe Passage",
+  "type": "community",
+  "categories": [
+    "safety"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Free, confidential services for anyone who has experienced domestic violence or relationship abuse, of any gender: counseling, advocacy, support groups, legal help for Probate and Family Court cases, immigration services, and help connecting to emergency shelter. Offered at the Northampton office and locations throughout Hampshire County. The helpline is staffed Monday to Friday, 9 AM to 5 PM. If you are in danger, call 911.",
+  "info_url": "https://www.safepass.org/",
+  "apply_url": null,
+  "contact": "Helpline (413) 586-5066 (Mon-Fri 9am-5pm); office 413-586-1125; 76 Carlon Drive, Northampton, MA 01060",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "sp-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "All services are free and confidential, for everyone who has experienced domestic violence or relationship abuse, of all genders.",
+      "source_url": "https://www.safepass.org/",
+      "verified": true
+    },
+    {
+      "id": "sp-area",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Services are offered at the office in Northampton, MA and in locations throughout Hampshire County.",
+      "source_url": "https://www.safepass.org/",
+      "verified": true
+    },
+    {
+      "id": "sp-immigrants",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Immigrants and refugees are welcome and documents are not required. Services are available in English and Spanish.",
+      "source_url": "https://safepass.org/need-help/",
+      "verified": true
+    },
+    {
+      "id": "sp-shelter",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "For emergency shelter, Safe Passage directs people to the statewide Safelink hotline (1-877-785-2020); its counselors help connect people to housing resources Monday to Friday.",
+      "source_url": "https://safepass.org/need-help/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "A 24/7 Safe Passage phone line (the helpline is weekday daytime only)",
+    "Which toll-free number is current (the site lists both 833-484-3415 and 888-345-5282)",
+    "Wait times for counseling appointments"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "hours": [
+    {
+      "label": "Helpline",
+      "days": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "time": "9am-5pm",
+      "source_url": "https://www.safepass.org/",
+      "nth_weekday": null
+    }
+  ],
+  "first_step": {
+    "title": "Call the Safe Passage helpline",
+    "detail": "Call (413) 586-5066, Monday to Friday 9 AM to 5 PM. Use a safer phone or computer if you can. If you are in danger, call 911."
+  }
+}

@@ -9,6 +9,13 @@ const NEED_LABEL: Record<string, string> = {
   housing: "Rent or a place to stay",
   healthcare: "Medical care",
   transportation: "Getting around",
+  mental_health: "Emotional support",
+  legal: "Legal help",
+  childcare: "Childcare",
+  employment: "Work & training",
+  safety: "Safety",
+  taxes: "Tax help",
+  phone_internet: "Phone & internet",
 };
 
 /** Needs present among these cards, in a fixed order. */

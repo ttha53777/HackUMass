@@ -4,6 +4,9 @@
 // Colors come only from the theme tokens in globals.css.
 import { useState, type ReactNode } from "react";
 import {
+  Baby,
+  Brain,
+  Briefcase,
   Bus,
   Check,
   CircleAlert,
@@ -16,8 +19,12 @@ import {
   Landmark,
   Lock,
   Phone,
+  Receipt,
+  Scale,
+  ShieldCheck,
   Stethoscope,
   Utensils,
+  Wifi,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -109,6 +116,13 @@ export const CAT_ICON: Record<string, LucideIcon> = {
   housing: House,
   healthcare: Stethoscope,
   transportation: Bus,
+  mental_health: Brain,
+  legal: Scale,
+  childcare: Baby,
+  employment: Briefcase,
+  safety: ShieldCheck,
+  taxes: Receipt,
+  phone_internet: Wifi,
 };
 
 export const CAT_CLASS: Record<string, string> = {
@@ -117,6 +131,13 @@ export const CAT_CLASS: Record<string, string> = {
   housing: "bg-amber text-amber-ink",
   healthcare: "bg-lav text-lav-ink",
   transportation: "bg-sky text-sky-ink",
+  mental_health: "bg-lav text-lav-ink",
+  legal: "bg-gov text-gov-ink",
+  childcare: "bg-leaf text-leaf-ink",
+  employment: "bg-sky text-sky-ink",
+  safety: "bg-peach text-peach-ink",
+  taxes: "bg-amber text-amber-ink",
+  phone_internet: "bg-sky text-sky-ink",
 };
 
 export function CatIcon({ category, className }: { category: string | undefined; className?: string }) {

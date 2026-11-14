@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { HouseArt } from "@/components/front-door/house-art";
+import { useWebResources } from "@/components/home/web-resources";
 import { useApp } from "@/components/session/session-provider";
 import { coreDone } from "@/lib/derive";
 
@@ -30,6 +31,7 @@ export function Building({ name }: { name: string }) {
   }, [reduced]);
 
   const ready = minTimeDone && !app.working && coreDone(app.snapshot);
+  const web = useWebResources();
   const result = ready && app.snapshot ? resultsLine(app.snapshot) : null;
 
   return (
@@ -59,6 +61,11 @@ export function Building({ name }: { name: string }) {
                 >
                   <p className="font-display text-[21px] font-extrabold tracking-[-0.03em]">{result.headline}</p>
                   <p className="mt-1 text-muted-foreground">{result.detail}</p>
+                  {web.length ? (
+                    <p className="mt-1.5 text-[13px] text-muted-foreground">
+                      I also found a few more places to look online for {web.map((g) => g.label.toLowerCase()).join(" and ")}. They&apos;re on your plan page.
+                    </p>
+                  ) : null}
                   <motion.button
                     type="button"
                     autoFocus

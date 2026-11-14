@@ -1,0 +1,65 @@
+{
+  "id": "capv-head-start-at-home",
+  "name": "Head Start at Home",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "childcare"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Free support and education in your home for expectant parents and children birth to three, offered in Franklin, Hampshire and Western Hampden Counties.",
+  "info_url": "https://www.communityaction.us/program/head-start-at-home/",
+  "apply_url": "https://www.goengage.app/pre-app?globalID=22594",
+  "contact": "HS & ELP Enrollment Office: 413-387-1250, hselpenrollment@communityaction.us",
+  "documents_needed": [
+    "Documentation of eligibility",
+    "Child's birth certificate",
+    "Child's health records"
+  ],
+  "requirements": [
+    {
+      "id": "capv-hsah-who",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Head Start at Home is for pregnant women, expectant parents, and children birth through three.",
+      "source_url": "https://www.communityaction.us/program/head-start-at-home/",
+      "verified": true
+    },
+    {
+      "id": "capv-hsah-eligibility",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Your family may qualify if it has a low income, if your child is a foster child, if your family receives SSI, DTA Cash or SNAP, or if your family is staying with others temporarily or is without housing.",
+      "source_url": "https://www.communityaction.us/program/head-start-at-home/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Dollar amount of the low-income limit",
+    "How often home visits happen",
+    "Which towns are covered (the page names counties only)",
+    "Waitlist length"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "apply",
+  "first_step": {
+    "title": "Apply online or call the enrollment office",
+    "detail": "Apply online at the Community Action pre-application or call the HS & ELP Enrollment Office at 413-387-1250."
+  }
+}

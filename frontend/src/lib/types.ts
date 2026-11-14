@@ -426,6 +426,9 @@ export type NotedFacts = {
   zip: string | null;
 };
 
+/** A crisis or safety line copied from a curated program record. */
+export type SafetyContact = { name: string; contact: string; info_url: string };
+
 /** A proposal only: interpreting a message never changes the session. */
 export type InterpretOut = {
   /** One or two warm sentences that passed the output guard; null means use a template. */
@@ -437,6 +440,22 @@ export type InterpretOut = {
   unsupported_needs: UnsupportedNeed[];
   /** "urgent": show the fixed safety message first. */
   safety: "none" | "urgent";
+  /** When urgent: verified crisis and safety lines from the curated data. */
+  safety_contacts: SafetyContact[];
   /** Not about getting help, or an attempt to instruct the app. */
   off_topic: boolean;
+};
+
+// --- Web-search backup (GET /sessions/{id}/web-resources) ---
+// Only for needs with no curated program nearby. NOT verified: shown apart from
+// the plan, never with an eligibility status.
+
+export type WebResult = { title: string; url: string; domain: string };
+
+export type WebResourceGroup = { need: string; label: string; results: WebResult[] };
+
+export type WebResourcesOut = {
+  /** False when web search is off (LLM mode off, no key, or not allowed for the key). */
+  available: boolean;
+  groups: WebResourceGroup[];
 };

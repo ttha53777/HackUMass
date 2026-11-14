@@ -1,4 +1,4 @@
-import type { AnswerIn, ErrorBody, ErrorCode, InterpretIn, InterpretOut, PersonaOut, RunView, SessionSnapshot } from "./types";
+import type { AnswerIn, ErrorBody, ErrorCode, InterpretIn, InterpretOut, PersonaOut, RunView, SessionSnapshot, WebResourcesOut } from "./types";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -131,4 +131,9 @@ export function stopRun(sessionId: string, runId: string): Promise<RunView> {
 /** Latest screenshot, for when the live view can't be embedded. */
 export function runFrameUrl(sessionId: string, runId: string, tick: number): string {
   return `/api${runs(sessionId)}/${encodeURIComponent(runId)}/frame?t=${tick}`;
+}
+
+/** Unverified web results for needs no curated program covers (empty when search is off). */
+export function getWebResources(sessionId: string): Promise<WebResourcesOut> {
+  return request<WebResourcesOut>(`/sessions/${encodeURIComponent(sessionId)}/web-resources`);
 }

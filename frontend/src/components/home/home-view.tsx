@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { ConfirmCard } from "@/components/evidence/evidence-cards";
 
 import { SharpenCard } from "./sharpen-card";
+import { WebResources } from "./web-resources";
 
 function greeting() {
   const h = new Date().getHours();
@@ -374,6 +375,7 @@ export function HomeView() {
               </Link>
             </div>
           </section>
+          <WebResources />
           <section aria-label="At a glance" className="mt-[30px] grid gap-3 min-[861px]:grid-cols-3">
             {q0 ? (
               <Glance

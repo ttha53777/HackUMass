@@ -1,0 +1,70 @@
+{
+  "id": "forbes-library-hotspot-lending",
+  "name": "Wi-Fi Hotspot Lending",
+  "provider": "Forbes Library",
+  "type": "community",
+  "categories": [
+    "phone_internet"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Forbes Library in Northampton lends Wi-Fi hotspots for 3 weeks, with one renewal. Any Massachusetts resident with a card from a certified Massachusetts library can borrow one. Reserve it like a book through the library catalog, or call the library during business hours.",
+  "info_url": "https://forbeslibrary.org/help/library-of-things/borrow-a-hotspot/",
+  "apply_url": null,
+  "contact": "(413) 587-1011; Forbes Library, 20 West St., Northampton MA 01060",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "fl-hotspot-card",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Any Massachusetts resident with a library card from a certified Massachusetts library is eligible to borrow a hotspot. Registration in the library system is required if you don't have a current library card.",
+      "source_url": "https://forbeslibrary.org/help/library-of-things/borrow-a-hotspot/",
+      "verified": true
+    },
+    {
+      "id": "fl-hotspot-age",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Hotspot borrowers must be 17 years or older and in good standing with the library. Only one hotspot per household.",
+      "source_url": "https://forbeslibrary.org/help/library-of-things/borrow-a-hotspot/",
+      "verified": true
+    },
+    {
+      "id": "fl-hotspot-loan",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Hotspots may be borrowed for 3 weeks with one renewal. Pick it up within 7 days of a hold. The cost to replace a lost hotspot is $75.",
+      "source_url": "https://forbeslibrary.org/help/library-of-things/borrow-a-hotspot/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Whether there is any fee to borrow is not stated (only the $75 replacement cost).",
+    "Library opening hours are not on this page.",
+    "How many hotspots are available, or typical wait times, is not stated."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Reserve a Wi-Fi hotspot at Forbes Library",
+    "detail": "Place a hold through the Forbes Library catalog, or call (413) 587-1011 during business hours. Bring a Massachusetts library card."
+  }
+}

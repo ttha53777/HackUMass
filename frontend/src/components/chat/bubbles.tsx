@@ -91,7 +91,16 @@ export function UserMessage({
 }
 
 /** The fixed safety message, shown when a message suggests danger or crisis. */
-export function SafetyCard({ title, lines }: { title: string; lines: string[] }) {
+export function SafetyCard({
+  title,
+  lines,
+  contacts = [],
+}: {
+  title: string;
+  lines: string[];
+  /** Verified lines from curated records (name, contact, link). */
+  contacts?: { name: string; contact: string; info_url: string }[];
+}) {
   return (
     <motion.div {...rise} role="note" className="flex items-start gap-3">
       <Avatar />
@@ -104,6 +113,18 @@ export function SafetyCard({ title, lines }: { title: string; lines: string[] })
             {line}
           </p>
         ))}
+        {contacts.length ? (
+          <ul className="mt-3 flex flex-col gap-2 border-t border-peach-ink/20 pt-3">
+            {contacts.map((c) => (
+              <li key={c.info_url} className="text-[13.5px] leading-snug">
+                <a href={c.info_url} target="_blank" rel="noreferrer" className="font-bold underline-offset-4 hover:underline">
+                  {c.name}
+                </a>
+                <span className="block font-medium opacity-90">{c.contact}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </div>
     </motion.div>
   );

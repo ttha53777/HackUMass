@@ -1,0 +1,69 @@
+{
+  "id": "getyourrefund-free-tax-filing",
+  "name": "GetYourRefund Free Tax Filing",
+  "provider": "GetYourRefund",
+  "type": "community",
+  "categories": [
+    "taxes"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "A free, IRS-certified virtual tax filing service for low-income households across America, with options to file on your own with help (FileMyself), have a tax expert file for you over the internet (Assist, Virtual), or find a local IRS site to file in person. Completely free. The service was closed for the season when checked and says it reopens late January.",
+  "info_url": "https://www.getyourrefund.org/en",
+  "apply_url": null,
+  "contact": "support@getyourrefund.org; chat on the website",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "gyr-residents",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Available to residents of all states (and Puerto Rico and non-residents, with limits).",
+      "source_url": "https://www.getyourrefund.org/en",
+      "verified": true
+    },
+    {
+      "id": "gyr-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "FileMyself: income must be under $89,000. Assist (Virtual or In-person): suggested income under $69,000.",
+      "source_url": "https://www.getyourrefund.org/en",
+      "verified": true
+    },
+    {
+      "id": "gyr-season",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Not open right now: the site says it will notify you as soon as the service reopens late January.",
+      "source_url": "https://www.getyourrefund.org/en",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The tax year the income limits apply to is not stated.",
+    "The exact reopening date is not stated beyond late January.",
+    "Documents needed are not listed on the page.",
+    "In-person locations near Amherst are not listed on the page."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Reopens late January (closed when checked on 2026-11-14)",
+  "track": "local",
+  "access": "register",
+  "first_step": {
+    "title": "Sign up for free virtual tax help",
+    "detail": "Go to GetYourRefund and sign up to be notified when it reopens in late January. Then choose FileMyself or have a tax expert file for you."
+  }
+}

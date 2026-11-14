@@ -1,0 +1,83 @@
+{
+  "id": "capv-vita-tax-help",
+  "name": "VITA Free Tax Help",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "taxes"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Volunteer Income Tax Assistance (VITA): free tax return preparation by volunteers at Community Action Pioneer Valley's tax clinics, which run January-April. Offices include 155 Pleasant Street, Northampton and 393 Main Street, Greenfield. Help is by appointment only; appointment information for the 2027 tax season had not been posted when this was checked.",
+  "info_url": "https://www.communityaction.us/taxes",
+  "apply_url": null,
+  "contact": "413-376-1136 (general program and scheduling questions); dzyra@communityaction.us; 155 Pleasant Street, Northampton, MA 01060; 393 Main Street, Greenfield, MA 01301",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "capv-vita-area",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must live in Hampshire County, Franklin County, or the North Quabbin towns of Athol, Petersham, Royalston and Phillipston.",
+      "source_url": "https://www.communityaction.us/taxes",
+      "verified": true
+    },
+    {
+      "id": "capv-vita-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Your income must be at or below 200% of the Federal Poverty Level: one person $31,920; two $43,280; three $54,640; four $66,000; five $77,360. (The page does not say which year these limits are for.)",
+      "source_url": "https://www.communityaction.us/taxes",
+      "verified": true
+    },
+    {
+      "id": "capv-vita-exclusions",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "They can't help if your return includes rental income, sale of stocks or investment property, capital gains or losses, royalties, certain business expenses, cancellation of debt, military income, out-of-state income, or if you are a foreign student with an F, J, M or Q visa.",
+      "source_url": "https://www.communityaction.us/taxes",
+      "verified": true
+    },
+    {
+      "id": "capv-vita-appointment",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "By appointment only. Appointment information for the 2027 VITA tax season will be updated in late 2026; check back in January 2027.",
+      "source_url": "https://www.communityaction.us/taxes",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Appointment days, times and booking method for the 2027 season were not yet posted (checked 2026-11-14).",
+    "The year the income limits apply to is not stated on the page.",
+    "Documents to bring are not listed.",
+    "Whether there is a clinic in Amherst is not stated; the page lists Northampton and Greenfield offices."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "2027 tax season (January-April 2027); appointments not yet posted",
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Ask CAPV about a free tax appointment",
+    "detail": "Call 413-376-1136 for scheduling questions. Appointment information for the 2027 season is due to be posted by January 2027."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "id": "ma-behavioral-health-help-line",
+  "name": "Massachusetts Behavioral Health Help Line",
+  "provider": "Massachusetts Behavioral Health Partnership (for the Commonwealth of Massachusetts)",
+  "type": "government",
+  "categories": [
+    "mental_health"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "A free, confidential help line for mental health and substance use concerns, run as a service of the Commonwealth of Massachusetts. Call or text any time, 24/7 including holidays, to be connected directly to clinical help. No health insurance is required. Interpretation is available in 200+ languages; text/chat is English only.",
+  "info_url": "https://www.masshelpline.com/",
+  "apply_url": null,
+  "contact": "Call or text 833-773-2445 (24/7); MassRelay 711",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "bhhl-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Free, confidential, and no health insurance is required. Available 24/7, including holidays.",
+      "source_url": "https://www.masshelpline.com/",
+      "verified": true
+    },
+    {
+      "id": "bhhl-language",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Real-time interpretation in 200+ languages by phone; text/chat is currently only available in English. Deaf or hard-of-hearing callers can use MassRelay at 711.",
+      "source_url": "https://www.masshelpline.com/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Formal eligibility rules",
+    "Whether staff can dispatch an in-person mobile crisis team in Hampshire County"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call or text the Behavioral Health Help Line",
+    "detail": "Call or text 833-773-2445, any time, day or night. It is free and you do not need health insurance."
+  }
+}
