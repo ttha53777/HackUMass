@@ -232,6 +232,14 @@ class NotedFacts(BaseModel):
     zip: str | None = None
 
 
+class SafetyContact(BaseModel):
+    """A crisis or safety line copied from a curated program record, shown with the safety message."""
+
+    name: str
+    contact: str
+    info_url: str
+
+
 class InterpretOut(BaseModel):
     """A proposal only: interpreting a message never changes the session."""
 
@@ -244,6 +252,8 @@ class InterpretOut(BaseModel):
     unsupported_needs: list[UnsupportedNeed] = Field(default_factory=list)
     # "urgent": show the fixed safety message before anything else.
     safety: Literal["none", "urgent"] = "none"
+    # When urgent: verified crisis and safety lines from the curated data (never generated).
+    safety_contacts: list[SafetyContact] = Field(default_factory=list)
     # The message was not about getting help (or tried to give the app instructions).
     off_topic: bool = False
 

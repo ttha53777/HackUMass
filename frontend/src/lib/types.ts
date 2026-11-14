@@ -426,6 +426,9 @@ export type NotedFacts = {
   zip: string | null;
 };
 
+/** A crisis or safety line copied from a curated program record. */
+export type SafetyContact = { name: string; contact: string; info_url: string };
+
 /** A proposal only: interpreting a message never changes the session. */
 export type InterpretOut = {
   /** One or two warm sentences that passed the output guard; null means use a template. */
@@ -437,6 +440,8 @@ export type InterpretOut = {
   unsupported_needs: UnsupportedNeed[];
   /** "urgent": show the fixed safety message first. */
   safety: "none" | "urgent";
+  /** When urgent: verified crisis and safety lines from the curated data. */
+  safety_contacts: SafetyContact[];
   /** Not about getting help, or an attempt to instruct the app. */
   off_topic: boolean;
 };
