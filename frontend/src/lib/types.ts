@@ -377,6 +377,8 @@ export type RunView = {
   seconds_left: number | null;
   outcome: Outcome | null;
   message: string | null;
+  /** The outcome is in the main graph: refresh the session snapshot. */
+  result_recorded: boolean;
 };
 
 export type ErrorCode =

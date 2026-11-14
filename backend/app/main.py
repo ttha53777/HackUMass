@@ -59,6 +59,10 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
     from app.api.execution_routes import router as execution_router
     from app.api.practice_routes import router as practice_router
     from app.execution.manager import ExecutionError
+    from app.execution.results import make_recorder
+
+    if not execution.has_result_callback:
+        execution.set_result_callback(make_recorder(app.state.sessions))
 
     records = automation_records()
     app.state.automation = records

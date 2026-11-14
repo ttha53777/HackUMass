@@ -4,6 +4,7 @@ No browser and no network: acceptance for Phase 1 ("pytest passes with
 FakeProvider and a scripted model").
 """
 
+import asyncio
 import logging
 import time
 
@@ -85,6 +86,16 @@ def wait_for(client, session_id, run_id, *statuses, timeout=5.0):
     raise AssertionError(f"run never reached {statuses}; last {view['status']}")
 
 
+def wait_for_recorded(client, session_id, run_id, timeout=5.0):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        view = client.get(runs_url(session_id, run_id)).json()
+        if view["result_recorded"]:
+            return view
+        time.sleep(0.02)
+    raise AssertionError("result never recorded")
+
+
 def test_snapshot_lists_automatable_programs_on_the_persons_list(harness):
     _, snapshot = run_food_intake(harness.client)
     assert snapshot["automatable_program_ids"] == [PROGRAM]
@@ -118,6 +129,13 @@ def test_full_practice_run_with_one_question_and_one_handoff(harness, caplog):
         view = wait_for(client, session_id, run["run_id"], "done")
 
     assert view["outcome"] == {"status": "submitted", "confirmation_text": "PRACTICE-ABC234"}
+    view = wait_for_recorded(client, session_id, run["run_id"])
+    snapshot = client.get(f"/api/sessions/{session_id}").json()
+    assert snapshot["applications"][PROGRAM]["status"] == "submitted"
+    assert snapshot["applications"][PROGRAM]["confirmation"] == "PRACTICE-ABC234"
+    item = next(i for i in snapshot["action_plan"] if i["program_id"] == PROGRAM)
+    assert item["next_step"].startswith("Sent on ")
+    assert "Maya" not in str(snapshot)
     assert view["live_view_url"] is None and view["seconds_left"] is None
     assert harness.computers[0].typed == {"first_name": "Maya", "zip": "00000"}
     assert harness.provider.sessions[0].closed is True
@@ -227,3 +245,46 @@ def test_provider_without_a_gemini_key_stays_off(repo, monkeypatch):
 
 def test_health_reports_the_agent_when_mounted(harness):
     assert harness.client.get("/api/health").json()["browser_agent"] is True
+
+
+@pytest.mark.parametrize("harness", [{"turns": [[click(500, 900)]] * 200, "delay": 0.05}], indirect=True)
+def test_a_stopped_run_is_recorded_and_keeps_the_usual_next_step(harness):
+    client = harness.client
+    session_id, before = run_food_intake(client)
+    run = start_run(client, session_id)
+    wait_for(client, session_id, run["run_id"], "working")
+    client.post(runs_url(session_id, run["run_id"], "stop"))
+    wait_for_recorded(client, session_id, run["run_id"])
+    after = client.get(f"/api/sessions/{session_id}").json()
+    assert after["applications"][PROGRAM]["status"] == "stopped"
+    step = lambda s: next(i["next_step"] for i in s["action_plan"] if i["program_id"] == PROGRAM)  # noqa: E731
+    assert step(after) == step(before)
+
+
+class SlowProvider(FakeProvider):
+    async def open(self, target):
+        await asyncio.sleep(30)  # a cloud browser that never comes up
+
+
+ASK_THEN_SUBMIT = [[click(100, 100)], [type_("{{first_name}}")], [click(500, 950)], []]
+
+
+@pytest.mark.parametrize("state", ["starting", "needs_answer", "needs_you"])
+def test_stop_releases_the_browser_from_every_state(repo, state):
+    turns = [[click(500, 950)], []] if state == "needs_you" else ASK_THEN_SUBMIT
+    h = Harness(turns)
+    if state == "starting":
+        h.provider = SlowProvider(lambda target: FakeComputer())
+        h.manager = ExecutionManager(h.provider, SETTINGS, model_factory=lambda _i: h.model)
+    app = create_app(repo, NessieService(None), execution=h.manager)
+    app.state.automation = {PROGRAM: AutomationRecord(program_id=PROGRAM, mode="practice")}
+    app.state.automatable_ids = frozenset(app.state.automation)
+    with TestClient(app) as client:
+        session_id, _ = run_food_intake(client)
+        run = start_run(client, session_id)
+        wait_for(client, session_id, run["run_id"], state)
+        started = time.monotonic()
+        view = client.post(runs_url(session_id, run["run_id"], "stop")).json()
+        assert time.monotonic() - started < 5
+        assert view["status"] == "stopped" and view["live_view_url"] is None
+        assert all(session.closed for session in h.provider.sessions)

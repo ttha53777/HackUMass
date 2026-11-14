@@ -104,6 +104,9 @@ class Run:
     started: float = field(default_factory=time.monotonic)
     finished: float | None = None
     task: asyncio.Task | None = None
+    # True once the outcome has been written to the main graph (or there was nothing
+    # to write). The panel refreshes the session snapshot after this.
+    result_recorded: bool = False
     _resume: asyncio.Event = field(default_factory=asyncio.Event)
     _answered: bool = False
     _takeover: bool = False
@@ -138,6 +141,7 @@ class Run:
             seconds_left=self.seconds_left(),
             outcome=self.outcome,
             message=self.message,
+            result_recorded=self.result_recorded,
         )
 
 
@@ -216,6 +220,14 @@ class ExecutionManager:
         self._pause_seconds = pause_seconds
         self._run_deadline = run_deadline
         self._runs: dict[str, Run] = {}
+
+    def set_result_callback(self, callback: ResultCallback) -> None:
+        """Where finished runs report their outcome (main.py wires the main graph)."""
+        self._on_result = callback
+
+    @property
+    def has_result_callback(self) -> bool:
+        return self._on_result is not None
 
     def _gemini(self, instruction: str) -> BrowserModel:
         if not self._settings.gemini_api_key:
@@ -326,9 +338,11 @@ class ExecutionManager:
                     logger.warning("browser close did not finish (run %s): %s", run.run_id, exc.__class__.__name__)
             if run.status in ("done", "stopped") and self._on_result is not None:
                 try:
-                    await self._on_result(run)
-                except Exception as exc:
-                    logger.error("application result not recorded (run %s): %s", run.run_id, describe_exception(exc))
+                    # Shielded: a stop request must not cancel the write that records it.
+                    await asyncio.shield(self._on_result(run))
+                except BaseException as exc:  # noqa: BLE001 - never let recording break cleanup
+                    logger.error("application result not recorded (run %s): %s", run.run_id, exc.__class__.__name__)
+            run.result_recorded = True
 
     async def _work(self, run: Run, model: BrowserModel, hooks: _Hooks) -> None:
         hooks.log("note", "Opening the application")

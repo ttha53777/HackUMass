@@ -114,7 +114,11 @@ def _absorb_application(state: SessionState, dirty: DirtyFlags, update: dict[str
     if result is None:
         return
     applications = dict(state.get("applications") or {})
-    applications[result.program_id] = result
+    previous = applications.get(result.program_id)
+    # A sent application stays sent: a later run that stopped or was unclear
+    # (say, the person reopened the form) must not hide that it went through.
+    if previous is None or previous.status != "submitted" or result.status == "submitted":
+        applications[result.program_id] = result
     update["applications"] = applications
     update["application_result"] = None
     dirty.plan = True

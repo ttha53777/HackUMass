@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Hand, ShieldCheck, Square } from "lucide-react";
 
 import { btn, Callout } from "@/components/od/ui";
+import { QuestionForm } from "@/components/program/question-form";
+import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
+import { useToast } from "@/components/shell/toast";
 import { answerRun, controlRun, getRun, isApiError, runFrameUrl, startRun, stopRun } from "@/lib/api";
 import type { Program, BrowserRunStatus, RunView } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -48,7 +51,11 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
  * step that must be theirs (signing, signing in, the final submit).
  */
 export function ApplyAssistant({ program }: { program: Program }) {
-  const { snapshot } = useApp();
+  const { snapshot, refresh } = useApp();
+  const { plan, setStage } = usePlan();
+  const toast = useToast();
+  const handled = useRef<string | null>(null);
+  const log = useRef<HTMLOListElement>(null);
   const sessionId = snapshot?.session_id ?? null;
   const key = sessionId ? storeKey(sessionId, program.id) : null;
   const [run, setRun] = useState<RunView | null>(null);
@@ -57,6 +64,8 @@ export function ApplyAssistant({ program }: { program: Program }) {
   const [tick, setTick] = useState(0);
   const runId = run?.run_id ?? null;
   const active = !!run && ACTIVE.includes(run.status);
+  // Keep polling after the run ends until its outcome is in the main graph.
+  const polling = !!run && (active || !run.result_recorded);
 
   const fail = useCallback((e: unknown) => {
     setError(isApiError(e) ? e.message : "Something went wrong. Please try again.");
@@ -72,9 +81,9 @@ export function ApplyAssistant({ program }: { program: Program }) {
       .catch(() => writeRunId(key, null));
   }, [sessionId, key]);
 
-  // Poll while the run is active.
+  // Poll while the run is active, and until its result is recorded.
   useEffect(() => {
-    if (!sessionId || !runId || !active) return;
+    if (!sessionId || !runId || !polling) return;
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
@@ -96,7 +105,27 @@ export function ApplyAssistant({ program }: { program: Program }) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [sessionId, runId, active, run, key, fail]);
+  }, [sessionId, runId, polling, run, key, fail]);
+
+  // Once the outcome is recorded: refresh the plan from the server and, if the page
+  // confirmed it was received, mark the application as applied on this device.
+  const stage = plan.apps[program.id]?.stage;
+
+  // Keep the newest step in view.
+  const stepCount = run?.steps.length ?? 0;
+  useEffect(() => {
+    if (log.current) log.current.scrollTop = log.current.scrollHeight;
+  }, [stepCount]);
+  useEffect(() => {
+    if (!run || active || !run.result_recorded || handled.current === run.run_id) return;
+    handled.current = run.run_id;
+    if (key) writeRunId(key, null); // finished: don't resume it on the next visit
+    void refresh();
+    if (run.status === "done" && run.outcome?.status === "submitted" && stage !== "applied" && stage !== "approved" && stage !== "denied") {
+      setStage(program.id, "applied");
+      toast("Sent. We marked it as applied and updated your plan.");
+    }
+  }, [run, active, key, refresh, stage, setStage, program.id, toast]);
 
   const act = async (call: () => Promise<RunView>) => {
     setPending(true);
@@ -192,7 +221,12 @@ export function ApplyAssistant({ program }: { program: Program }) {
 
       {run.status === "needs_you" && run.handoff ? (
         <div className="flex flex-wrap items-center gap-3 bg-amber px-4 py-3 text-amber-ink">
-          <p className="min-w-0 flex-1 text-[13px] font-bold leading-[1.5]">{run.handoff.message}</p>
+          <p className="min-w-0 flex-1 text-[13px] font-bold leading-[1.5]">
+            {run.handoff.message}
+            {!run.live_view_url ? (
+              <span className="mt-0.5 block text-xs font-semibold">Use the browser window that opened on this computer.</span>
+            ) : null}
+          </p>
           <button type="button" className={btn("primary", "sm")} disabled={pending} onClick={() => void act(() => controlRun(sessionId, run.run_id, "return"))}>
             I&apos;m done
           </button>
@@ -200,14 +234,31 @@ export function ApplyAssistant({ program }: { program: Program }) {
       ) : null}
 
       {run.status === "needs_answer" && run.question ? (
-        <AgentQuestion
-          key={run.question.id}
-          prompt={run.question.prompt}
-          reason={run.question.reason}
-          pending={pending}
-          onAnswer={(text) => act(() => answerRun(sessionId, run.run_id, { question_id: run.question!.id, text }))}
-          onSkip={() => act(() => answerRun(sessionId, run.run_id, { question_id: run.question!.id, skipped: true }))}
-        />
+        <div className="bg-sky px-4 py-3 text-sky-ink">
+          <p className="mb-1 text-[13.5px] font-extrabold">{run.question.prompt}</p>
+          {run.question.reason ? <p className="mb-2.5 text-xs leading-[1.55]">{run.question.reason}</p> : null}
+          <QuestionForm
+            key={run.question.id}
+            question={run.question}
+            surface="tinted"
+            showSkip
+            busy={pending}
+            onAnswer={async (body) => {
+              const question = run.question!;
+              setPending(true);
+              setError(null);
+              try {
+                setRun(await answerRun(sessionId, run.run_id, { question_id: question.id, ...body }));
+                return true;
+              } catch (e) {
+                fail(e);
+                return false;
+              } finally {
+                setPending(false);
+              }
+            }}
+          />
+        </div>
       ) : null}
 
       <div className="grid gap-0 min-[1101px]:grid-cols-[minmax(0,1fr)_240px]">
@@ -229,7 +280,11 @@ export function ApplyAssistant({ program }: { program: Program }) {
           ) : null}
           {!active ? <Result run={run} onReset={reset} /> : null}
         </div>
-        <ol aria-label="What the assistant did" className="max-h-[320px] overflow-y-auto border-t border-line px-4 py-3 text-[12.5px] min-[1101px]:max-h-none min-[1101px]:border-l min-[1101px]:border-t-0">
+        <ol
+          ref={log}
+          aria-label="What the assistant did"
+          className="max-h-[280px] overflow-y-auto border-t border-line px-4 py-3 text-[12.5px] min-[1101px]:max-h-[420px] min-[1101px]:border-l min-[1101px]:border-t-0"
+        >
           {run.steps.length ? (
             run.steps.map((s, i) => (
               <li key={`${s.at}-${i}`} className={cn("border-b border-dashed border-line py-1.5 leading-[1.45] last:border-b-0", s.kind === "blocked" && "text-muted-foreground", s.kind === "handoff" && "font-bold")}>
@@ -243,55 +298,6 @@ export function ApplyAssistant({ program }: { program: Program }) {
       </div>
       {error ? <p role="alert" className="px-4 pb-3 text-xs font-bold text-amber-ink">{error}</p> : null}
     </section>
-  );
-}
-
-function AgentQuestion({
-  prompt,
-  reason,
-  pending,
-  onAnswer,
-  onSkip,
-}: {
-  prompt: string;
-  reason: string | null;
-  pending: boolean;
-  onAnswer: (text: string) => void;
-  onSkip: () => void;
-}) {
-  const [value, setValue] = useState("");
-  const input = useRef<HTMLInputElement>(null);
-  useEffect(() => input.current?.focus(), []);
-  return (
-    <form
-      className="bg-sky px-4 py-3 text-sky-ink"
-      onSubmit={(e) => {
-        e.preventDefault();
-        if (value.trim()) onAnswer(value.trim());
-      }}
-    >
-      <label htmlFor="agent-answer" className="mb-1 block text-[13.5px] font-extrabold">
-        {prompt}
-      </label>
-      {reason ? <p className="mb-2 text-xs leading-[1.55]">{reason}</p> : null}
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          id="agent-answer"
-          ref={input}
-          value={value}
-          maxLength={120}
-          autoComplete="off"
-          onChange={(e) => setValue(e.target.value)}
-          className="min-w-0 flex-1 rounded-[11px] border border-line bg-surface px-3.5 py-2.5 text-[15px] text-ink outline-none focus:border-brand"
-        />
-        <button type="submit" className={btn("primary", "sm")} disabled={pending || !value.trim()}>
-          Use this
-        </button>
-        <button type="button" className={btn("text", "sm")} disabled={pending} onClick={onSkip}>
-          Skip
-        </button>
-      </div>
-    </form>
   );
 }
 

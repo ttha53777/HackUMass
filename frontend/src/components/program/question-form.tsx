@@ -14,7 +14,8 @@ const EXCLUSIVE = "none";
 /**
  * A compact form for one open question. Single choice sends on tap; multi choice,
  * numbers and text send on Save. Goes through the shared answer hook, so the toast
- * and "moved" highlight follow.
+ * and "moved" highlight follow, unless `onAnswer` sends it somewhere else (the
+ * browser assistant's questions go to its run, not the main graph).
  */
 export function QuestionForm({
   question,
@@ -23,6 +24,8 @@ export function QuestionForm({
   showSkip,
   current,
   onDone,
+  onAnswer,
+  busy,
 }: {
   question: Question;
   /** Option background: "plain" on white, "tinted" on colored panels. */
@@ -32,8 +35,13 @@ export function QuestionForm({
   /** The stored answer, when editing: its choices start selected. */
   current?: AnsweredItem;
   onDone?: () => void;
+  /** Send the answer here instead of the main graph. Resolves true when accepted. */
+  onAnswer?: (body: Omit<AnswerIn, "question_id">) => Promise<boolean>;
+  /** With onAnswer: disables the form while the answer is being sent. */
+  busy?: boolean;
 }) {
-  const { answer, working } = useAnswer();
+  const shared = useAnswer();
+  const working = onAnswer ? !!busy : shared.working;
   const stored = current && !current.skipped ? current : undefined;
   const [picked, setPicked] = useState<string[]>(() =>
     stored ? question.options.filter((o) => answerIncludes(stored, [o.id])).map((o) => o.id) : [],
@@ -47,7 +55,7 @@ export function QuestionForm({
   );
 
   const send = async (body: Omit<AnswerIn, "question_id">) => {
-    const ok = await answer({ question_id: question.id, ...body }, { tailoring });
+    const ok = onAnswer ? await onAnswer(body) : await shared.answer({ question_id: question.id, ...body }, { tailoring });
     if (ok) onDone?.();
   };
 

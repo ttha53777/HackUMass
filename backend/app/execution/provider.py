@@ -19,7 +19,7 @@ import logging
 from typing import Any, Callable, Protocol
 from urllib.parse import urlencode
 
-from app.execution.computer import Computer, PlaywrightComputer, install_allowlist
+from app.execution.computer import SETTLE_SECONDS, Computer, PlaywrightComputer, install_allowlist
 from app.execution.config import SCREEN_HEIGHT, SCREEN_WIDTH, SESSION_SECONDS, AgentSettings, RunTarget
 from app.services.log_safety import describe_exception
 
@@ -81,11 +81,12 @@ class _PlaywrightSession:
         if self._playwright is not None:
             await self._playwright.stop()
 
-    async def _start_page(self, context: Any, target: RunTarget) -> None:
+    async def _start_page(self, context: Any, target: RunTarget, settle_seconds: float = SETTLE_SECONDS) -> None:
         await install_allowlist(context, target.allowed_hosts, strict=target.mode == "practice")
         page = context.pages[0] if context.pages else await context.new_page()
         await page.goto(target.start_url, wait_until="domcontentloaded", timeout=OPEN_TIMEOUT_MS)
-        self.computer = PlaywrightComputer(page)
+        self.page = page  # for spikes and tests; the agent uses self.computer
+        self.computer = PlaywrightComputer(page, settle_seconds=settle_seconds)
 
 
 class LocalSession(_PlaywrightSession):
@@ -95,8 +96,9 @@ class LocalSession(_PlaywrightSession):
 class LocalProvider:
     name = "local"
 
-    def __init__(self, channel: str | None, headless: bool) -> None:
-        self._channel, self._headless = channel, headless
+    def __init__(self, channel: str | None, headless: bool, *, settle_seconds: float = SETTLE_SECONDS) -> None:
+        self._channel, self._headless, self._settle = channel, headless, settle_seconds
+        self.sessions: list[LocalSession] = []
 
     async def open(self, target: RunTarget) -> BrowserSession:
         from playwright.async_api import async_playwright  # imported only when a run starts
@@ -110,7 +112,8 @@ class LocalProvider:
             context = await session._browser.new_context(
                 viewport={"width": SCREEN_WIDTH, "height": SCREEN_HEIGHT}, accept_downloads=False
             )
-            await session._start_page(context, target)
+            await session._start_page(context, target, self._settle)
+            self.sessions.append(session)
             return session
         except Exception as exc:
             await session.close()

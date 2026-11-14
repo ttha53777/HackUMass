@@ -50,6 +50,15 @@ def test_a_newer_result_replaces_the_older_one_for_the_same_program():
     assert decision.update["applications"]["p2"] is older["p2"]
 
 
+def test_a_sent_application_is_not_downgraded_by_a_later_run():
+    sent = {"p1": record("p1", "submitted", "PRACTICE-ABC234")}
+    for status in ("stopped", "unclear", "in_progress"):
+        decision = decide({"application_result": record("p1", status), "applications": sent})
+        assert decision.update["applications"]["p1"].status == "submitted"
+    again = decide({"application_result": record("p1", "submitted", "PRACTICE-XYZ789"), "applications": sent})
+    assert again.update["applications"]["p1"].confirmation == "PRACTICE-XYZ789"
+
+
 def test_no_result_leaves_applications_alone():
     decision = decide({"applications": {"p1": record("p1", "submitted")}})
     assert "applications" not in decision.update

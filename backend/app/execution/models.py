@@ -117,6 +117,8 @@ class RunView(BaseModel):
     seconds_left: int | None = None  # until the browser session expires
     outcome: Outcome | None = None
     message: str | None = None  # safe explanation when stopped or failed
+    # The outcome is in the main graph; refresh the session snapshot.
+    result_recorded: bool = False
 
 
 class StartRunIn(BaseModel):

@@ -60,6 +60,8 @@ export type SessionController = {
   clearAnswerError: () => void;
   /** Resolves once the backend has finished the current run (or after `timeoutMs`). */
   whenIdle: (timeoutMs?: number) => Promise<void>;
+  /** Re-read the snapshot after a change made outside an answer (the browser assistant's result). */
+  refresh: () => Promise<void>;
 };
 
 /**
@@ -205,6 +207,19 @@ export function useSession(): SessionController {
 
   const clearAnswerError = useCallback(() => setAnswerError(null), []);
 
+  const refresh = useCallback(async () => {
+    if (!sessionId) return;
+    const mine = generation.current;
+    try {
+      const next = await getSession(sessionId);
+      if (generation.current !== mine) return;
+      setSnapshot(next);
+      setPollAttempt(0); // keeps polling if the backend is still working
+    } catch (error) {
+      if (generation.current === mine && isApiError(error, "session_not_found")) void begin(null, true);
+    }
+  }, [sessionId, begin]);
+
   // Latest "working" flag, readable from async sequences without re-rendering them.
   const workingRef = useRef(false);
   useEffect(() => {
@@ -232,5 +247,6 @@ export function useSession(): SessionController {
     restart,
     clearAnswerError,
     whenIdle,
+    refresh,
   };
 }

@@ -31,7 +31,7 @@ async def probe(provider, program) -> str:
         return f"| {program.id} | {host_of(url)} | did not open ({exc.__class__.__name__}) | | |"
     try:
         await asyncio.sleep(4)  # let client-side forms render
-        page = session.computer._page  # type: ignore[attr-defined]
+        page = session.page  # type: ignore[attr-defined]
         text = await session.computer.page_text()
         fields = await page.locator("input:visible, textarea:visible, select:visible").count()
         frames = [f.url for f in page.frames if "captcha" in f.url]

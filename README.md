@@ -102,7 +102,7 @@ Only mounted when `BROWSER_PROVIDER` is `steel` or `local` and `GEMINI_API_KEY` 
 | Route | Purpose |
 |---|---|
 | `POST /sessions/{id}/applications` | Body `{"program_id", "consent": true}`. Starts a run for a program listed in `automatable_program_ids`. `201`; `409 run_active` if one is running. |
-| `GET /sessions/{id}/applications/{run_id}` | Run status, step log, pending question, handoff reason, live-view URL, seconds left. Poll about once a second. |
+| `GET /sessions/{id}/applications/{run_id}` | Run status, step log, pending question, handoff reason, live-view URL, seconds left. Poll about once a second. When the run ends, its outcome goes into the main graph (`applications` and the plan's next step); `result_recorded` turns true once it has. |
 | `POST /sessions/{id}/applications/{run_id}/answer` | Answer the assistant's question (`AnswerIn` shape, `text` or `skipped`). |
 | `POST /sessions/{id}/applications/{run_id}/control` | `{"action": "take"}` gives the person the browser; `"return"` hands it back. |
 | `POST /sessions/{id}/applications/{run_id}/stop` | Ends the run and releases the browser. |
