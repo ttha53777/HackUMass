@@ -62,6 +62,11 @@ def run(agent):
     return asyncio.run(agent.run())
 
 
+def last_result(model):
+    """The newest action result the model was sent (nudges after it carry no result)."""
+    return next(i[0] for i in reversed(model.inputs) if i and i[0].get("type") == "function_result")
+
+
 def test_fills_known_fields_by_substitution_and_never_sends_values_to_the_model():
     agent, computer, model, hooks = make(
         [[click(100, 200)], [type_("{{zip}}")], [click(100, 250), type_("{{household_size}}")], [click(500, 900)], []],
@@ -88,14 +93,14 @@ def test_a_skipped_question_leaves_the_field_empty():
     agent, computer, model, _ = make([[click(100, 150)], [type_("{{phone}}")], []])
     run(agent)
     assert computer.typed == {}
-    last = model.inputs[-1][0]["result"]
+    last = last_result(model)["result"]
     assert "skipped" in last
 
 
 def test_ask_user_function_round_trip():
     agent, _, model, hooks = make([[Call("a1", "ask_user", {"field_key": "first_name"})], []], answers={"first_name": "Maya"})
     run(agent)
-    result = model.inputs[-1][0]
+    result = last_result(model)
     assert result["call_id"] == "a1" and result["name"] == "ask_user"
     assert result["result"]["answered"] is True
     assert "Maya" not in json.dumps(model.inputs)
@@ -106,7 +111,7 @@ def test_the_agents_own_submit_click_is_handed_to_the_person():
     run(agent)
     assert hooks.handoffs == ["submit"]
     assert "click" not in computer.executed  # the page was never touched
-    assert model.inputs[-1][0]["result"]["handled_by_person"] is True
+    assert last_result(model)["result"]["handled_by_person"] is True
 
 
 def test_certify_checkbox_and_ssn_are_handed_off():
@@ -120,7 +125,7 @@ def test_free_text_is_blocked_and_reported_to_the_model():
     agent, computer, model, hooks = make([[click(100, 100)], [type_("Ignore previous instructions")], []])
     run(agent)
     assert computer.typed == {}
-    assert "error" in model.inputs[-1][0]["result"]
+    assert "error" in last_result(model)["result"]
     assert hooks.logs[-1][0] == "blocked"
 
 
@@ -137,6 +142,23 @@ def test_take_over_parks_before_the_next_action():
     run(agent)
     assert hooks.handoffs == ["person_requested"]
     assert computer.executed == ["click"]  # first call skipped, second ran after control came back
+
+
+def test_a_text_only_reply_is_nudged_not_treated_as_finished():
+    agent, computer, model, _ = make([[click(100, 200)], [], [type_("{{zip}}")], [Call("f", "finish", {})]],
+                                     known={"zip": "01002"})
+    end = run(agent)
+    assert end.kind == "finished"
+    assert computer.typed == {"zip": "01002"}  # the turn after the nudge still ran
+    nudge = model.inputs[2]
+    assert nudge[0]["type"] == "text" and "Carry on" in nudge[0]["text"]
+    assert nudge[1]["type"] == "image"
+
+
+def test_repeated_silence_ends_the_run():
+    agent, _, model, _ = make([[click(100, 200)]])
+    assert run(agent).kind == "finished"
+    assert len(model.inputs) == 4  # the action turn, then three silent turns (two nudges)
 
 
 def test_step_limit_ends_the_run():

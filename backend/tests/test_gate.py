@@ -82,6 +82,15 @@ def test_signature_text_field_hands_off():
     assert type_into(FIELD("Signature: type your full name", "signature"), "{{first_name}}").reason == "attestation"
 
 
+@pytest.mark.parametrize("label,name", [("Middle initial", "mi"), ("M.I.", "middle_initial"), ("Middle name initial", "")])
+def test_middle_initial_is_a_name_field_not_a_signature(label, name):
+    assert type_into(FIELD(label, name), "{{zip}}").kind == "allow"
+
+
+def test_initial_here_still_hands_off():
+    assert type_into(FIELD("Initial here to confirm", "initials"), "{{zip}}").reason == "attestation"
+
+
 def test_type_accepts_only_a_known_placeholder():
     phone = FIELD("Phone number", "phone")
     allowed = type_into(phone, "{{phone}}")

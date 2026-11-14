@@ -71,15 +71,17 @@ def read_run(request: Request, session_id: str, run_id: str) -> JSONResponse:
     return _view(_run(request, session_id, run_id))
 
 
+# async: these set the run's asyncio.Event, which must happen on the event loop,
+# not in FastAPI's threadpool (a plain `def` route), or the loop isn't woken.
 @router.post("/{run_id}/answer", response_model=RunView)
-def answer_run(request: Request, session_id: str, run_id: str, answer: AnswerIn) -> JSONResponse:
+async def answer_run(request: Request, session_id: str, run_id: str, answer: AnswerIn) -> JSONResponse:
     run = _run(request, session_id, run_id)
     _manager(request).answer(run, answer)
     return _view(run)
 
 
 @router.post("/{run_id}/control", response_model=RunView)
-def control_run(request: Request, session_id: str, run_id: str, body: ControlIn) -> JSONResponse:
+async def control_run(request: Request, session_id: str, run_id: str, body: ControlIn) -> JSONResponse:
     run = _run(request, session_id, run_id)
     _manager(request).control(run, body.action)
     return _view(run)

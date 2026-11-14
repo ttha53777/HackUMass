@@ -3,7 +3,7 @@
     cd backend && .venv/bin/python scripts/spikes/s1_gemini_cu.py
 
 Answers the open items in docs/browser-agent-plan.md section 6:
-  * the model id works (BROWSER_AGENT_MODEL, default gemini-4-hydrogen);
+  * the model id works (BROWSER_AGENT_MODEL, default gemini-3.5-flash);
   * the coordinate system: we place a button at a known pixel position and check
     whether the model's x, y match it on a 1000x1000 grid or in pixels;
   * the action names and argument shapes we actually receive;

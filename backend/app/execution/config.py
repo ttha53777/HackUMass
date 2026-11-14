@@ -28,13 +28,15 @@ AUTOMATION_DIR = Path(__file__).resolve().parents[1] / "data" / "automation"
 
 PROVIDERS = ("steel", "local", "off")
 
-# Model id for Gemini Computer Use. Google's own samples use this id; keep it
-# overridable because the docs list several (docs/browser-agent-plan.md, section 6).
-DEFAULT_AGENT_MODEL = "gemini-4-hydrogen"
+# Model id for Gemini Computer Use, overridable with BROWSER_AGENT_MODEL. Measured
+# 2026-11-14 on the practice form: gemini-3.5-flash answered a screenshot turn in
+# 5-135 s; gemini-4-hydrogen (Google's sample id, used for spike S1) took 100 s to
+# over 240 s and could not finish a run.
+DEFAULT_AGENT_MODEL = "gemini-3.5-flash"
 DEFAULT_PRACTICE_BASE_URL = "http://127.0.0.1:8000"
 
 # Run limits (plan section 3).
-MAX_STEPS = 40
+MAX_STEPS = 80  # a field costs two (click, type); AGENT_SECONDS still bounds the run
 AGENT_SECONDS = 8 * 60  # model and browser time, pauses excluded
 PAUSE_SECONDS = 5 * 60  # longest wait for one answer or one takeover
 SESSION_SECONDS = 15 * 60  # Steel's free tier caps a session at 15 minutes
