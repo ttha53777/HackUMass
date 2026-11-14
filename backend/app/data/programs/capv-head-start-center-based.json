@@ -1,0 +1,78 @@
+{
+  "id": "capv-head-start-center-based",
+  "name": "Center-Based Head Start & Early Head Start",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "childcare"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Free and low-cost center-based programs for children birth to five in Franklin, Hampshire and Western Hampden Counties. Part-day preschool is offered in Franklin and Hampshire counties, and full-day, full-year programs for children birth to five are offered in Amherst, Northampton and Turners Falls. All meals and snacks are free to families.",
+  "info_url": "https://www.communityaction.us/program/center-based-head-start/",
+  "apply_url": "https://www.goengage.app/pre-app?globalID=22594",
+  "contact": "Enrollment: 413-387-1250, hselpenrollment@communityaction.us; Amherst Community Child Care: 413-548-1290",
+  "documents_needed": [
+    "Documentation of eligibility",
+    "Child's birth certificate",
+    "Child's health records"
+  ],
+  "requirements": [
+    {
+      "id": "capv-hs-ages",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "For children birth to five. Part-day services are for preschoolers; full-day services are for infants, toddlers and preschoolers.",
+      "source_url": "https://www.communityaction.us/program/center-based-head-start/",
+      "verified": true
+    },
+    {
+      "id": "capv-hs-partday",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Part-day/extended-day: your family may qualify if it has a low income; if anyone in your family receives SSI, DTA Cash, or SNAP benefits; if your child is a foster child; or if your family is staying with friends or family temporarily, living in a shelter or motel, or otherwise without housing.",
+      "source_url": "https://www.communityaction.us/program/center-based-head-start/",
+      "verified": true
+    },
+    {
+      "id": "capv-hs-fullday",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Full-day: your family may qualify if it already has a child care voucher, has an open case with the Department of Children and Families, or has income under 50% of the State Median Income and needs child care for work, school or job search.",
+      "source_url": "https://www.communityaction.us/program/center-based-head-start/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Tuition or fees (the page says free and low-cost but gives no amounts)",
+    "Dollar amount of the low-income and 50% State Median Income limits",
+    "Hours and days per year (they vary by site and classroom)",
+    "Street addresses of the Hampshire County centers",
+    "Which western Hampden County towns are served",
+    "Waitlist length"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "apply",
+  "first_step": {
+    "title": "Apply online or call the enrollment office",
+    "detail": "Apply online at the Community Action pre-application or call 413-387-1250. An enrollment staff member will contact you and meet with you before you join the waitlist."
+  }
+}

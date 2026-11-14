@@ -1,0 +1,99 @@
+{
+  "id": "masshire-fh-career-center",
+  "name": "MassHire Franklin Hampshire Career Center",
+  "provider": "MassHire Franklin Hampshire Career Center",
+  "type": "government",
+  "categories": [
+    "employment"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "The public career center for Franklin County, Hampshire County and the North Quabbin area. It provides employment and training services at no charge to job seekers: job listings, job search resources, career exploration, career readiness workshops and seminars, education and training program information, and services for veterans, people with disabilities, DTA/SNAP recipients, mature workers and formerly incarcerated people. The main office is in Greenfield, with a job seeker access point at Forbes Library in Northampton on Wednesdays.",
+  "info_url": "https://www.masshirefhcareers.org/about",
+  "apply_url": "https://jobquest.mass.gov/JobQuest/Login/Index",
+  "contact": "(413) 774-4361; toll free 1-800-457-2603; info@masshirefhcareers.org; Greenfield Office, 101 Munson Street, Suite 210, Greenfield, MA 01301; Northampton Access Point at Forbes Library, 20 West Street, Northampton, MA 01060",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "mhfh-area",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Serves the 50 communities of Franklin and Hampshire Counties, plus Royalston, Athol, Phillipston and Petersham in Worcester County.",
+      "source_url": "https://www.masshirefhcareers.org/about",
+      "verified": true
+    },
+    {
+      "id": "mhfh-free",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Provides employment and training services at no charge to job seekers and employers. Membership is easy and free.",
+      "source_url": "https://www.masshirefhcareers.org/about",
+      "verified": true
+    },
+    {
+      "id": "mhfh-membership",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Membership is required to register for Career Center services. The fastest way to become a member is to register yourself for MassHire JobQuest and get a Job Seeker ID.",
+      "source_url": "https://www.masshirefhcareers.org/for-job-seekers/become-a-member",
+      "verified": true
+    },
+    {
+      "id": "mhfh-seminar",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "To attend a Career Center Seminar, schedule it in JobQuest (My JobQuest, then Schedule CCS), in person or virtually, or call the front desk at (413) 774-4361 or 800-457-2603.",
+      "source_url": "https://www.masshirefhcareers.org/for-job-seekers/career-center-seminars",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The homepage says Friday is virtual services only, while the contact page lists Friday 9:30am-4:30pm without that note; confirm before visiting on a Friday.",
+    "Whether the Northampton access point needs an appointment is not stated.",
+    "Whether a specific orientation is required before services is not stated.",
+    "Documents needed are not listed."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "register",
+  "hours": [
+    {
+      "label": "Greenfield office",
+      "days": [0, 1, 2, 3],
+      "nth_weekday": null,
+      "time": "8:30am-4:30pm",
+      "source_url": "https://www.masshirefhcareers.org/contact"
+    },
+    {
+      "label": "Northampton job seeker services at Forbes Library",
+      "days": [2],
+      "nth_weekday": null,
+      "time": "10am-1pm",
+      "source_url": "https://www.masshirefhcareers.org/contact"
+    }
+  ],
+  "first_step": {
+    "title": "Become a free MassHire member",
+    "detail": "Register yourself on MassHire JobQuest to get a Job Seeker ID, or call (413) 774-4361. On Wednesdays, job seeker services are at Forbes Library in Northampton, 10am-1pm."
+  }
+}

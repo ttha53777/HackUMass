@@ -1,0 +1,67 @@
+{
+  "id": "ma-free-legal-answers",
+  "name": "Massachusetts Free Legal Answers",
+  "provider": "American Bar Association (ABA Free Legal Answers)",
+  "type": "community",
+  "categories": [
+    "legal"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "A free online legal advice clinic: qualifying users post non-criminal (civil) legal questions, such as family, divorce, custody, housing, eviction, homelessness and consumer rights, and volunteer lawyers answer them. You get an email when there is a response. The lawyers cannot call you or represent you in court, and an answer is not promised before a court date or deadline.",
+  "info_url": "https://mass.freelegalanswers.org/",
+  "apply_url": "https://mass.freelegalanswers.org/",
+  "contact": "Online only through https://mass.freelegalanswers.org/ (no phone number listed)",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "mfla-qualify",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You answer a few questions on the site to see if you qualify to use the service. Register for yourself only, not for someone else.",
+      "source_url": "https://mass.freelegalanswers.org/",
+      "verified": true
+    },
+    {
+      "id": "mfla-civil-only",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Only non-criminal (civil) legal questions. Volunteer lawyers can't call you and can't represent you in court.",
+      "source_url": "https://mass.freelegalanswers.org/",
+      "verified": true
+    },
+    {
+      "id": "mfla-deadline",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "If you already have a court date or other important legal deadline, an answer is not promised before that day.",
+      "source_url": "https://mass.freelegalanswers.org/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The qualifying rules (income, age, residency) are not stated on the home page",
+    "How long answers usually take"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "register",
+  "first_step": {
+    "title": "Check if you qualify and post your question",
+    "detail": "On mass.freelegalanswers.org, answer a few questions to see if you qualify, create an account, then ask your civil legal question. You will get an email when a volunteer lawyer responds."
+  }
+}

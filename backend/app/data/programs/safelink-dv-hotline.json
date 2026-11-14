@@ -1,0 +1,67 @@
+{
+  "id": "safelink-dv-hotline",
+  "name": "SafeLink Domestic Violence Hotline",
+  "provider": "Casa Myrna",
+  "type": "community",
+  "categories": [
+    "safety"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Massachusetts' statewide 24/7 toll-free domestic violence hotline. Anyone affected by domestic or dating violence can call, including people worried about someone else. Advocates offer a safe and confidential space, safety planning resources, and referrals to local domestic violence programs and community resources. Advocates speak English and Spanish and can arrange translation in more than 130 languages.",
+  "info_url": "https://casamyrna.org/get-support/safelink/",
+  "apply_url": null,
+  "contact": "(877) 785-2020, 24/7; Deaf/hard-of-hearing callers dial 711 (Mass Relay) and ask for the hotline",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "sl-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Anyone affected by domestic or dating violence can call, including about someone else's situation. You do not need to be seeking shelter to call.",
+      "source_url": "https://casamyrna.org/get-support/safelink/",
+      "verified": true
+    },
+    {
+      "id": "sl-language",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Advocates are bilingual in English and Spanish and can arrange translation in more than 130 languages. Deaf and hard-of-hearing callers can use Mass Relay (711).",
+      "source_url": "https://casamyrna.org/get-support/safelink/",
+      "verified": true
+    },
+    {
+      "id": "sl-shelter",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Safe Passage (Hampshire County) says: for emergency shelter, call the Safelink hotline for information about available shelter options across Massachusetts.",
+      "source_url": "https://safepass.org/shelter/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Whether the call is free (the page says toll-free)",
+    "How confidentiality is handled"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call SafeLink, any time",
+    "detail": "Call (877) 785-2020, 24 hours a day. An advocate can help you plan for safety and ask about shelter options or local programs. If you are in danger, call 911."
+  }
+}

@@ -1,0 +1,137 @@
+{
+  "id": "lifeline-phone-internet",
+  "name": "Lifeline Phone and Internet Discount",
+  "provider": "Universal Service Administrative Company (Lifeline Support Center), for the FCC",
+  "type": "government",
+  "categories": [
+    "phone_internet"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Lifeline is a federal program that lowers the monthly cost of phone or internet service. If you qualify, you can get a monthly discount of up to $9.25 on phone, internet, or bundled service (up to $34.25 on qualifying Tribal lands). You qualify through your income or by taking part in programs such as SNAP or Medicaid. After you apply and are approved, you sign up with a participating phone or internet company.",
+  "info_url": "https://www.lifelinesupport.org/",
+  "apply_url": "https://getinternet.gov/apply?id=nv_home",
+  "contact": "Lifeline Support Center: (800) 234-9473, 7 days a week 9:00 a.m.-9:00 p.m. ET; LifelineSupport@usac.org; mail: Lifeline Support Center, PO Box 1000, Horseheads, NY 14845",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "ll-program",
+      "kind": "categorical",
+      "field": "benefits_held",
+      "op": "in",
+      "value": [
+        "snap"
+      ],
+      "period": null,
+      "text": "You qualify if you (or someone in your household) take part in Medicaid, SNAP, Supplemental Security Income (SSI), Federal Public Housing Assistance (including Section 8 vouchers and public housing), or the Veterans Pension and Survivors Benefit.",
+      "source_url": "https://www.lifelinesupport.org/how-to-qualify/",
+      "verified": true,
+      "group": "qualify"
+    },
+    {
+      "id": "ll-income",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 21546,
+        "2": 29214,
+        "3": 36882,
+        "4": 44550,
+        "5": 52218,
+        "6": 59886,
+        "7": 67554,
+        "8": 75222
+      },
+      "period": "year",
+      "text": "Or qualify by income: at 135% or less of the 2026 Federal Poverty Guidelines. Annual limits for the 48 contiguous states: 1 person $21,546; 2 $29,214; 3 $36,882; 4 $44,550; 5 $52,218; 6 $59,886; 7 $67,554; 8 $75,222; add $7,668 for each additional person.",
+      "source_url": "https://www.lifelinesupport.org/how-to-qualify/",
+      "verified": true,
+      "group": "qualify"
+    },
+    {
+      "id": "ll-proof",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Accepted proof includes a benefit award letter or benefits portal screenshot (program participation), a prior year's tax return or current annual income statement (income), and ID and address documents.",
+      "source_url": "https://www.lifelinesupport.org/supporting-documents/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Whether every applicant must upload documents, or only some, is not stated on the pages checked.",
+    "A one-per-household rule is not stated on the pages checked.",
+    "Which phone or internet companies offer Lifeline in Amherst was not checked (see the Companies Near Me tool on lifelinesupport.org).",
+    "fcc.gov Lifeline pages could not be fetched (HTTP 403)."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Income limits: 2026 Federal Poverty Guidelines",
+  "track": "benefit",
+  "guide": {
+    "slug": "lifeline",
+    "short_name": "Lifeline",
+    "what": "A monthly discount of up to $9.25 on phone, internet, or bundled service.",
+    "decided_by": "The Lifeline National Verifier confirms whether you qualify; then a participating phone or internet company gives the discount",
+    "when": "Apply any time",
+    "cost": "Free to apply",
+    "ways": [
+      {
+        "kind": "online",
+        "title": "Apply online",
+        "detail": "Apply on the Lifeline National Verifier to confirm you qualify, then choose a phone or internet company that offers Lifeline and sign up.",
+        "url": "https://getinternet.gov/apply?id=nv_home",
+        "phone": null,
+        "best": true
+      },
+      {
+        "kind": "phone",
+        "title": "Get help from the Lifeline Support Center",
+        "detail": "(800) 234-9473, 7 days a week, 9:00 a.m.-9:00 p.m. ET. They can also mail you an application.",
+        "url": null,
+        "phone": "(800) 234-9473",
+        "best": false
+      },
+      {
+        "kind": "mail",
+        "title": "Apply by mail",
+        "detail": "Print an application (English or Spanish) and mail it to Lifeline Support Center, PO Box 1000, Horseheads, NY 14845.",
+        "url": "https://www.lifelinesupport.org/how-to-apply/",
+        "phone": null,
+        "best": false
+      }
+    ],
+    "ask_them": [
+      "Which phone or internet companies near Amherst offer Lifeline?",
+      "Which documents do I need to send?"
+    ],
+    "unlocks": [],
+    "if_denied": [
+      "forbes-library-hotspot-lending"
+    ],
+    "tailor_questions": [
+      "benefits_held"
+    ],
+    "conditional_notes": [
+      {
+        "field": "benefits_held",
+        "any_of": [
+          "snap"
+        ],
+        "text": "You get SNAP. People in SNAP (or their household) can get Lifeline."
+      }
+    ],
+    "no_documents_note": "Proof may be needed: a benefit letter or income document, plus ID and address. The Lifeline site lists accepted documents.",
+    "source_url": "https://www.lifelinesupport.org/how-to-apply/"
+  },
+  "first_step": {
+    "title": "Apply for Lifeline online",
+    "detail": "Apply on the Lifeline National Verifier at getinternet.gov, then sign up with a participating phone or internet company. Help: (800) 234-9473."
+  }
+}

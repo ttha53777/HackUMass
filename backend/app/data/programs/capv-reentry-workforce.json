@@ -1,0 +1,71 @@
+{
+  "id": "capv-reentry-workforce",
+  "name": "Re-Entry Workforce Program",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "employment"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "A free training program for returning citizens who are recently out or soon to be out of incarceration. It offers case management (job search, support services, housing applications and transportation), job training, free industry-recognized certifications, and help getting and keeping a job. Training tracks: culinary, production/manufacturing, building/property maintenance, custodial and warehousing.",
+  "info_url": "https://www.communityaction.us/program/re-entry-workforce-program/",
+  "apply_url": null,
+  "contact": "Angel Torres, 413-834-2169 (text okay), ATorres@communityaction.us; Bob Wojcik, 413-949-2143 (text okay)",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "capv-rw-age",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must be 18 years old or older and authorized to work in the US.",
+      "source_url": "https://www.communityaction.us/program/re-entry-workforce-program/",
+      "verified": true
+    },
+    {
+      "id": "capv-rw-incarceration",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must have been incarcerated in a Massachusetts HOC or DOC, and have been released within the last 18 months or will be released within the next 6 months.",
+      "source_url": "https://www.communityaction.us/program/re-entry-workforce-program/",
+      "verified": true
+    },
+    {
+      "id": "capv-rw-connection",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must have a connection to Hampshire or Franklin Counties (not sure if you have a connection? Ask the program).",
+      "source_url": "https://www.communityaction.us/program/re-entry-workforce-program/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Training schedule, length and start dates are not stated.",
+    "Where training takes place is not stated.",
+    "Documents needed are not listed."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call or text the Re-Entry Workforce team",
+    "detail": "Call or text Angel Torres at 413-834-2169 or Bob Wojcik at 413-949-2143 to get signed up."
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "id": "cna-immigration-legal-services",
+  "name": "Immigration Legal Services",
+  "provider": "Center for New Americans",
+  "type": "community",
+  "categories": [
+    "legal"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "The Center for New Americans helps immigrants and refugees in Western Massachusetts with immigration applications, including family immigration, green card applications, humanitarian applications (TPS, VAWA, DACA renewals), employment authorization, travel documents, fee waivers for government application fees, and USCIS change of address. If it cannot provide a service, it helps connect you to a provider. It has an office in Amherst.",
+  "info_url": "https://cnam.org/immigration-legal-services/",
+  "apply_url": null,
+  "contact": "Amherst: (413) 239-9550, 150 Fearing Street, Amherst, MA 01002; Northampton: (413) 587-0084, James House, 42 Gothic Street, Northampton, MA 01060",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "cna-audience",
+      "kind": "info",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Serves immigrants and refugees in Western Massachusetts, with sites in Northampton, Amherst, Greenfield and Springfield (Springfield by appointment only).",
+      "source_url": "https://cnam.org/immigration-legal-services/",
+      "verified": true
+    },
+    {
+      "id": "cna-intake-review",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Which services you can get is decided at an intake review; some services are only for qualifying statuses.",
+      "source_url": "https://cnam.org/immigration-legal-services/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Whether services are free, low-cost or fee-based (the page only mentions fee waivers for government application fees)",
+    "Office hours",
+    "Income or other eligibility limits",
+    "Whether the Amherst site offers legal appointments or only the Northampton office",
+    "Whether deportation defense is offered (the page does not say)"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null,
+  "track": "local",
+  "access": "call",
+  "first_step": {
+    "title": "Call to get scheduled for an intake",
+    "detail": "Call the Amherst office at (413) 239-9550 or Northampton at (413) 587-0084 and ask to be scheduled for an immigration legal services intake."
+  }
+}
