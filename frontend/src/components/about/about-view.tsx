@@ -96,8 +96,9 @@ export function AboutView() {
       <div className="grid items-start gap-[22px] min-[1101px]:grid-cols-[minmax(0,1fr)_360px]">
         <Panel>
           <ul>
-            <li className="border-b border-line pb-3">
+            <>
               {editingName ? (
+                <li className="pb-3">
                 <form
                   className="flex flex-wrap items-center gap-2.5"
                   onSubmit={(e) => {
@@ -124,6 +125,7 @@ export function AboutView() {
                     Cancel
                   </button>
                 </form>
+                </li>
               ) : (
                 <Row
                   label="Name"
@@ -143,10 +145,10 @@ export function AboutView() {
                   }
                 />
               )}
-            </li>
-            <li className="border-b border-line py-3">
+            </>
+
               <Row label="Language" value="English" action={<span className="text-[11px] font-bold text-faint">More languages soon</span>} />
-            </li>
+
           </ul>
           <ul className="pt-3">
             {snapshot.answered.map((a) => {

@@ -41,7 +41,7 @@ export function FrontDoor() {
   const start = (raw: string, asSample = false) => {
     const clean = asSample ? SAMPLE_NAME : cleanName(raw);
     setName(clean);
-    if (!asSample) saveName(clean);
+    saveName(clean);
     setSample(asSample);
     setOpening(true);
     setTimeout(() => setStage("chat"), window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 450);

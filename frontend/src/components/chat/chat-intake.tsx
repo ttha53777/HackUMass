@@ -317,7 +317,7 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
                 <HandHeart aria-hidden className="size-4" />
               </span>
               <span>
-                Open<b className="text-art-h1">Door</b>
+                Open<b className="text-brand">Door</b>
               </span>
             </span>
             <div className="flex items-center gap-3">

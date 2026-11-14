@@ -323,56 +323,56 @@ export function HomeView() {
               </Link>
             </div>
           </section>
+          <section aria-label="At a glance" className="mt-[30px] grid gap-3 min-[861px]:grid-cols-3">
+            {q0 ? (
+              <Glance
+                icon={CircleHelp}
+                tint="bg-amber text-amber-ink"
+                small="One quick question"
+                title={snapshot.field_labels[q0.question.target_field] ?? q0.question.prompt}
+                note={`Could firm up ${plural(q0.affects.length, "match", "matches")}`}
+                onClick={() => openQuestion(q0.question)}
+              />
+            ) : (
+              <Glance icon={Check} tint="bg-brand-soft text-brand-text" small="Questions" title="All caught up" note="Nothing else would change your results" />
+            )}
+            {nextEvent ? (
+              <Glance
+                icon={CalendarDays}
+                tint="bg-sky text-sky-ink"
+                small="Next open time"
+                title={nextEvent.entry.label}
+                note={`${dayName(nextEvent.day)} · ${nextEvent.entry.time}`}
+                onClick={() => openProgram(nextEvent.card.program.id)}
+              />
+            ) : (
+              <Glance icon={CalendarDays} tint="bg-sky text-sky-ink" small="This week" title="No drop-in hours posted" note="Call or apply any day" href="/local" />
+            )}
+            {wallet.length ? (
+              <Glance
+                icon={Wallet}
+                tint="bg-leaf text-leaf-ink"
+                small="Documents"
+                title={`${walletGot} of ${wallet.length} ready`}
+                note={firstMissing ? `Next: ${docLabel(firstMissing.kind, walletTexts(firstMissing))}` : "You have everything"}
+                href="/documents"
+              />
+            ) : (
+              <Glance
+                icon={UserRound}
+                tint="bg-leaf text-leaf-ink"
+                small="Your answers"
+                title={household ? `${household} at home` : "Your answers"}
+                note={`${zip ? `ZIP ${zip.display_value} · ` : ""}Edit anytime`}
+                href="/about"
+              />
+            )}
+          </section>
         </div>
 
         {snapshot.pending_question?.origin === "conflict" ? <ConfirmCard /> : <SharpenCard />}
       </div>
 
-      <section aria-label="At a glance" className="mb-2.5 grid gap-3 min-[861px]:grid-cols-3">
-        {q0 ? (
-          <Glance
-            icon={CircleHelp}
-            tint="bg-amber text-amber-ink"
-            small="One quick question"
-            title={snapshot.field_labels[q0.question.target_field] ?? q0.question.prompt}
-            note={`Could firm up ${plural(q0.affects.length, "match", "matches")}`}
-            onClick={() => openQuestion(q0.question)}
-          />
-        ) : (
-          <Glance icon={Check} tint="bg-brand-soft text-brand-text" small="Questions" title="All caught up" note="Nothing else would change your results" />
-        )}
-        {nextEvent ? (
-          <Glance
-            icon={CalendarDays}
-            tint="bg-sky text-sky-ink"
-            small="Next open time"
-            title={nextEvent.entry.label}
-            note={`${dayName(nextEvent.day)} · ${nextEvent.entry.time}`}
-            onClick={() => openProgram(nextEvent.card.program.id)}
-          />
-        ) : (
-          <Glance icon={CalendarDays} tint="bg-sky text-sky-ink" small="This week" title="No drop-in hours posted" note="Call or apply any day" href="/local" />
-        )}
-        {wallet.length ? (
-          <Glance
-            icon={Wallet}
-            tint="bg-leaf text-leaf-ink"
-            small="Documents"
-            title={`${walletGot} of ${wallet.length} ready`}
-            note={firstMissing ? `Next: ${docLabel(firstMissing.kind, walletTexts(firstMissing))}` : "You have everything"}
-            href="/documents"
-          />
-        ) : (
-          <Glance
-            icon={UserRound}
-            tint="bg-leaf text-leaf-ink"
-            small="Your answers"
-            title={household ? `${household} at home` : "Your answers"}
-            note={`${zip ? `ZIP ${zip.display_value} · ` : ""}Edit anytime`}
-            href="/about"
-          />
-        )}
-      </section>
       <Disclaimer className="mt-4" />
     </>
   );
