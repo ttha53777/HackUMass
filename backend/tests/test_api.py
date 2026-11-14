@@ -341,3 +341,13 @@ def test_status_changes_are_classified_and_ignore_new_programs():
         {"a": "likely_eligible", "b": "opens_later", "c": "likely_ineligible", "d": "likely_eligible", "new": "likely_eligible"},
     )
     assert change == {"moved_to_fit": ["a"], "opens_later": ["b"], "no_longer_fit": ["c"], "updated": []}
+
+
+def test_already_receiving_is_not_reported_as_a_new_fit():
+    from app.services.session_store import status_changes
+
+    change = status_changes(
+        {"snap": "insufficient_information", "fuel": "likely_eligible"},
+        {"snap": "already_receiving", "fuel": "already_receiving"},
+    )
+    assert change == {"moved_to_fit": [], "opens_later": [], "no_longer_fit": [], "updated": ["snap", "fuel"]}

@@ -52,11 +52,12 @@ def get_checkpointer() -> InMemorySaver:
     )
 
 
-FIT_STATUSES = ("likely_eligible", "already_receiving")
-
-
 def status_changes(before: dict[str, str], after: dict[str, str]) -> dict[str, list[str]]:
-    """Which programs changed status during a run. Programs new to the list are ignored."""
+    """Which programs changed status during a run. Programs new to the list are ignored.
+
+    Only a move to likely_eligible counts as a new fit. A program the person now says
+    they already get (already_receiving) is not a new match, so it is reported as updated.
+    """
     change: dict[str, list[str]] = {
         "moved_to_fit": [], "opens_later": [], "no_longer_fit": [], "updated": [],
     }
@@ -64,7 +65,7 @@ def status_changes(before: dict[str, str], after: dict[str, str]) -> dict[str, l
         previous = before.get(program_id)
         if previous is None or previous == status:
             continue
-        if status in FIT_STATUSES:
+        if status == "likely_eligible":
             change["moved_to_fit"].append(program_id)
         elif status == "opens_later":
             change["opens_later"].append(program_id)

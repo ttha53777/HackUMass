@@ -246,5 +246,5 @@ Known, accepted for now: the legacy intake still runs its own session hook (remo
 Gaps noticed:
 - A tailoring question shows in a guide only when it is in `open_questions` or already answered (the snapshot has no definition otherwise). The backend accepts them; exposing their definitions (e.g. `guide_questions`) would need a contract change.
 - Matching `conditional_notes` compares option labels with `display_value`, because `AnsweredItem` carries no option ids. An additive `selected_option_ids` on `AnsweredItem` would make this exact.
-- After answering `benefits_held = snap`, `last_change.moved_to_fit` listed the SNAP program itself (it became "You have this"), so the toast says "moved to likely fit". Worth a look on the backend side.
+- ~~After answering `benefits_held = snap`, `last_change.moved_to_fit` listed the SNAP program itself.~~ Fixed: `already_receiving` is now reported under `updated`, not as a new fit.
 - The demo's dated timing strip (deadlines) and "other programs outside what you picked" are not built: the snapshot has neither the dates as data nor the unmatched programs.
