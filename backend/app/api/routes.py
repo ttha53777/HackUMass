@@ -1,10 +1,11 @@
-"""HTTP routes (tickets T5, T15). The document endpoint arrives with T17."""
+"""HTTP routes (tickets T5, T15, T17)."""
 
 from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, Body, Request
+from fastapi import APIRouter, Body, File, Form, Request, UploadFile
+from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from app.api.schemas import (
@@ -19,6 +20,7 @@ from app.api.views import build_snapshot
 from app.graph.answers import AnswerError, validate_answer
 from app.graph.questions import get_spec
 from app.graph.state import EvidenceRequest, IntakeState
+from app.services.documents import MAX_BYTES, DocumentRejected, extract
 from app.services.llm import get_llm
 from app.services.session_store import SessionManager, SessionMeta
 
@@ -153,6 +155,48 @@ async def submit_nessie_evidence(
         raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
 
     request_in = EvidenceRequest(kind="nessie", persona_id=evidence.persona_id)
+    finished = await manager.submit(session_id, {"pending_evidence": request_in})
+    snapshot = _snapshot(request, session_id, meta)
+    return JSONResponse(
+        status_code=200 if finished else 202, content=snapshot.model_dump(mode="json")
+    )
+
+
+@router.post(
+    "/sessions/{session_id}/evidence/document",
+    response_model=SessionSnapshot,
+    status_code=202,
+)
+async def submit_document(
+    request: Request,
+    session_id: str,
+    file: UploadFile = File(...),
+    consent: str = Form(""),
+) -> JSONResponse:
+    """Read household size and income from a PDF or text file (2 MB max).
+
+    The file is parsed from a temporary copy that is deleted straight away; only
+    the extracted facts are kept, and they stay unconfirmed until the person
+    confirms them. 200 when finished on the fast path, 202 while still going.
+    """
+    manager = _manager(request)
+    meta = _session(request, session_id)
+    if consent.strip().lower() != "true":
+        raise ApiError(400, "consent_required", "Please confirm you want us to read this document.")
+    if meta.busy:
+        raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
+
+    data = await file.read(MAX_BYTES + 1)  # never read more than we would accept
+    await file.close()
+    try:
+        extraction = await run_in_threadpool(extract, file.filename or "", data)
+    except DocumentRejected as exc:
+        raise ApiError(415, "unsupported_file", str(exc)) from exc
+    finally:
+        del data
+
+    document_id = request.app.state.documents.put(extraction)
+    request_in = EvidenceRequest(kind="document", document_ref=document_id)
     finished = await manager.submit(session_id, {"pending_evidence": request_in})
     snapshot = _snapshot(request, session_id, meta)
     return JSONResponse(

@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createSession, getSession, isApiError, submitAnswer, submitNessieEvidence } from "@/lib/api";
+import {
+  createSession,
+  getSession,
+  isApiError,
+  submitAnswer,
+  submitNessieEvidence,
+  uploadDocument,
+} from "@/lib/api";
 import type { AnswerIn, SessionSnapshot } from "@/lib/types";
 
 const STORAGE_KEY = "crn.session_id";
@@ -44,6 +51,8 @@ export type SessionController = {
   submit: (answer: AnswerIn) => Promise<boolean>;
   /** Use a simulated bank profile (consent given). Returns an error message, or null. */
   submitEvidence: (personaId: string) => Promise<string | null>;
+  /** Upload a document (consent given). Returns an error message, or null. */
+  submitDocument: (file: File) => Promise<string | null>;
   restart: () => Promise<void>;
   clearAnswerError: () => void;
 };
@@ -174,6 +183,14 @@ export function useSession(): SessionController {
     [send],
   );
 
+  const submitDocument = useCallback(
+    async (file: File) => {
+      const result = await send((id) => uploadDocument(id, file));
+      return result === false ? null : result;
+    },
+    [send],
+  );
+
   const restart = useCallback(async () => {
     storeId(null);
     setSnapshot(null);
@@ -191,6 +208,7 @@ export function useSession(): SessionController {
     working: submitting || busy,
     submit,
     submitEvidence,
+    submitDocument,
     restart,
     clearAnswerError,
   };

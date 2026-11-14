@@ -20,7 +20,11 @@ async function request<T = SessionSnapshot>(path: string, init?: RequestInit): P
   // Same-origin: Next.js forwards /api/* to the backend (see next.config.ts).
   const response = await fetch(`/api${path}`, {
     ...init,
-    headers: { "content-type": "application/json", ...init?.headers },
+    // A FormData body sets its own multipart content type.
+    headers:
+      init?.body instanceof FormData
+        ? init.headers
+        : { "content-type": "application/json", ...init?.headers },
     cache: "no-store",
   });
   if (response.ok) {
@@ -65,5 +69,16 @@ export function submitNessieEvidence(sessionId: string, personaId: string): Prom
   return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/nessie`, {
     method: "POST",
     body: JSON.stringify({ persona_id: personaId, consent: true }),
+  });
+}
+
+/** Upload a PDF or text file to read household size and income from it. */
+export function uploadDocument(sessionId: string, file: File): Promise<SessionSnapshot> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("consent", "true");
+  return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/document`, {
+    method: "POST",
+    body: form,
   });
 }

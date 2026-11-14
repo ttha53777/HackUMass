@@ -21,7 +21,8 @@ The app leads; the user answers. It is not an open-ended chatbot.
 4. It shows matching government and community programs, each with a source link and a preliminary fit label.
 5. It produces an ordered roadmap of next steps, and revises it when the user adds or corrects information. A short summary says what each new answer changed.
 6. The plan can be printed or saved as a PDF from the browser; links are written out in print.
-7. A collapsed *How we put this together* panel shows each of the four specialist steps, its status and time, and counts drawn from the results. It shows no generated reasoning.
+7. Optionally, the person can try a fictional simulated bank profile or upload a pay stub or benefit letter. Any number found is shown to them to confirm before it is used.
+8. A collapsed *How we put this together* panel shows each of the four specialist steps, its status and time, and counts drawn from the results. It shows no generated reasoning.
 
 ## Architecture (Planned)
 
@@ -90,9 +91,10 @@ All routes are under `/api`. Errors have the shape `{"error": {"code", "message"
 | `POST /sessions/{id}/answers` | Answer the pending question, or change or skip an earlier one. `200` means the snapshot is current; `202` means work continues (`busy: true`), so poll the `GET` route. |
 | `GET /nessie/personas` | The fictional demo bank profiles, each labelled *Simulated*. |
 | `POST /sessions/{id}/evidence/nessie` | Body `{"persona_id", "consent": true}`. Uses a simulated bank profile; `200` or `202` like answers. Deposits become an **unconfirmed** income estimate, and the app asks the person to confirm it before relying on it. |
+| `POST /sessions/{id}/evidence/document` | Multipart: `file` (PDF or `.txt`, 2 MB max) and `consent=true`. Reads only household size and income from labelled lines such as "Gross monthly pay: $1,400". The file is deleted right after reading, and its text is never stored. Found numbers wait for the person to confirm them. |
 | `GET /health` | Liveness and configuration flags. No secrets. |
 
-Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422), `consent_required` (400).
+Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422), `consent_required` (400), `unsupported_file` (415).
 
 Try it with the backend running:
 

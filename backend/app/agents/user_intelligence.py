@@ -40,6 +40,7 @@ from app.graph.state import (
     SessionState,
 )
 from app.services.free_text import match_other
+from app.services.documents import DocumentInbox
 from app.services.nessie import NessieService
 
 # Two money amounts within this fraction of each other are treated as the same
@@ -264,8 +265,17 @@ def _income_fact(summary: FinancialSummary, now: datetime) -> Fact:
     )
 
 
-def make_user_intelligence(nessie: NessieService | None = None):
-    """`nessie` supplies simulated bank summaries; None means seeded personas only."""
+NO_FACTS_MESSAGE = (
+    "We couldn't find household income or household size in that document. "
+    "You can type them in instead."
+)
+
+
+def make_user_intelligence(
+    nessie: NessieService | None = None, inbox: DocumentInbox | None = None
+):
+    """`nessie` supplies simulated bank summaries (None: seeded personas only);
+    `inbox` holds facts extracted from an uploaded document."""
     service = nessie
 
     def user_intelligence(state: SessionState) -> dict[str, Any]:
@@ -297,6 +307,19 @@ def make_user_intelligence(nessie: NessieService | None = None):
                 code, message = result.notice
                 update["errors"] = list(state.get("errors") or []) + [
                     SafeError(code=code, message=message, agent="user_intelligence", at=now)
+                ]
+
+        if evidence is not None and evidence.kind == "document" and evidence.document_ref:
+            update["consents"] = {**(state.get("consents") or {}), "document": True}
+            extraction = inbox.pop(evidence.document_ref) if inbox else None
+            if extraction is not None:
+                # Facts only: the document's text never reaches state.
+                update["documents"] = list(state.get("documents") or []) + [extraction]
+                changed += apply_evidence_facts(profile, dict(extraction.extracted_facts))
+            if extraction is None or not extraction.extracted_facts:
+                update["errors"] = list(update.get("errors") or state.get("errors") or []) + [
+                    SafeError(code="document_no_facts", message=NO_FACTS_MESSAGE,
+                              agent="user_intelligence", at=now)
                 ]
 
         return {

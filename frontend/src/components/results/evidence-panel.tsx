@@ -28,9 +28,9 @@ export function FinancialSummaryCard({ summary }: { summary: FinancialSummaryVie
     >
       <SimulatedBadge />
       <div>
-        <h2 id="summary-heading" className="text-lg font-semibold">
+        <h3 id="summary-heading" className="text-lg font-semibold">
           From your simulated bank profile
-        </h2>
+        </h3>
         <p className="text-sm text-muted-foreground">
           {summary.source === "nessie_sandbox"
             ? "Read from the Capital One Nessie sandbox (demo data, not a real bank)"

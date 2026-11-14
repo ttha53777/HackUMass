@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ActivityPanel } from "@/components/results/activity-panel";
+import { DocumentPanel } from "@/components/results/document-panel";
 import { EvidencePanel } from "@/components/results/evidence-panel";
 import { hasResults, ResultsView } from "@/components/results/results-view";
 import { STATUS } from "@/components/results/status";
@@ -134,6 +135,12 @@ export function GuidedIntake() {
     return session.submitEvidence(personaId);
   }
 
+  async function handleDocument(file: File) {
+    const before = statusesOf(snapshot!);
+    setBaseline(before.size > 0 ? before : null);
+    return session.submitDocument(file);
+  }
+
   function startEdit(questionId: string) {
     session.clearAnswerError();
     setEditingId(questionId);
@@ -256,7 +263,7 @@ export function GuidedIntake() {
           className="rounded-xl border border-sky-700/30 bg-sky-50 p-4 text-sky-950 dark:border-sky-400/30 dark:bg-sky-950 dark:text-sky-50 print:hidden"
         >
           <h2 id="changes-heading" className="font-semibold">
-            What your answer changed
+            What changed
           </h2>
           <ul className="mt-1 list-disc pl-5 text-sm">
             {changes.map((line) => (
@@ -286,12 +293,23 @@ export function GuidedIntake() {
           followUp={followUp}
           evidence={
             usesIncome(snapshot) ? (
-              <EvidencePanel
-                summary={snapshot.financial_summary}
-                openRequested={offerAccepted}
-                disabled={working}
-                onUse={handleEvidence}
-              />
+              <section aria-labelledby="evidence-heading" className="flex flex-col gap-3 print:hidden">
+                <div>
+                  <h2 id="evidence-heading" className="text-xl font-semibold tracking-tight">
+                    Not sure about your income?
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Both are optional. Anything we find is shown to you to confirm first.
+                  </p>
+                </div>
+                <EvidencePanel
+                  summary={snapshot.financial_summary}
+                  openRequested={offerAccepted}
+                  disabled={working}
+                  onUse={handleEvidence}
+                />
+                <DocumentPanel disabled={working} onUpload={handleDocument} />
+              </section>
             ) : null
           }
           disabled={working}

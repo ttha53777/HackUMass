@@ -210,7 +210,8 @@ def decide(state: SessionState) -> Decision:
     #    bank profile, in that order.
     question = next_awaiting_question(
         profile, intake, programs, assessments,
-        has_summary=state.get("financial_summary") is not None,
+        # Already given a bank profile or a document: don't offer another source.
+        has_summary=state.get("financial_summary") is not None or bool(state.get("documents")),
     )
     if question is not None:
         return finish("awaiting_user", question)
