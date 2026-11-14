@@ -204,6 +204,18 @@ def list_personas(request: Request) -> list[PersonaOut]:
     ]
 
 
+@router.post("/sessions/{session_id}/evidence/nessie/disconnect", response_model=SessionSnapshot)
+async def disconnect_bank(request: Request, session_id: str) -> JSONResponse:
+    """Disconnect the simulated bank: drop its summary and any unconfirmed income read from it."""
+    manager = _manager(request)
+    meta = _session(request, session_id)
+    if meta.busy:
+        raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
+    finished = await manager.disconnect_bank(session_id)
+    snapshot = _snapshot(request, session_id, meta)
+    return JSONResponse(status_code=200 if finished else 202, content=snapshot.model_dump(mode="json"))
+
+
 @router.post(
     "/sessions/{session_id}/evidence/nessie",
     response_model=SessionSnapshot,
