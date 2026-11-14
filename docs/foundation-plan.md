@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Nothing in this plan is implemented yet.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T5 (T3 with stub Eligibility and Action Planning). See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 
@@ -20,7 +20,7 @@ Items marked **VERIFY** depend on third-party behaviour or real-world facts that
 | D4 | **Eligibility is deterministic for structured rules.** LLM use is limited to wording explanations and never changes a status. | Spec §8.4; statuses are testable without a model. |
 | D5 | **`LLM_MODE=off` is a first-class mode.** Every LLM call has a template fallback. | The scripted demo and the whole test suite run with no network and no key. |
 | D6 | **Discovery reads curated JSON only.** No live web search in the MVP. | Spec §13; live search is on the cut list. |
-| D7 | **Background run + polling.** `POST …/answers` starts the graph run in a background task and returns `202` with a snapshot; the frontend polls `GET /sessions/{id}` about once a second while the phase is a working phase. | One code path for fast and slow turns. Progress is visible because the checkpointer saves after every node. SSE adds failure modes for no demo gain. |
+| D7 | **Background run + polling, with a fast path.** `POST …/answers` starts the graph run and waits up to 0.8 s. If the run finishes it returns `200` with the current snapshot; otherwise it returns `202` with `busy: true` and the frontend polls `GET /sessions/{id}` about once a second until `busy` is false. | One code path for fast and slow turns. Progress is visible because the checkpointer saves after every node. SSE adds failure modes for no demo gain. |
 | D8 | **Next.js proxies `/api/*` to FastAPI** through a `rewrites` entry. | No CORS configuration, no backend URL in browser code, keys stay server-side. |
 | D9 | **Preliminary roadmap first, follow-ups second.** After the first Eligibility pass the plan is produced and shown; up to two eligibility-triggered follow-ups are then offered alongside the results and revise them. | Users get value even if they stop answering; the revision is the visible "new evidence changes the plan" moment. |
 | D10 | **Model provider: Anthropic Claude**, model ID from `LLM_MODEL`, called through one thin wrapper (`services/llm.py`) using the provider SDK directly. No LangChain model or agent abstractions. | Fewer dependencies. Only `langgraph` is needed from that ecosystem. **VERIFY** the current structured-output call shape in the SDK docs when the wrapper is written. |
@@ -314,7 +314,7 @@ All routes are under `/api`. Error body: `{"error": {"code": str, "message": str
 |---|---|---|---|
 | `POST /sessions` | — | `201 SessionSnapshot` | Includes `session_id` and the first `pending_question`. |
 | `GET /sessions/{id}` | — | `200 SessionSnapshot` | Polled while `busy` is true. |
-| `POST /sessions/{id}/answers` | `AnswerIn` | `202 SessionSnapshot` | Also used for edits and skips. |
+| `POST /sessions/{id}/answers` | `AnswerIn` | `200` or `202 SessionSnapshot` | Also used for edits and skips. `200` = run finished; `202` = still running, poll. |
 | `GET /nessie/personas` | — | `200 [{id, label, description}]` | Labels say "simulated". |
 | `POST /sessions/{id}/evidence/nessie` | `{persona_id, consent: true}` | `202 SessionSnapshot` | `consent` must be literally true. |
 | `POST /sessions/{id}/evidence/document` | multipart, `consent=true` | `202 SessionSnapshot` | Stretch. PDF or text, 2 MB cap. |

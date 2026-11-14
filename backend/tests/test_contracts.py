@@ -4,7 +4,6 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import END, START, StateGraph
 
 from app.api.schemas import SessionSnapshot
@@ -16,6 +15,7 @@ from app.graph.state import (
     Profile,
     SessionState,
 )
+from app.services.session_store import get_checkpointer
 
 FIXTURE = Path(__file__).parent / "fixtures" / "snapshot.json"
 FRONTEND_COPY = (
@@ -79,7 +79,7 @@ def test_session_state_persists_across_invocations():
     builder.add_edge(START, "first")
     builder.add_edge("first", "second")
     builder.add_edge("second", END)
-    graph = builder.compile(checkpointer=InMemorySaver())
+    graph = builder.compile(checkpointer=get_checkpointer())
 
     config = {"configurable": {"thread_id": "t1"}}
     graph.invoke({"session_id": "t1"}, config)

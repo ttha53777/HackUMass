@@ -1,0 +1,55 @@
+{
+  "id": "fixture-energy-assist",
+  "name": "Fixture Energy Assistance (not a real program)",
+  "provider": "Fixture State Agency",
+  "type": "government",
+  "categories": [
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "ZZ",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Help paying winter heating bills. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-energy-assist",
+  "apply_url": "https://example.org/fixture-energy-assist/apply",
+  "contact": null,
+  "documents_needed": [
+    "Proof of income",
+    "A recent heating bill"
+  ],
+  "requirements": [
+    {
+      "id": "income",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 2500,
+        "2": 3300,
+        "3": 4100,
+        "4": 4900
+      },
+      "period": "month",
+      "text": "Gross monthly household income at or below the limit for household size.",
+      "source_url": "https://example.org/fixture-energy-assist",
+      "verified": true
+    },
+    {
+      "id": "heat",
+      "kind": "categorical",
+      "field": "heat_included_in_rent",
+      "op": "eq",
+      "value": false,
+      "period": null,
+      "text": "The household must pay its own heating costs.",
+      "source_url": "https://example.org/fixture-energy-assist",
+      "verified": true
+    }
+  ],
+  "unknowns": [],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}

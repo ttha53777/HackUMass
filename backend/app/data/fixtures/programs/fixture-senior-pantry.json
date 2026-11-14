@@ -1,0 +1,38 @@
+{
+  "id": "fixture-senior-pantry",
+  "name": "Fixture Senior Pantry (not a real program)",
+  "provider": "Fixture Community Center",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "ZZ",
+    "counties": [],
+    "zips": [
+      "00000"
+    ]
+  },
+  "description": "Weekly grocery pickup. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-senior-pantry",
+  "apply_url": null,
+  "contact": null,
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "age",
+      "kind": "age_min",
+      "field": "age_60_plus",
+      "op": "eq",
+      "value": true,
+      "period": null,
+      "text": "For residents aged 60 and over.",
+      "source_url": "https://example.org/fixture-senior-pantry",
+      "verified": true
+    }
+  ],
+  "unknowns": [],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}

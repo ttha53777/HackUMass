@@ -4,8 +4,8 @@ A guided assistant that helps people find government assistance programs and loc
 
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
-> **Project status: scaffold and shared contracts are in place; the guided intake is not built yet.**
-> Today the app shows a placeholder page and a backend health check. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
+> **Project status: the backend runs the guided intake end to end against fictional test programs; the web UI is still a placeholder.**
+> Built: question registry, Administrator and graph, session API, basic profile building and program filtering. Eligibility and Action Planning are stubs that do not evaluate any rule yet, and there are no real program records. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
 
 ## Who it is for
 
@@ -74,12 +74,35 @@ Open the URL that `npm run dev` prints. It is <http://localhost:3000> unless tha
 
 The frontend forwards `/api/*` to `http://127.0.0.1:8000`. Set `BACKEND_URL` when starting the frontend to point it elsewhere.
 
+## API
+
+All routes are under `/api`. Errors have the shape `{"error": {"code", "message"}}`.
+
+| Route | Purpose |
+|---|---|
+| `POST /sessions` | Start a session. Returns `201` and a snapshot that already contains the first question. |
+| `GET /sessions/{id}` | Current snapshot: pending question, answered questions, programs, plan, agent statuses, notices. |
+| `POST /sessions/{id}/answers` | Answer the pending question, or change or skip an earlier one. `200` means the snapshot is current; `202` means work continues (`busy: true`), so poll the `GET` route. |
+| `GET /health` | Liveness and configuration flags. No secrets. |
+
+Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422).
+
+Try it with the backend running:
+
+```bash
+curl -s -X POST http://127.0.0.1:8000/api/sessions
+curl -s -X POST http://127.0.0.1:8000/api/sessions/<session_id>/answers \
+  -H 'content-type: application/json' \
+  -d '{"question_id": "needs", "selected_option_ids": ["food", "utilities"]}'
+```
+
 ## Environment variables
 
-Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data. Only the health check reads them today; the model and Nessie integrations are planned.
+Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data. The model and Nessie integrations are planned, so only `PROGRAM_SOURCE` changes behaviour today.
 
 | Variable | Required | Purpose |
 |---|---|---|
+| `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value uses the curated records, of which there are none yet, so every ZIP code is reported as outside coverage. `.env.example` sets `fixtures`. |
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `ANTHROPIC_API_KEY` | Only when `LLM_MODE=live` | Model access for free-text interpretation and explanations. |
 | `LLM_MODEL` | No | Model ID to use in live mode. |
@@ -110,14 +133,15 @@ The backend and frontend share one snapshot fixture, `backend/tests/fixtures/sna
 cd frontend && npm run sync:fixture
 ```
 
-## Reproducing the demo (Planned)
+## Reproducing the demo
 
-Set `LLM_MODE=off` for a fully deterministic run.
+Today, with `PROGRAM_SOURCE=fixtures`, the flow can be driven through the API (see the curl example above): choose `food` and `utilities`, enter ZIP `00000`, answer the utility, household-size and income questions, and the snapshot returns fictional programs, a stub plan and one follow-up question. `backend/tests/test_api.py` runs the same flow.
 
-- **Region:** Amherst / Hampshire County, Massachusetts. The exact supported ZIP codes will be listed here once the dataset is curated.
+Planned for the real demo:
+
+- **Region:** Amherst / Hampshire County, Massachusetts. The supported ZIP codes will be listed here once the dataset is curated.
 - **Persona (fictional):** a retired person living alone on about $1,400 a month, worried about groceries and energy bills.
-
-Script: choose *Food* and *Utilities* → enter a supported ZIP → *Retired* → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally pick the simulated bank profile.
+- **Script:** choose *Food* and *Utilities* → enter a supported ZIP → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally pick the simulated bank profile.
 
 ## Scope and limitations
 
@@ -130,29 +154,36 @@ Script: choose *Food* and *Utilities* → enter a supported ZIP → *Retired* �
 ## Repository structure
 
 ```text
-CLAUDE.md                       guidance for coding agents
-docs/foundation-plan.md         architecture, contracts, tickets, risks
-backend/app/main.py             FastAPI entry point
-backend/app/api/routes.py       routes (health only so far)
-backend/app/api/schemas.py      request/response shapes        (contract file)
-backend/app/graph/state.py      shared LangGraph state models  (contract file)
-backend/app/agents/             the four specialists           (empty, planned)
-backend/app/services/           LLM, Nessie, programs, sessions (empty, planned)
-backend/app/data/programs/      curated program records         (empty, planned)
-backend/tests/                  pytest suite and the shared snapshot fixture
-frontend/src/app/               pages (placeholder home page)
-frontend/src/components/        UI components; `ui/` holds shadcn components
-frontend/src/lib/types.ts       TypeScript mirror of the API   (contract file)
-frontend/src/lib/fixtures/      generated copy of the snapshot fixture
+CLAUDE.md                          guidance for coding agents
+docs/foundation-plan.md            architecture, contracts, tickets, risks
+backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
+backend/app/api/routes.py          HTTP routes
+backend/app/api/views.py           builds the client snapshot from graph state
+backend/app/api/schemas.py         request/response shapes          (contract file)
+backend/app/graph/state.py         shared LangGraph state models    (contract file)
+backend/app/graph/build.py         graph wiring                     (contract file)
+backend/app/graph/administrator.py deterministic routing between specialists
+backend/app/graph/questions.py     question registry and selection policy
+backend/app/graph/answers.py       answer validation and normalisation
+backend/app/agents/                the four specialists, one file each
+                                   (eligibility and action_planning are stubs)
+backend/app/services/              programs repository, in-memory session store
+backend/app/data/fixtures/         fictional development programs and region
+backend/app/data/programs/         curated program records          (empty, planned)
+backend/tests/                     pytest suite and the shared snapshot fixture
+frontend/src/app/                  pages (placeholder home page)
+frontend/src/components/           UI components; `ui/` holds shadcn components
+frontend/src/lib/types.ts          TypeScript mirror of the API     (contract file)
+frontend/src/lib/fixtures/         generated copy of the snapshot fixture
 ```
 
 Contract files are shared by every workstream. Agree changes with the team first, and change the Python and TypeScript sides together.
 
-Where changes will go as the planned pieces are built:
+Where to make changes:
 
 - **An agent's behaviour:** its file in `backend/app/agents/`. Graph wiring and shared state are contract files; coordinate before editing them.
 - **A program record:** add or edit a file in `backend/app/data/programs/`, following the curation procedure in the [foundation plan](docs/foundation-plan.md) (section B.7). Copy URLs from the provider's page; never write one from memory.
-- **A question:** the question registry in `backend/app/graph/` (planned).
+- **A question:** `backend/app/graph/questions.py`. A question is only asked when a candidate program's requirement references its `target_field`.
 - **An integration:** `backend/app/services/`.
 
 ## Troubleshooting
@@ -170,6 +201,10 @@ Where changes will go as the planned pieces are built:
   ```
 
   Repeat the last two lines after any `npm install` or `npm ci`, because npm replaces the link with a real folder.
+- **Every ZIP code is "outside coverage".** `PROGRAM_SOURCE` is not `fixtures` and no curated records exist yet. With fixtures, only ZIP `00000` is supported.
+- **`409 session_busy`.** The previous answer is still being processed. Poll `GET /sessions/{id}` until `busy` is false.
 - **`Cannot find name 'LayoutProps'` from `tsc`.** Run `npm run typecheck`, which generates Next.js route types first, instead of calling `tsc` directly.
 
-Planned topics once the features exist: session expired after a backend restart, missing model key in live mode, Nessie unavailable, unsupported ZIP code.
+- **`404 session_not_found` after a restart.** Sessions live in memory, so restarting the backend clears them. Start a new session.
+
+Planned topics once the features exist: missing model key in live mode, Nessie unavailable.

@@ -1,0 +1,38 @@
+{
+  "id": "fixture-ride-service",
+  "name": "Fixture Ride Service (not a real program)",
+  "provider": "Fixture Community Center",
+  "type": "community",
+  "categories": [
+    "transportation"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "ZZ",
+    "counties": [],
+    "zips": [
+      "00000"
+    ]
+  },
+  "description": "Free rides to appointments. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-ride-service",
+  "apply_url": null,
+  "contact": null,
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Open to all residents of the service area.",
+      "source_url": "https://example.org/fixture-ride-service",
+      "verified": true
+    }
+  ],
+  "unknowns": [],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}

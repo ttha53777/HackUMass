@@ -1,0 +1,52 @@
+{
+  "id": "fixture-rent-help",
+  "name": "Fixture Rent Help (not a real program)",
+  "provider": "Fixture Housing Office",
+  "type": "government",
+  "categories": [
+    "housing"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "ZZ",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Short-term help with rent. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-rent-help",
+  "apply_url": "https://example.org/fixture-rent-help/apply",
+  "contact": null,
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "income",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 3000,
+        "2": 3900,
+        "3": 4800,
+        "4": 5700
+      },
+      "period": "month",
+      "text": "Gross monthly household income at or below the limit for household size.",
+      "source_url": "https://example.org/fixture-rent-help",
+      "verified": true
+    },
+    {
+      "id": "renter",
+      "kind": "categorical",
+      "field": "housing_status",
+      "op": "eq",
+      "value": "renting",
+      "period": null,
+      "text": "For households that rent their home.",
+      "source_url": "https://example.org/fixture-rent-help",
+      "verified": true
+    }
+  ],
+  "unknowns": [],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}

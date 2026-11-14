@@ -1,0 +1,10 @@
+{
+  "_comment": "FICTIONAL development data. 00000 is not a real ZIP code.",
+  "supported_zips": {
+    "00000": {
+      "city": "Fixtureville",
+      "county": "Fixture County",
+      "state": "ZZ"
+    }
+  }
+}

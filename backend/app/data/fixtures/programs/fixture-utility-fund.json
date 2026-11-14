@@ -1,0 +1,41 @@
+{
+  "id": "fixture-utility-fund",
+  "name": "Fixture Neighbors Utility Fund (not a real program)",
+  "provider": "Fixture Neighbors Nonprofit",
+  "type": "community",
+  "categories": [
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "ZZ",
+    "counties": [
+      "Fixture County"
+    ],
+    "zips": []
+  },
+  "description": "One-time help with an overdue utility bill. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-utility-fund",
+  "apply_url": null,
+  "contact": null,
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "overdue",
+      "kind": "categorical",
+      "field": "utility_urgency",
+      "op": "in",
+      "value": [
+        "behind",
+        "shutoff"
+      ],
+      "period": null,
+      "text": "For households with an overdue bill or a shutoff notice.",
+      "source_url": "https://example.org/fixture-utility-fund",
+      "verified": true
+    }
+  ],
+  "unknowns": [],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}

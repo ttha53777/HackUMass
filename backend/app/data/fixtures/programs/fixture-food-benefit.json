@@ -1,0 +1,45 @@
+{
+  "id": "fixture-food-benefit",
+  "name": "Fixture Food Benefit (not a real program)",
+  "provider": "Fixture State Agency",
+  "type": "government",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "ZZ",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Monthly grocery benefit. Fictional record for development only.",
+  "info_url": "https://example.org/fixture-food-benefit",
+  "apply_url": "https://example.org/fixture-food-benefit/apply",
+  "contact": null,
+  "documents_needed": [
+    "Proof of income"
+  ],
+  "requirements": [
+    {
+      "id": "income",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 2000,
+        "2": 2700,
+        "3": 3400,
+        "4": 4100
+      },
+      "period": "month",
+      "text": "Gross monthly household income at or below the limit for household size.",
+      "source_url": "https://example.org/fixture-food-benefit",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Asset limits"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Fixture year 2026"
+}
