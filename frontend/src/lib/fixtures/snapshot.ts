@@ -3289,5 +3289,11 @@ export const snapshotFixture: SessionSnapshot = {
     "benefits_held": "Benefits you get",
     "monthly_income": "Monthly income",
     "eversource_customer": "Eversource customer"
-  }
+  },
+  "applications": {},
+  "automatable_program_ids": [
+    "fbwm-snap-application-assistance",
+    "eversource-ma-discount-rate",
+    "capv-fuel-assistance"
+  ]
 };

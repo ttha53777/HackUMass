@@ -9,10 +9,13 @@ client = TestClient(app)
 def test_health_defaults(monkeypatch):
     monkeypatch.delenv("LLM_MODE", raising=False)
     monkeypatch.delenv("NESSIE_API_KEY", raising=False)
+    monkeypatch.delenv("BROWSER_PROVIDER", raising=False)
     reset_llm()
     response = client.get("/api/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok", "llm_mode": "off", "nessie_configured": False}
+    assert response.json() == {
+        "status": "ok", "llm_mode": "off", "nessie_configured": False, "browser_agent": False,
+    }
 
 
 def test_health_reports_configuration_without_leaking_keys(monkeypatch):

@@ -1,6 +1,37 @@
 # Browser Execution Agent: 36-hour MVP plan
 
-Status: plan only, nothing implemented. Written 2026-11-14 against `main` at `60c466a`.
+Status: Phases 0 and 1 built on 2026-11-14 (see "Progress" below). Written 2026-11-14 against `main` at `60c466a`.
+
+## Progress
+
+**Phase 0**
+
+- Contract change done: `ApplicationRecord`, `SessionState.applications` and `application_result` (`graph/state.py`); the Administrator stores a result and marks the plan dirty; Action Planning moves a submitted program to the bottom ("Sent on ... Watch for a reply from ...") and turns `unclear` into "Check whether your application went through"; `SessionSnapshot.applications` and `automatable_program_ids` in `api/schemas.py` and `frontend/src/lib/types.ts`; the snapshot fixture is regenerated and synced.
+- S1 (`backend/scripts/spikes/s1_gemini_cu.py`) and S2 (`s2_steel.py`) are written, but they have **not been run yet**: `backend/.env` has no `GEMINI_API_KEY` or `STEEL_API_KEY`. The go/no-go decision is still open.
+- S3 (`s3_real_forms.py`) has a baseline from a residential IP (`--local`). The run through Steel, from a datacenter IP, is still to do.
+
+  | program | host | visible fields | bot wall |
+  |---|---|---|---|
+  | asc-food-pantry | amherstsurvival.org | 5 | no |
+  | capv-weatherization | forms.monday.com | 20 | no |
+  | hves-home-delivered-meals | fd7.formdesk.com | 65 | no |
+  | fbwm-snap-application-assistance | www.foodbankwma.org | 3 | no |
+  | eversource-ma-discount-rate | www.eversource.com | 27 | **yes**, even locally |
+  | capv-fuel-assistance | www.toapply.org | 0 (sign-up or login wall) | no |
+
+**Phase 1:** all four streams are built. The acceptance check runs as `tests/test_practice_browser.py`: real headless Chrome and the real practice form, with a scripted model. It fills steps one and two from the fill sheet, hands off at the certify box and at Submit, and blocks an off-site navigation. `tests/test_execution_api.py` covers the run lifecycle with `FakeProvider` and no network. One end-to-end run with real Gemini and real Steel still needs the keys.
+
+**Changes from this plan, and why**
+
+- **The execution graph is a plain asyncio state machine** (`execution/manager.py`), the fallback section 6 allows. Resuming a LangGraph `interrupt()` re-runs the node from the start, which would replay browser actions. A live browser can't be checkpointed anyway, and the private fill-sheet values must stay out of checkpoints. So there is no `execution/graph.py`; `manager.py` holds the prepare, act and verify steps, and `verify.py` reads the outcome.
+- **Action names come from Google's docs** (fetched 2026-11-14): `click`, `double_click`, `type` (no coordinates, so it goes into the focused field), `scroll`, `navigate`, `press_key`, `hotkey` and others. The docs do not use `click_at` or `type_text_at`. For `type`, the gate checks the focused element.
+- **Coordinates** are scaled from a 1000x1000 grid, as in Google's own sample. S1 prints both readings so we can confirm it.
+- **Steel is called over its REST API with `httpx`**, not `steel-sdk`, so there is one dependency fewer. Playwright is an optional extra: `pip install -e ".[browser]"`.
+- **Typed values never reach the model.** The model types a placeholder such as `{{phone}}`; the gate accepts only a known fill-sheet key, and the server types the value. The questions the person sees are worded by us, never by the model.
+- **A `safety_decision: require_confirmation` is handed to the person, and the agent does not perform the action.** That means we never need to send `safety_acknowledgement`, which settles that open item.
+- **No `BROWSER_PROVIDER=browserbase` yet.** It is the drop-in backup if S2 fails.
+- **The feature stays hidden when `GEMINI_API_KEY` is missing**, the same way `LLM_MODE=live` falls back to off.
+- **Pulled forward from Phase 2:** the backend already supports questions and takeover end to end (`needs_answer`, `needs_you`, I'm done, `verify`), because the gate's outcomes need them. The run panel has a simple answer box and takeover controls. **Still Phase 2:** reusing `question-form.tsx` for the agent's questions, writing the result to the main graph (the `ExecutionManager(on_result=...)` hook exists but is not wired in `main.py`), and setting the device stage to `applied`.
 
 The agent opens an isolated cloud browser, fills an application from what the person already told us, asks for what it lacks, and hands the same browser to the person for anything that must be theirs: sign-in, identity checks, attestations, signatures and the final submit. It then reads the outcome and updates the plan.
 

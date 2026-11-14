@@ -1,4 +1,4 @@
-import type { AnswerIn, ErrorBody, ErrorCode, PersonaOut, SessionSnapshot } from "./types";
+import type { AnswerIn, ErrorBody, ErrorCode, PersonaOut, RunView, SessionSnapshot } from "./types";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -81,4 +81,46 @@ export function uploadDocument(sessionId: string, file: File): Promise<SessionSn
     method: "POST",
     body: form,
   });
+}
+
+// ---------------------------------------------------------------------------
+// Browser execution agent. Poll getRun about once a second while it is active.
+// ---------------------------------------------------------------------------
+
+const runs = (sessionId: string) => `/sessions/${encodeURIComponent(sessionId)}/applications`;
+
+/** Start the assistant on one program's form. Consent is sent as literally `true`. */
+export function startRun(sessionId: string, programId: string): Promise<RunView> {
+  return request<RunView>(runs(sessionId), {
+    method: "POST",
+    body: JSON.stringify({ program_id: programId, consent: true }),
+  });
+}
+
+export function getRun(sessionId: string, runId: string): Promise<RunView> {
+  return request<RunView>(`${runs(sessionId)}/${encodeURIComponent(runId)}`);
+}
+
+export function answerRun(sessionId: string, runId: string, answer: AnswerIn): Promise<RunView> {
+  return request<RunView>(`${runs(sessionId)}/${encodeURIComponent(runId)}/answer`, {
+    method: "POST",
+    body: JSON.stringify(answer),
+  });
+}
+
+/** "take": the person takes the browser; "return": they hand it back (I'm done). */
+export function controlRun(sessionId: string, runId: string, action: "take" | "return"): Promise<RunView> {
+  return request<RunView>(`${runs(sessionId)}/${encodeURIComponent(runId)}/control`, {
+    method: "POST",
+    body: JSON.stringify({ action }),
+  });
+}
+
+export function stopRun(sessionId: string, runId: string): Promise<RunView> {
+  return request<RunView>(`${runs(sessionId)}/${encodeURIComponent(runId)}/stop`, { method: "POST" });
+}
+
+/** Latest screenshot, for when the live view can't be embedded. */
+export function runFrameUrl(sessionId: string, runId: string, tick: number): string {
+  return `/api${runs(sessionId)}/${encodeURIComponent(runId)}/frame?t=${tick}`;
 }

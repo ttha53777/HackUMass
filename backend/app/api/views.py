@@ -80,6 +80,7 @@ def build_snapshot(
     *,
     fixture_data: bool,
     region_for: Callable[[str], dict[str, str] | None] = lambda _zip: None,
+    automatable_ids: frozenset[str] = frozenset(),
 ) -> SessionSnapshot:
     intake: IntakeState = values.get("intake") or IntakeState()
     profile: Profile = values.get("profile") or Profile()
@@ -196,4 +197,7 @@ def build_snapshot(
         else None,
         notices=notices,
         field_labels=field_labels,
+        applications=values.get("applications") or {},
+        # Only programs that are on this person's list.
+        automatable_program_ids=[p.id for p in programs if p.id in automatable_ids],
     )

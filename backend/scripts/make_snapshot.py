@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.execution.config import automation_records  # noqa: E402
 from app.main import create_app  # noqa: E402
 from app.services.nessie import NessieService  # noqa: E402
 from app.services.programs_repo import repository_from_env  # noqa: E402
@@ -33,7 +34,10 @@ STEPS = [
 
 
 def main() -> None:
-    with TestClient(create_app(repository_from_env("curated"), NessieService(None))) as client:
+    app = create_app(repository_from_env("curated"), NessieService(None))
+    # Show the browser agent's button in the UI fixture, as if BROWSER_PROVIDER were set.
+    app.state.automatable_ids = frozenset(automation_records())
+    with TestClient(app) as client:
         session_id = client.post("/api/sessions").json()["session_id"]
         snapshot: dict = {}
         for step in STEPS:
