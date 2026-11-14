@@ -9,6 +9,8 @@ from starlette.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from app.api.schemas import (
+    InterpretIn,
+    InterpretOut,
     AnswerIn,
     ErrorCode,
     HealthOut,
@@ -21,6 +23,7 @@ from app.graph.answers import AnswerError, validate_answer
 from app.graph.questions import get_spec
 from app.graph.state import EvidenceRequest, IntakeState
 from app.services.documents import MAX_BYTES, DocumentRejected, extract
+from app.services.conversation import interpret
 from app.services.llm import get_llm
 from app.services.session_store import SessionManager, SessionMeta
 
@@ -122,6 +125,31 @@ async def submit_answer(request: Request, session_id: str, answer: AnswerIn) -> 
     return JSONResponse(
         status_code=200 if finished else 202, content=snapshot.model_dump(mode="json")
     )
+
+
+MAX_INTERPRET_PER_SESSION = 40
+
+
+@router.post("/sessions/{session_id}/interpret", response_model=InterpretOut)
+async def interpret_message(request: Request, session_id: str, body: InterpretIn) -> InterpretOut:
+    """Read a message typed into the chat and propose what to do with it.
+
+    Never changes the session: any answer it finds is sent back for the frontend
+    to submit through POST .../answers, and noted facts are confirmed by the
+    person before use. The text is not logged or stored.
+    """
+    meta = _session(request, session_id)
+    if meta.busy:
+        raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
+    if get_spec(body.question_id) is None:
+        raise ApiError(422, "validation_error", "Unknown question.")
+    meta.interpret_count += 1
+    if meta.interpret_count > MAX_INTERPRET_PER_SESSION:
+        raise ApiError(429, "too_many_messages", "That's a lot of messages. Tap an option to keep going.")
+    programs = request.app.state.programs.all()
+    names = [p.name for p in programs] + [p.guide.short_name for p in programs if p.guide]
+    names += request.app.state.programs.place_names()  # places are facts too, unless the person named them
+    return await run_in_threadpool(interpret, body.question_id, body.text, names)
 
 
 @router.get("/nessie/personas", response_model=list[PersonaOut])

@@ -36,7 +36,8 @@ KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
         "unable_to_work": ("disab", "injur", "can't work", "cannot work", "unable to work"),
         "looking_for_work": ("unemploy", "laid off", "looking for work", "looking for a job",
                              "between jobs", "lost my job"),
-        "working": ("part-time", "part time", "full-time", "full time", "employed"),
+        "working": ("part-time", "part time", "full-time", "full time", "employed",
+                    r"work(ing)? (two|2|three|3|multiple|several) jobs", r"(two|2|three|3) jobs"),
     },
 }
 

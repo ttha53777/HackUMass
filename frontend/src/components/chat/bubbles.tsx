@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { Sparkles } from "lucide-react";
+import { HeartHandshake, Pencil, Sparkles } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { cn } from "@/lib/utils";
@@ -55,18 +55,56 @@ export function BotMessage({
   );
 }
 
-/** What the person said, on the right. */
-export function UserMessage({ children, animate = true }: { children: ReactNode; animate?: boolean }) {
+/** What the person said, on the right. With `onEdit`, it can be tapped to change the answer. */
+export function UserMessage({
+  children,
+  animate = true,
+  onEdit,
+}: {
+  children: ReactNode;
+  animate?: boolean;
+  onEdit?: () => void;
+}) {
+  const bubble =
+    "max-w-[min(480px,85%)] rounded-[18px] rounded-br-md bg-brand px-4 py-2.5 text-left text-[15px] font-semibold leading-snug text-on-brand shadow-card";
   return (
     <motion.div
       {...(animate
         ? { ...rise, initial: { opacity: 0, y: 26, scale: 0.94 }, style: { originX: 1, originY: 1 } }
         : {})}
-      className="flex justify-end"
+      className="group flex items-center justify-end gap-2"
     >
-      <p className="max-w-[min(480px,85%)] rounded-[18px] rounded-br-md bg-brand px-4 py-2.5 text-[15px] font-semibold leading-snug text-on-brand shadow-card">
-        {children}
-      </p>
+      {onEdit ? (
+        <>
+          <span aria-hidden className="flex items-center gap-1 text-xs font-semibold text-faint opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+            <Pencil className="size-3" /> Change
+          </span>
+          <button type="button" onClick={onEdit} className={bubble} aria-label={`${typeof children === "string" ? children : "Your answer"}. Change this answer`}>
+            {children}
+          </button>
+        </>
+      ) : (
+        <p className={bubble}>{children}</p>
+      )}
+    </motion.div>
+  );
+}
+
+/** The fixed safety message, shown when a message suggests danger or crisis. */
+export function SafetyCard({ title, lines }: { title: string; lines: string[] }) {
+  return (
+    <motion.div {...rise} role="note" className="flex items-start gap-3">
+      <Avatar />
+      <div className="max-w-[560px] rounded-[18px] border border-peach-ink/25 bg-peach px-4 py-3.5 text-peach-ink">
+        <p className="flex items-center gap-2 font-display text-[16px] font-extrabold tracking-[-0.02em]">
+          <HeartHandshake aria-hidden className="size-[18px]" /> {title}
+        </p>
+        {lines.map((line) => (
+          <p key={line} className="mt-1 text-[14.5px] font-semibold leading-relaxed">
+            {line}
+          </p>
+        ))}
+      </div>
     </motion.div>
   );
 }

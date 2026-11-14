@@ -89,6 +89,8 @@ class SessionMeta:
     # What the latest input changed (program ids by kind of change), set when its
     # run finishes and cleared by the next input. Statuses only, never answers.
     last_change: dict[str, list[str]] | None = None
+    # Typed chat messages read so far (POST .../interpret), capped per session.
+    interpret_count: int = 0
 
 
 class SessionManager:

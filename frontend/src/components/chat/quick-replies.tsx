@@ -32,11 +32,14 @@ const HOUSEHOLD = [1, 2, 3, 4, 5, 6];
 export function QuickReplies({
   question,
   initial,
+  confirm,
   disabled,
   onAnswer,
 }: {
   question: Question;
   initial?: string[];
+  /** A "Yes, that's right" chip for something the person already said. */
+  confirm?: { label: string; answer: AnswerIn };
   disabled: boolean;
   onAnswer: (answer: AnswerIn) => void;
 }) {
@@ -48,7 +51,7 @@ export function QuickReplies({
 
   const multi = question.type === "multi_select";
   const isNumber = question.type === "number" && question.id === "household_size";
-  if (!multi && question.type !== "single_select" && !isNumber) return null;
+  if (!multi && question.type !== "single_select" && !isNumber && !confirm) return null;
 
   const chips: { id: string; label: string; icon?: LucideIcon }[] = isNumber
     ? HOUSEHOLD.filter((n) => n >= (question.min ?? 1) && n <= (question.max ?? 8)).map((n) => ({
@@ -56,7 +59,9 @@ export function QuickReplies({
         label: n === 1 ? "Just me" : `${n} people`,
         icon: n === 1 ? UserRound : Users,
       }))
-    : question.options.map((o) => ({ ...o, icon: ICON[o.id] }));
+    : multi || question.type === "single_select"
+      ? question.options.map((o) => ({ ...o, icon: ICON[o.id] }))
+      : [];
 
   const toggle = (id: string) => {
     if (EXCLUSIVE.has(id)) return setPicked((p) => (p.includes(id) ? [] : [id]));
@@ -75,6 +80,20 @@ export function QuickReplies({
 
   return (
     <div className="pl-11">
+      {confirm ? (
+        <motion.button
+          ref={first}
+          type="button"
+          disabled={disabled}
+          onClick={() => onAnswer(confirm.answer)}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileTap={{ scale: 0.96 }}
+          className="mb-2.5 inline-flex min-h-11 items-center gap-2 rounded-full bg-brand px-4 py-2 text-[14.5px] font-bold text-on-brand hover:bg-brand-hover disabled:opacity-50"
+        >
+          <Check aria-hidden className="size-4" /> {confirm.label}
+        </motion.button>
+      ) : null}
       <div role="group" aria-label={question.prompt} className="flex flex-wrap gap-2">
         {chips.map((chip, i) => {
           const on = picked.includes(chip.id);
@@ -82,7 +101,7 @@ export function QuickReplies({
           return (
             <motion.button
               key={chip.id}
-              ref={i === 0 ? first : undefined}
+              ref={i === 0 && !confirm ? first : undefined}
               type="button"
               aria-pressed={multi ? on : undefined}
               disabled={disabled}

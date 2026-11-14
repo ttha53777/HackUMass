@@ -1,7 +1,7 @@
 // What the navigator says between questions. Every line is a template filled
 // only with values the backend already returned (answers, region, counts), so
 // no program fact is ever written here.
-import type { AnswerIn, AnsweredItem, Question, SessionSnapshot } from "@/lib/types";
+import type { AnswerIn, AnsweredItem, NotedFacts, Question, SessionSnapshot, UnsupportedNeed } from "@/lib/types";
 import { isLive } from "@/lib/derive";
 import { plural } from "@/lib/format";
 
@@ -18,9 +18,76 @@ export const SAMPLE_ANSWERS: Record<string, AnswerIn> = {
 };
 
 export function greeting(name: string): string {
-  return name
-    ? `Hi ${name}, I'm your navigator. I'll look through what's out there while we talk. It takes about a minute.`
-    : "Hi, I'm your navigator. I'll look through what's out there while we talk. It takes about a minute.";
+  const hi = name ? `Hi ${name}, I'm really glad you reached out.` : "Hi, I'm really glad you reached out.";
+  return `${hi} I'll ask a few short questions and look for help near you while we talk.`;
+}
+
+/** How the chat words some questions. The backend prompt stays as is for other screens. */
+const DISPLAY: Record<string, { prompt: string; reason: string | null }> = {
+  needs: {
+    prompt: "What's been weighing on you lately?",
+    reason: "Tell me in your own words, or tap what fits. You don't need to know which programs exist.",
+  },
+};
+
+export function shown(q: Question): { prompt: string; reason: string | null } {
+  return DISPLAY[q.id] ?? { prompt: q.prompt, reason: q.reason };
+}
+
+/** Fixed, team-reviewed safety message (the one fact here not from the curated data). */
+export const SAFETY_TEXT = {
+  title: "Your safety comes first.",
+  lines: ["If you're in immediate danger, call 911.", "For crisis support any time, call or text 988."],
+};
+
+export const OFF_TOPIC =
+  "I'm here to help you find food, heat, housing, health and transport support nearby. Tell me what's going on, or tap what fits below.";
+
+/** When a typed message didn't settle the question. */
+export function nudge(q: Question): string {
+  if (q.type === "zip") return "I'll need the five digits of your ZIP code, like 01002.";
+  if (q.id === "household_size") return "About how many people live with you, counting you? A number works best.";
+  return "Thank you for sharing that. Tap what fits best below, or tell me a little more.";
+}
+
+const UNSUPPORTED_LABEL: Record<UnsupportedNeed, string | null> = {
+  childcare: "childcare",
+  mental_health: "mental health support",
+  legal: "legal help",
+  job: "help finding work",
+  other: null,
+};
+
+/** An honest line about what the app can't search for yet. */
+export function unsupportedLine(needs: UnsupportedNeed[]): string | null {
+  const labels = needs.map((n) => UNSUPPORTED_LABEL[n]).filter((x): x is string => !!x);
+  if (!labels.length) return null;
+  return `I can't search for ${list(labels)} yet, so I'll focus on what I can find for you.`;
+}
+
+/** A question asked as a confirmation of something the person already said. */
+export function confirmation(q: Question, noted: NotedFacts): { prompt: string; label: string; answer: AnswerIn } | null {
+  if (q.id === "household_size" && noted.household_size) {
+    const n = noted.household_size;
+    return {
+      prompt: n === 1 ? "You mentioned it's just you at home. Is that right?" : `You mentioned there are ${n} of you at home. Is that right?`,
+      label: "Yes, that's right",
+      answer: { question_id: q.id, value: n },
+    };
+  }
+  if (q.id === "household_who" && noted.household_who.length) {
+    const labels = q.options.filter((o) => noted.household_who.includes(o.id)).map((o) => o.label);
+    if (!labels.length) return null;
+    return {
+      prompt: `You mentioned ${list(labels)}. Is that everyone I should know about?`,
+      label: "Yes, that's everyone",
+      answer: { question_id: q.id, selected_option_ids: noted.household_who },
+    };
+  }
+  if (q.id === "zip" && noted.zip) {
+    return { prompt: `You mentioned ${noted.zip}. Is that your ZIP code?`, label: `Yes, ${noted.zip}`, answer: { question_id: q.id, value: noted.zip } };
+  }
+  return null;
 }
 
 /** How long the typing bubble shows before a message of this length. */
@@ -53,15 +120,14 @@ function list(items: string[]): string {
   return `${lower.slice(0, -1).join(", ")} and ${lower[lower.length - 1]}`;
 }
 
-/** The short reply after an answer was accepted. */
-export function ack(questionId: string, s: SessionSnapshot): string {
+/** The short reply after an answer was accepted. `afterReply`: a warm reply was already shown. */
+export function ack(questionId: string, s: SessionSnapshot, afterReply = false): string {
   const item = answered(s, questionId);
   switch (questionId) {
     case "needs": {
       const labels = chosenLabels(item);
-      return labels.length
-        ? `Got it: ${list(labels)}. I'll start there.`
-        : "Thanks. I'll keep that in mind and look at everything nearby.";
+      if (!labels.length) return "Thank you. I'll look at everything nearby.";
+      return afterReply ? `I'll start by looking for help with ${list(labels)}.` : `Thank you. I'll start by looking for help with ${list(labels)}.`;
     }
     case "zip": {
       const r = s.region;
@@ -70,12 +136,12 @@ export function ack(questionId: string, s: SessionSnapshot): string {
     }
     case "household_size": {
       const n = Number(item?.display_value ?? 0);
-      return n === 1 ? "Just you. Thanks." : n ? `${n} people at home. Thanks.` : "Thanks.";
+      return n === 1 ? "Just you. Thank you." : n ? `${n} of you at home. Thank you.` : "Thank you.";
     }
     case "household_who":
-      return "That helps. Some programs are only for certain ages.";
+      return "Thank you. That helps me find the right programs.";
     default:
-      return "Thanks, I've updated that.";
+      return "Thank you, I've updated that.";
   }
 }
 
