@@ -5,7 +5,7 @@ A guided assistant that helps people find government assistance programs and loc
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
 > **Project status: the guided intake works end to end in the browser against fictional test programs.**
-> Built: question registry, Administrator and graph, session API, basic profile building and program filtering, and the question-by-question web UI with a plain results list. Eligibility and Action Planning are stubs that do not evaluate any rule yet, and there are no real program records. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
+> Built: question registry, Administrator and graph, session API, profile building, program filtering over 23 curated Hampshire County records, deterministic eligibility checks, and the question-by-question web UI with a plain results list. Action Planning is still a stub. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
 
 ## Who it is for
 
@@ -43,6 +43,7 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 - Specialists never message each other. Each returns a typed update to shared state.
 - Discovery supplies sourced criteria before Eligibility assesses; Action Planning consumes the assessments.
 - Structured eligibility rules are evaluated in code. The language model is used only to interpret free-text answers and to word explanations.
+- Each program gets one of four preliminary labels. A rule the provider states but the app cannot check (most rules) can never yield more than *possibly a fit*. Facts from simulated bank data or a document count only once the user confirms them.
 - The frontend polls a session snapshot for progress and results.
 
 ## Prerequisites
@@ -168,7 +169,7 @@ backend/app/graph/administrator.py deterministic routing between specialists
 backend/app/graph/questions.py     question registry and selection policy
 backend/app/graph/answers.py       answer validation and normalisation
 backend/app/agents/                the four specialists, one file each
-                                   (eligibility and action_planning are stubs)
+                                   (action_planning is a stub)
 backend/app/services/              programs repository, in-memory session store
 backend/app/data/fixtures/         fictional development programs and region
 backend/app/data/programs/         curated program records, one JSON file each

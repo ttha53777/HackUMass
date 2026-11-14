@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T6 (T3 with stub Eligibility and Action Planning; T6 with a plain results preview that T13 replaces). See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T10 (T3 with a stub Action Planning until T11; T6 with a plain results preview that T13 replaces). Build plan for T10–T18: Gemini replaces Anthropic for D10 (see T14); `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 
@@ -154,7 +154,7 @@ class Profile(BaseModel):
 
 class Requirement(BaseModel):
     id: str
-    kind: Literal["income_max", "age_min", "age_max", "residency",
+    kind: Literal["income_max", "income_min", "age_min", "age_max", "residency",
                   "household", "categorical", "open_access", "text_only"]
     field: str | None                        # profile field compared, None for text_only
     op: Literal["lte", "gte", "eq", "in"] | None

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.agents.eligibility import inputs_hash
 from app.api.schemas import (
     AnsweredItem,
     AssessmentView,
@@ -84,7 +85,11 @@ def build_snapshot(
                 assessment=AssessmentView(**assessment.model_dump(exclude={"program_id", "inputs_hash"}))
                 if assessment
                 else None,
-                stale=dirty.discovery or program.id in dirty.eligibility_ids,
+                # Second guard (plan B.3): an assessment computed from different
+                # answers than the current ones is never shown as current.
+                stale=dirty.discovery
+                or program.id in dirty.eligibility_ids
+                or (assessment is not None and assessment.inputs_hash != inputs_hash(program, profile)),
             )
         )
 
@@ -112,7 +117,10 @@ def build_snapshot(
         coverage=coverage,
         programs=cards,
         action_plan=values.get("action_plan") or [],
-        plan_stale=dirty.discovery or bool(dirty.eligibility_ids) or dirty.plan,
+        plan_stale=dirty.discovery
+        or bool(dirty.eligibility_ids)
+        or dirty.plan
+        or any(card.stale for card in cards),
         agent_statuses=values.get("agent_statuses") or {},
         financial_summary=FinancialSummaryView(**summary.model_dump(exclude={"total_deposits", "balance_snapshot"}))
         if summary
