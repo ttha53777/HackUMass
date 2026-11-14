@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T14 (live mode not yet verified against the real API) and T16. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T12, T14 (live mode not yet verified against the real API) and T16. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 
@@ -390,7 +390,7 @@ class FinancialSummary(BaseModel):
 - Only the summary enters graph state. Raw transactions stay inside the Nessie service call and are not logged.
 - If the user has not reported income, `avg_monthly_deposits` becomes a `monthly_income` fact with provenance `nessie_sandbox` and `confirmed = False`, and a confirmation question is queued ("The demo profile shows about $X a month in deposits. Is that close to your household's monthly income?").
 - If the user has reported income and the two differ by more than 20 %, a `Conflict` is recorded and the same confirmation question is asked. The user-reported value stays in force until they answer.
-- **VERIFY in T12:** base URL, `key` query-parameter auth, the customer/account/deposit/purchase/bill routes, whether data is scoped per API key, and whether we must seed our own personas with POST calls.
+- **T12 result** (see `docs/nessie-spike.md`): base `https://api.nessieisreal.com`, `?key=` auth, per-key data starts empty so personas must be seeded (`backend/scripts/seed_nessie.py`); conditional go with the seeded file as the default path.
 
 ### B.8 Security and privacy checklist
 

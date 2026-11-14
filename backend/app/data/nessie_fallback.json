@@ -1,0 +1,322 @@
+{
+  "_comment": "FICTIONAL, SIMULATED personas for the optional demo bank profile. Not real people or accounts. Used when the Nessie sandbox is not configured, empty, or unreachable; summaries built from this file say source=seeded_fallback.",
+  "period_start": "2026-08-01",
+  "period_end": "2026-10-31",
+  "personas": [
+    {
+      "id": "retired-fixed-income",
+      "label": "Simulated: retired, fixed monthly income",
+      "description": "One adult. A single benefit deposit of about $1,400 each month, plus electric and heating bills.",
+      "balance": 612.4,
+      "deposits": [
+        {
+          "transaction_date": "2026-08-03",
+          "amount": 1400.0,
+          "description": "Monthly benefit deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-03",
+          "amount": 1400.0,
+          "description": "Monthly benefit deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-03",
+          "amount": 1400.0,
+          "description": "Monthly benefit deposit",
+          "status": "completed"
+        }
+      ],
+      "bills": [
+        {
+          "payment_date": "2026-08-15",
+          "payee": "Electric company",
+          "payment_amount": 88.2,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-15",
+          "payee": "Electric company",
+          "payment_amount": 94.75,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-20",
+          "payee": "Heating oil supplier",
+          "payment_amount": 142.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-15",
+          "payee": "Electric company",
+          "payment_amount": 97.1,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-20",
+          "payee": "Heating oil supplier",
+          "payment_amount": 186.5,
+          "status": "completed"
+        }
+      ],
+      "purchases_total": [
+        910.0,
+        980.0,
+        1015.0
+      ]
+    },
+    {
+      "id": "part-time-irregular",
+      "label": "Simulated: part-time work, uneven pay",
+      "description": "Weekly paychecks that change with hours worked. Electric and phone bills; behind on one electric payment.",
+      "balance": 84.15,
+      "deposits": [
+        {
+          "transaction_date": "2026-08-07",
+          "amount": 310.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-14",
+          "amount": 245.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-21",
+          "amount": 402.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-28",
+          "amount": 280.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-04",
+          "amount": 226.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-11",
+          "amount": 388.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-18",
+          "amount": 295.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-25",
+          "amount": 350.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-02",
+          "amount": 240.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-09",
+          "amount": 412.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-16",
+          "amount": 276.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-23",
+          "amount": 330.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-30",
+          "amount": 298.0,
+          "description": "Payroll deposit",
+          "status": "completed"
+        }
+      ],
+      "bills": [
+        {
+          "payment_date": "2026-08-18",
+          "payee": "Electric company",
+          "payment_amount": 71.3,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-18",
+          "payee": "Electric company",
+          "payment_amount": 76.85,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-08-22",
+          "payee": "Phone company",
+          "payment_amount": 45.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-22",
+          "payee": "Phone company",
+          "payment_amount": 45.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-22",
+          "payee": "Phone company",
+          "payment_amount": 45.0,
+          "status": "completed"
+        }
+      ],
+      "purchases_total": [
+        1180.0,
+        1240.0,
+        1205.0
+      ]
+    },
+    {
+      "id": "two-earner-family",
+      "label": "Simulated: family of four, two paychecks",
+      "description": "Two adults paid every two weeks. Electric and gas bills.",
+      "balance": 1950.0,
+      "deposits": [
+        {
+          "transaction_date": "2026-08-07",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-10",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-21",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-08-24",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-04",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-07",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-18",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-09-21",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-02",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-05",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-16",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-19",
+          "amount": 1100.0,
+          "description": "Payroll deposit (earner 2)",
+          "status": "completed"
+        },
+        {
+          "transaction_date": "2026-10-30",
+          "amount": 1350.0,
+          "description": "Payroll deposit (earner 1)",
+          "status": "completed"
+        }
+      ],
+      "bills": [
+        {
+          "payment_date": "2026-08-12",
+          "payee": "Electric company",
+          "payment_amount": 132.4,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-12",
+          "payee": "Electric company",
+          "payment_amount": 128.9,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-12",
+          "payee": "Electric company",
+          "payment_amount": 141.2,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-08-14",
+          "payee": "Gas company",
+          "payment_amount": 38.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-14",
+          "payee": "Gas company",
+          "payment_amount": 41.5,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-14",
+          "payee": "Gas company",
+          "payment_amount": 96.3,
+          "status": "completed"
+        }
+      ],
+      "purchases_total": [
+        4300.0,
+        4450.0,
+        4390.0
+      ]
+    }
+  ]
+}

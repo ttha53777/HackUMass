@@ -111,7 +111,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for matching "Other" answers and for plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
-| `NESSIE_API_KEY` | No | Enables the simulated banking profile. Without it, a seeded fallback persona is used and labelled as such. |
+| `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
 
 The frontend needs no secrets. The browser only calls same-origin `/api/*`, which Next.js forwards to the backend.
 
@@ -175,6 +175,9 @@ backend/app/services/              programs repository, in-memory session store
 backend/app/data/fixtures/         fictional development programs and region
 backend/app/data/programs/         curated program records, one JSON file each
 backend/app/data/regions.json      supported ZIP codes (curated source)
+backend/app/data/nessie_fallback.json  fictional simulated bank personas (fallback)
+backend/scripts/seed_nessie.py     opt-in: seed those personas into the Nessie sandbox
+docs/nessie-spike.md               what was verified about the Nessie API
 docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
