@@ -188,7 +188,8 @@ docs/nessie-spike.md               what was verified about the Nessie API
 docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
-frontend/src/components/front-door/ Welcome, the 3 core questions, Building
+frontend/src/components/front-door/ Welcome, then hands off to the chat intake
+frontend/src/components/chat/       the intake as a conversation: profile panel, typing, quick replies
 frontend/src/components/home/      Home: next step, plan, sharpen card, glance strip
 frontend/src/components/benefits/  Government benefits and the step-by-step guide
 frontend/src/components/local/     Local help and the week calendar
@@ -246,7 +247,7 @@ Where to make changes:
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
 - Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`. The old `/legacy` UI was retired in Phase 6.
-- Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear on the Building screen and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
+- Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear in the chat intake's "checking programs" message and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.
 - Regenerate the contract fixture: `.venv/bin/python scripts/make_snapshot.py` in `backend/`, then `npm run sync:fixture` in `frontend/`.

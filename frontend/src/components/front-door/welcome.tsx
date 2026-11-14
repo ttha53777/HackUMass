@@ -45,7 +45,7 @@ export function Welcome({
           Find the help that&apos;s <em className="not-italic text-art-h2">already waiting</em> for you.
         </h1>
         <p className="text-base leading-[1.75] text-muted-foreground">
-          Three quick questions. We check government benefits and local help near you, then show you
+          A few quick questions. We check government benefits and local help near you, then show you
           what to do first.
         </p>
 
