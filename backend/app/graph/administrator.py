@@ -8,7 +8,8 @@ specialist work; it only looks at state and chooses exactly one of:
   3. ask a core question (ends the run; phase "intake")
   4. eligibility         some assessments are out of date
   5. action_planning     the plan is out of date
-  6. ask a follow-up     (ends the run; phase "awaiting_user")
+  6. ask a confirmation, follow-up or evidence offer
+                         (ends the run; phase "awaiting_user")
   7. complete            (ends the run)
 
 Every dispatch either consumes an input or clears a dirty flag, and each
@@ -27,8 +28,8 @@ from langgraph.types import Command
 
 from app.graph.questions import (
     get_spec,
+    next_awaiting_question,
     next_core_question,
-    next_followup_question,
     referenced_fields,
 )
 from app.graph.state import (
@@ -148,7 +149,9 @@ def decide(state: SessionState) -> Decision:
     def finish(phase: Literal["intake", "awaiting_user", "complete"], question: Question | None):
         if question and question.id not in intake.asked_question_ids:
             intake.asked_question_ids.append(question.id)
-            if phase == "awaiting_user":
+            if question.origin in ("conflict", "evidence_offer"):
+                pass  # limited only by the session total
+            elif phase == "awaiting_user":
                 intake.followup_asked_count += 1
             else:
                 intake.core_asked_count += 1
@@ -203,8 +206,12 @@ def decide(state: SessionState) -> Decision:
             return decision
         dirty.plan = False
 
-    # 6. One targeted follow-up could change a recommendation.
-    question = next_followup_question(profile, intake, programs, assessments)
+    # 6. Confirm evidence, ask one targeted follow-up, or offer the simulated
+    #    bank profile, in that order.
+    question = next_awaiting_question(
+        profile, intake, programs, assessments,
+        has_summary=state.get("financial_summary") is not None,
+    )
     if question is not None:
         return finish("awaiting_user", question)
 

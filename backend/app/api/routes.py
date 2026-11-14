@@ -1,17 +1,24 @@
-"""HTTP routes (ticket T5). Evidence endpoints arrive with T15 and T17."""
+"""HTTP routes (tickets T5, T15). The document endpoint arrives with T17."""
 
 from __future__ import annotations
 
 import os
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse
 
-from app.api.schemas import AnswerIn, ErrorCode, HealthOut, SessionSnapshot
+from app.api.schemas import (
+    AnswerIn,
+    ErrorCode,
+    HealthOut,
+    NessieEvidenceIn,
+    PersonaOut,
+    SessionSnapshot,
+)
 from app.api.views import build_snapshot
 from app.graph.answers import AnswerError, validate_answer
 from app.graph.questions import get_spec
-from app.graph.state import IntakeState
+from app.graph.state import EvidenceRequest, IntakeState
 from app.services.llm import get_llm
 from app.services.session_store import SessionManager, SessionMeta
 
@@ -105,6 +112,48 @@ async def submit_answer(request: Request, session_id: str, answer: AnswerIn) -> 
         raise ApiError(422, "validation_error", str(exc)) from exc
 
     finished = await manager.submit(session_id, {"user_answer": answer})
+    snapshot = _snapshot(request, session_id, meta)
+    return JSONResponse(
+        status_code=200 if finished else 202, content=snapshot.model_dump(mode="json")
+    )
+
+
+@router.get("/nessie/personas", response_model=list[PersonaOut])
+def list_personas(request: Request) -> list[PersonaOut]:
+    """Fictional demo bank profiles. Every label says "Simulated"."""
+    return [
+        PersonaOut(id=p.id, label=p.label, description=p.description)
+        for p in request.app.state.nessie.personas()
+    ]
+
+
+@router.post(
+    "/sessions/{session_id}/evidence/nessie",
+    response_model=SessionSnapshot,
+    status_code=202,
+)
+async def submit_nessie_evidence(
+    request: Request, session_id: str, body: dict = Body(...)
+) -> JSONResponse:
+    """Use a simulated bank profile. `consent` must be literally true.
+
+    200 when the run finished on the fast path, 202 while it is still going.
+    """
+    manager = _manager(request)
+    meta = _session(request, session_id)
+    if body.get("consent") is not True:
+        raise ApiError(400, "consent_required", "Please confirm you want to use the simulated profile.")
+    try:
+        evidence = NessieEvidenceIn.model_validate(body)
+    except ValueError as exc:
+        raise ApiError(422, "validation_error", "Choose one of the simulated profiles.") from exc
+    if not request.app.state.nessie.has_persona(evidence.persona_id):
+        raise ApiError(422, "validation_error", "Choose one of the simulated profiles.")
+    if meta.busy:
+        raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
+
+    request_in = EvidenceRequest(kind="nessie", persona_id=evidence.persona_id)
+    finished = await manager.submit(session_id, {"pending_evidence": request_in})
     snapshot = _snapshot(request, session_id, meta)
     return JSONResponse(
         status_code=200 if finished else 202, content=snapshot.model_dump(mode="json")

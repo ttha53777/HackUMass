@@ -13,6 +13,8 @@ type Props = {
   snapshot: SessionSnapshot;
   /** The open follow-up question, rendered at the top of the results. */
   followUp: ReactNode;
+  /** Optional simulated bank profile panel, shown after the plan. */
+  evidence?: ReactNode;
   disabled: boolean;
   /** Re-open an earlier question (by id) for a new answer. */
   onEditQuestion: (questionId: string) => void;
@@ -45,7 +47,7 @@ export function hasResults(snapshot: SessionSnapshot): boolean {
   return snapshot.programs.some((card) => card.assessment !== null);
 }
 
-export function ResultsView({ snapshot, followUp, disabled, onEditQuestion }: Props) {
+export function ResultsView({ snapshot, followUp, evidence, disabled, onEditQuestion }: Props) {
   const notice = (code: string) => snapshot.notices.find((n) => n.code === code)?.message;
 
   if (snapshot.coverage === "unsupported") {
@@ -124,6 +126,8 @@ export function ResultsView({ snapshot, followUp, disabled, onEditQuestion }: Pr
       {followUp}
 
       <Roadmap plan={snapshot.action_plan} programs={programs} stale={snapshot.plan_stale} />
+
+      {evidence}
 
       <section aria-labelledby="programs-heading" className="flex flex-col gap-4 print:hidden">
         <div>

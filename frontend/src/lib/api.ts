@@ -1,4 +1,4 @@
-import type { AnswerIn, ErrorBody, ErrorCode, SessionSnapshot } from "./types";
+import type { AnswerIn, ErrorBody, ErrorCode, PersonaOut, SessionSnapshot } from "./types";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -16,7 +16,7 @@ export function isApiError(error: unknown, code?: ErrorCode): error is ApiError 
   return error instanceof ApiError && (code === undefined || error.code === code);
 }
 
-async function request(path: string, init?: RequestInit): Promise<SessionSnapshot> {
+async function request<T = SessionSnapshot>(path: string, init?: RequestInit): Promise<T> {
   // Same-origin: Next.js forwards /api/* to the backend (see next.config.ts).
   const response = await fetch(`/api${path}`, {
     ...init,
@@ -24,7 +24,7 @@ async function request(path: string, init?: RequestInit): Promise<SessionSnapsho
     cache: "no-store",
   });
   if (response.ok) {
-    return (await response.json()) as SessionSnapshot;
+    return (await response.json()) as T;
   }
   let body: Partial<ErrorBody> = {};
   try {
@@ -52,5 +52,18 @@ export function submitAnswer(sessionId: string, answer: AnswerIn): Promise<Sessi
   return request(`/sessions/${encodeURIComponent(sessionId)}/answers`, {
     method: "POST",
     body: JSON.stringify(answer),
+  });
+}
+
+/** Fictional demo bank profiles, each labelled "Simulated". */
+export function getPersonas(): Promise<PersonaOut[]> {
+  return request<PersonaOut[]>("/nessie/personas");
+}
+
+/** Use a simulated bank profile. Consent is sent as literally `true`. */
+export function submitNessieEvidence(sessionId: string, personaId: string): Promise<SessionSnapshot> {
+  return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/nessie`, {
+    method: "POST",
+    body: JSON.stringify({ persona_id: personaId, consent: true }),
   });
 }

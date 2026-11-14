@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from app.graph.state import Fact, Profile
 from app.main import create_app
 from app.services import llm
+from app.services.nessie import NessieService
 from app.services.programs_repo import ProgramsRepository, repository_from_env
 
 
@@ -19,7 +20,8 @@ def repo() -> ProgramsRepository:
 def client(repo):
     # The context manager keeps one event loop alive across requests, so
     # background graph runs are not cancelled between calls.
-    with TestClient(create_app(repo)) as test_client:
+    # Seeded personas only: tests never call the real Nessie sandbox.
+    with TestClient(create_app(repo, NessieService(None))) as test_client:
         yield test_client
 
 

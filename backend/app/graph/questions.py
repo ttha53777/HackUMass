@@ -191,6 +191,62 @@ _SPECS: list[QuestionSpec] = [
     ),
 ]
 
+# --- Evidence questions (T15, T17). Asked only after the first results. -----
+
+_SPECS += [
+    QuestionSpec(
+        question=Question(
+            id="evidence_offer",
+            prompt="Would you like to try a simulated bank profile to help check your income?",
+            reason=(
+                "This is optional and uses made-up demo data from a bank sandbox, never a real "
+                "account. You can always type your own numbers instead."
+            ),
+            type="single_select",
+            options=_opts(("yes", "Yes, show me the simulated profiles"), ("no", "No, thanks")),
+            target_field="evidence_offer",
+            origin="evidence_offer",
+        ),
+        label="Simulated bank profile",
+        value_map={"yes": True, "no": False},
+    ),
+    QuestionSpec(
+        question=Question(
+            id="confirm_monthly_income",
+            prompt="Is this close to your household's monthly income?",
+            type="single_select",
+            options=_opts(("yes", "Yes, that's about right"), ("no", "No, that's not right")),
+            target_field="monthly_income_confirmation",
+            origin="conflict",
+        ),
+        label="Income confirmed",
+        value_map={"yes": True, "no": False},
+    ),
+    QuestionSpec(
+        question=Question(
+            id="confirm_household_size",
+            prompt="Is this the number of people in your household?",
+            type="single_select",
+            options=_opts(("yes", "Yes, that's right"), ("no", "No, that's not right")),
+            target_field="household_size_confirmation",
+            origin="conflict",
+        ),
+        label="Household size confirmed",
+        value_map={"yes": True, "no": False},
+    ),
+]
+
+# Profile field -> the question that asks the person to confirm evidence about it.
+CONFIRMATION_FOR: dict[str, str] = {
+    "monthly_income": "confirm_monthly_income",
+    "household_size": "confirm_household_size",
+}
+EVIDENCE_PROVENANCES = frozenset({"nessie_sandbox", "document_extracted", "inferred"})
+_EVIDENCE_SOURCE = {
+    "nessie_sandbox": "The simulated bank profile shows",
+    "document_extracted": "Your document shows",
+}
+
 REGISTRY: dict[str, QuestionSpec] = {spec.question.id: spec for spec in _SPECS}
 _BY_FIELD: dict[str, QuestionSpec] = {spec.question.target_field: spec for spec in _SPECS}
 
@@ -225,12 +281,17 @@ def _selected_needs(profile: Profile) -> list[str]:
     return list(fact.value) if fact and isinstance(fact.value, list) else []
 
 
-def _budget_left(question_id: str, intake: IntakeState, *, followup: bool) -> bool:
+def _budget_left(
+    question_id: str, intake: IntakeState, *, followup: bool, counted: bool = True
+) -> bool:
+    """`counted=False` for evidence questions: only the session total limits them."""
     # Re-posing a question that was already asked does not spend budget.
     if question_id in intake.asked_question_ids:
         return True
     if len(intake.asked_question_ids) >= MAX_TOTAL_QUESTIONS:
         return False
+    if not counted:
+        return True
     if followup:
         return intake.followup_asked_count < MAX_FOLLOWUP_QUESTIONS
     return intake.core_asked_count < MAX_CORE_QUESTIONS
@@ -260,6 +321,83 @@ def next_core_question(
             continue
         return question
     return None
+
+
+def unconfirmed_evidence(profile: Profile, field: str):
+    """The evidence fact awaiting the person's confirmation for `field`, if any."""
+    conflict = next((c for c in profile.conflicts if c.field == field), None)
+    if conflict is not None:
+        evidence = [c for c in conflict.candidates if c.provenance in EVIDENCE_PROVENANCES]
+        return evidence[-1] if evidence else None
+    fact = profile.facts.get(field)
+    if fact is not None and not fact.confirmed and fact.provenance in EVIDENCE_PROVENANCES:
+        return fact
+    return None
+
+
+def confirmation_question(profile: Profile, intake: IntakeState) -> Question | None:
+    """Ask the person to confirm a fact that came from evidence, if one is waiting."""
+    for field, question_id in CONFIRMATION_FOR.items():
+        spec = REGISTRY[question_id]
+        if spec.question.target_field in intake.skipped_fields:
+            continue
+        evidence = unconfirmed_evidence(profile, field)
+        if evidence is None or evidence.provenance not in _EVIDENCE_SOURCE:
+            continue
+        if not _budget_left(question_id, intake, followup=False, counted=False):
+            continue
+        source = _EVIDENCE_SOURCE[evidence.provenance]
+        if field == "monthly_income":
+            detail = f"{source} about ${float(evidence.value):,.0f} a month in household income"
+            if evidence.provenance == "nessie_sandbox":
+                detail = f"{source} about ${float(evidence.value):,.0f} a month in deposits"
+        else:
+            detail = f"{source} a household of {evidence.value}"
+        conflict = any(c.field == field for c in profile.conflicts)
+        reason = (
+            "This is different from what you told us, so we're still using your answer."
+            if conflict
+            else "We won't use this number until you confirm it."
+        )
+        return spec.question.model_copy(
+            update={"prompt": f"{detail}. {spec.question.prompt}", "reason": reason}
+        )
+    return None
+
+
+def evidence_offer_question(
+    profile: Profile,
+    intake: IntakeState,
+    programs: list[Program],
+    has_summary: bool,
+) -> Question | None:
+    """Offer the simulated bank profile once, and only when income matters."""
+    spec = REGISTRY["evidence_offer"]
+    if has_summary or _is_settled(spec.question.target_field, profile, intake):
+        return None
+    if spec.question.id in intake.answered_question_ids:
+        return None
+    if not any("monthly_income" in referenced_fields(p) for p in programs):
+        return None
+    if not _budget_left(spec.question.id, intake, followup=False, counted=False):
+        return None
+    return spec.question
+
+
+def next_awaiting_question(
+    profile: Profile,
+    intake: IntakeState,
+    programs: list[Program],
+    assessments: dict[str, EligibilityAssessment],
+    *,
+    has_summary: bool = False,
+) -> Question | None:
+    """After results: confirm evidence first, then a follow-up, then the evidence offer."""
+    return (
+        confirmation_question(profile, intake)
+        or next_followup_question(profile, intake, programs, assessments)
+        or evidence_offer_question(profile, intake, programs, has_summary)
+    )
 
 
 def next_followup_question(

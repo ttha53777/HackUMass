@@ -117,8 +117,16 @@ def test_rule_6_followup_ends_the_run(repo):
     assert decision.update["intake"].followup_asked_count == 1
 
 
-def test_rule_7_complete_when_nothing_is_left(repo):
+def test_rule_6_offers_the_simulated_bank_profile_after_follow_ups(repo):
     intake = IntakeState(skipped_fields=["age_60_plus"])
+    decision = decide(settled_state(repo, intake=intake))
+    assert decision.update["pending_question"].id == "evidence_offer"
+    assert decision.update["workflow_phase"] == "awaiting_user"
+    assert decision.update["intake"].followup_asked_count == 0  # not a follow-up
+
+
+def test_rule_7_complete_when_nothing_is_left(repo):
+    intake = IntakeState(skipped_fields=["age_60_plus", "evidence_offer"])
     decision = decide(settled_state(repo, intake=intake))
     assert decision.goto == END
     assert decision.update["pending_question"] is None
@@ -226,8 +234,11 @@ def test_full_run_reaches_results_and_then_completes(repo):
     assert state["dirty"] == DirtyFlags()
 
     state = answer(graph, "s", question_id="age_60_plus", selected_option_ids=["yes"])
-    assert state["workflow_phase"] == "complete"
     assert state["eligibility_assessments"]["fixture-senior-pantry"].missing_fields == []
+    assert state["pending_question"].id == "evidence_offer"
+
+    state = answer(graph, "s", question_id="evidence_offer", selected_option_ids=["no"])
+    assert state["workflow_phase"] == "complete" and state["pending_question"] is None
 
 
 def test_followup_recomputes_only_the_affected_program(repo):

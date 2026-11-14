@@ -88,9 +88,11 @@ All routes are under `/api`. Errors have the shape `{"error": {"code", "message"
 | `POST /sessions` | Start a session. Returns `201` and a snapshot that already contains the first question. |
 | `GET /sessions/{id}` | Current snapshot: pending question, answered questions, programs, plan, agent statuses, notices. |
 | `POST /sessions/{id}/answers` | Answer the pending question, or change or skip an earlier one. `200` means the snapshot is current; `202` means work continues (`busy: true`), so poll the `GET` route. |
+| `GET /nessie/personas` | The fictional demo bank profiles, each labelled *Simulated*. |
+| `POST /sessions/{id}/evidence/nessie` | Body `{"persona_id", "consent": true}`. Uses a simulated bank profile; `200` or `202` like answers. Deposits become an **unconfirmed** income estimate, and the app asks the person to confirm it before relying on it. |
 | `GET /health` | Liveness and configuration flags. No secrets. |
 
-Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422).
+Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422), `consent_required` (400).
 
 Try it with the backend running:
 
@@ -146,7 +148,7 @@ Planned for the real demo:
 
 - **Region:** Amherst / Hampshire County, Massachusetts. Supported ZIP codes are listed in `backend/app/data/regions.json` (25 Hampshire County ZIPs from the MassGIS ZIP layer; Amherst is `01002` and `01003`). Use `PROGRAM_SOURCE=curated`.
 - **Persona (fictional):** a retired person living alone on about $1,400 a month, worried about groceries and energy bills.
-- **Script:** choose *Food* and *Utilities* → enter a supported ZIP → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally pick the simulated bank profile.
+- **Script:** choose *Food* and *Utilities* → enter a supported ZIP → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally accept the simulated bank profile offer, pick a persona, tick consent, and confirm or reject the deposit estimate.
 
 ## Scope and limitations
 

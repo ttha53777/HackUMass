@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { ActivityPanel } from "@/components/results/activity-panel";
+import { EvidencePanel } from "@/components/results/evidence-panel";
 import { hasResults, ResultsView } from "@/components/results/results-view";
 import { STATUS } from "@/components/results/status";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,16 @@ const WORKING_LABEL: Partial<Record<WorkflowPhase, string>> = {
 
 // Shown by the results view itself, so they are not repeated as banners.
 const HANDLED_NOTICES = new Set(["unsupported_region", "no_matches"]);
+
+/** Some candidate program has an income rule, so a bank profile could matter. */
+function usesIncome(snapshot: SessionSnapshot): boolean {
+  return (
+    snapshot.financial_summary !== null ||
+    snapshot.programs.some((card) =>
+      card.program.requirements.some((r) => r.field === "monthly_income"),
+    )
+  );
+}
 
 /** Programs whose check is waiting on the field this question asks about. */
 function affectedPrograms(snapshot: SessionSnapshot, field: string): string[] {
@@ -65,6 +76,8 @@ export function GuidedIntake() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Statuses just before the latest answer, so the page can say what it changed.
   const [baseline, setBaseline] = useState<Baseline | null>(null);
+  // The person said yes to the simulated bank profile offer: open the picker.
+  const [offerAccepted, setOfferAccepted] = useState(false);
 
   const editing = snapshot?.answered.find((item) => item.question_id === editingId) ?? null;
   const question = editing?.question ?? snapshot?.pending_question ?? null;
@@ -110,6 +123,15 @@ export function GuidedIntake() {
     setBaseline(before.size > 0 ? before : null);
     const accepted = await session.submit(answer);
     if (accepted) setEditingId(null);
+    if (accepted && answer.question_id === "evidence_offer") {
+      setOfferAccepted(answer.selected_option_ids?.includes("yes") ?? false);
+    }
+  }
+
+  async function handleEvidence(personaId: string) {
+    const before = statusesOf(snapshot!);
+    setBaseline(before.size > 0 ? before : null);
+    return session.submitEvidence(personaId);
   }
 
   function startEdit(questionId: string) {
@@ -155,6 +177,14 @@ export function GuidedIntake() {
   let followUp = null;
   if (isFollowUp && question) {
     const affected = affectedPrograms(snapshot, question.target_field);
+    const title =
+      question.origin === "conflict"
+        ? "Please check this number"
+        : question.origin === "evidence_offer"
+          ? "Optional"
+          : affected.length > 0
+            ? `One more question could change ${plural(affected.length, "result")}`
+            : "One more question";
     followUp = (
       <section
         aria-label="Optional follow-up question"
@@ -162,11 +192,9 @@ export function GuidedIntake() {
       >
         <div className="flex flex-col gap-1">
           <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-            {affected.length > 0
-              ? `One more question could change ${plural(affected.length, "result")}`
-              : "One more question"}
+            {title}
           </p>
-          {affected.length > 0 && (
+          {affected.length > 0 && question.origin !== "conflict" && (
             <p className="text-sm text-muted-foreground">It helps us check: {affected.join(", ")}.</p>
           )}
           <p className="text-sm text-muted-foreground">
@@ -256,6 +284,16 @@ export function GuidedIntake() {
         <ResultsView
           snapshot={snapshot}
           followUp={followUp}
+          evidence={
+            usesIncome(snapshot) ? (
+              <EvidencePanel
+                summary={snapshot.financial_summary}
+                openRequested={offerAccepted}
+                disabled={working}
+                onUse={handleEvidence}
+              />
+            ) : null
+          }
           disabled={working}
           onEditQuestion={startEdit}
         />
@@ -280,6 +318,7 @@ export function GuidedIntake() {
               onClick={() => {
                 setEditingId(null);
                 setBaseline(null);
+                setOfferAccepted(false);
                 void session.restart();
               }}
             >

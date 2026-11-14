@@ -81,6 +81,8 @@ def test_full_flow_produces_sourced_results_and_a_plan(client):
     assert "fixture_data" in [notice["code"] for notice in snapshot["notices"]]
 
     snapshot = answer(client, session_id, question_id="age_60_plus", selected_option_ids=["yes"])
+    assert snapshot["pending_question"]["id"] == "evidence_offer"
+    snapshot = answer(client, session_id, question_id="evidence_offer", skipped=True)
     assert snapshot["phase"] == "complete" and snapshot["pending_question"] is None
     pantry = next(c for c in snapshot["programs"] if c["program"]["id"] == "fixture-senior-pantry")
     assert pantry["assessment"]["missing_fields"] == []

@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T12, T14 (live mode not yet verified against the real API) and T16. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T12, T14 (live mode not yet verified against the real API), T15 and T16. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 

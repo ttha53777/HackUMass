@@ -23,9 +23,24 @@ from datetime import datetime, timezone
 from typing import Any, Iterable
 
 from app.graph.answers import normalize_answer
-from app.graph.questions import OTHER_OPTION_ID, QuestionSpec, get_spec
-from app.graph.state import AnswerIn, Conflict, Fact, Profile, SessionState
+from app.graph.questions import (
+    CONFIRMATION_FOR,
+    OTHER_OPTION_ID,
+    QuestionSpec,
+    get_spec,
+    unconfirmed_evidence,
+)
+from app.graph.state import (
+    AnswerIn,
+    Conflict,
+    Fact,
+    FinancialSummary,
+    Profile,
+    SafeError,
+    SessionState,
+)
 from app.services.free_text import match_other
+from app.services.nessie import NessieService
 
 # Two money amounts within this fraction of each other are treated as the same
 # fact (bank deposits rarely match a reported monthly income to the dollar).
@@ -205,22 +220,95 @@ def _unique(fields: Iterable[str]) -> list[str]:
 
 
 # --------------------------------------------------------------------------
+# Evidence confirmation (T15, T17)
+# --------------------------------------------------------------------------
+
+# Confirmation question id -> the profile field it settles.
+CONFIRMS = {question_id: field for field, question_id in CONFIRMATION_FOR.items()}
+
+
+def apply_confirmation(profile: Profile, field: str, confirmed: bool, now: datetime) -> list[str]:
+    """The person said whether evidence about `field` is right.
+
+    Yes: the evidence value becomes their own, confirmed answer.
+    No:  their earlier answer stands; with no earlier answer, the evidence is
+         dropped so the field is unknown again (and can be asked or added).
+    """
+    evidence = unconfirmed_evidence(profile, field)
+    if evidence is None:
+        return []
+    if confirmed:
+        return apply_user_fact(profile, field, evidence.model_copy(update={"updated_at": now}))
+    conflict = _conflict_for(profile, field)
+    if conflict is not None:
+        user = next((c for c in conflict.candidates if c.provenance == "user_reported"), None)
+        if user is not None:
+            return apply_user_fact(profile, field, user)
+    profile.facts.pop(field, None)
+    _drop_conflict(profile, field)
+    return [field]
+
+
+# --------------------------------------------------------------------------
 # Graph node
 # --------------------------------------------------------------------------
 
 
-def user_intelligence(state: SessionState) -> dict[str, Any]:
-    profile = (state.get("profile") or Profile()).model_copy(deep=True)
-    answer = state.get("user_answer")
-    changed: list[str] = []
+def _income_fact(summary: FinancialSummary, now: datetime) -> Fact:
+    return Fact(
+        value=summary.avg_monthly_deposits,
+        provenance="nessie_sandbox",
+        updated_at=now,
+        period="month",
+        confirmed=False,
+    )
 
-    spec = get_spec(answer.question_id) if answer else None
-    if answer is not None and spec is not None:
-        changed = apply_answer(profile, spec, answer, datetime.now(timezone.utc))
 
-    return {
-        "profile": profile,
-        "changed_fields": _unique(changed),
-        "user_answer": None,
-        "pending_evidence": None,
-    }
+def make_user_intelligence(nessie: NessieService | None = None):
+    """`nessie` supplies simulated bank summaries; None means seeded personas only."""
+    service = nessie
+
+    def user_intelligence(state: SessionState) -> dict[str, Any]:
+        nonlocal service
+        profile = (state.get("profile") or Profile()).model_copy(deep=True)
+        answer = state.get("user_answer")
+        evidence = state.get("pending_evidence")
+        now = datetime.now(timezone.utc)
+        changed: list[str] = []
+        update: dict[str, Any] = {}
+
+        spec = get_spec(answer.question_id) if answer else None
+        if answer is not None and spec is not None:
+            if answer.question_id in CONFIRMS and not answer.skipped:
+                yes = normalize_answer(spec, answer) is True
+                changed = apply_confirmation(profile, CONFIRMS[answer.question_id], yes, now)
+            elif answer.question_id not in CONFIRMS:
+                changed = apply_answer(profile, spec, answer, now)
+
+        if evidence is not None and evidence.kind == "nessie" and evidence.persona_id:
+            # Consent was checked by the API; record it before any call is made.
+            update["consents"] = {**(state.get("consents") or {}), "nessie": True}
+            if service is None:
+                service = NessieService(None)
+            result = service.summarize(evidence.persona_id)
+            update["financial_summary"] = result.summary
+            changed += apply_evidence_facts(profile, {"monthly_income": _income_fact(result.summary, now)})
+            if result.notice:
+                code, message = result.notice
+                update["errors"] = list(state.get("errors") or []) + [
+                    SafeError(code=code, message=message, agent="user_intelligence", at=now)
+                ]
+
+        return {
+            **update,
+            "profile": profile,
+            "changed_fields": _unique(changed),
+            "user_answer": None,
+            "pending_evidence": None,
+        }
+
+    return user_intelligence
+
+
+# Default node: seeded personas only (tests, and when no service is wired).
+user_intelligence = make_user_intelligence()

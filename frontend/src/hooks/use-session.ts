@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { createSession, getSession, isApiError, submitAnswer } from "@/lib/api";
+import { createSession, getSession, isApiError, submitAnswer, submitNessieEvidence } from "@/lib/api";
 import type { AnswerIn, SessionSnapshot } from "@/lib/types";
 
 const STORAGE_KEY = "crn.session_id";
@@ -42,6 +42,8 @@ export type SessionController = {
   working: boolean;
   /** Returns true when the answer was accepted. */
   submit: (answer: AnswerIn) => Promise<boolean>;
+  /** Use a simulated bank profile (consent given). Returns an error message, or null. */
+  submitEvidence: (personaId: string) => Promise<string | null>;
   restart: () => Promise<void>;
   clearAnswerError: () => void;
 };
@@ -118,42 +120,58 @@ export function useSession(): SessionController {
     return () => window.clearTimeout(timer);
   }, [sessionId, busy, pollAttempt, begin]);
 
-  const submit = useCallback(
-    async (answer: AnswerIn) => {
+  /** Sends one change to the session; shared by answers and evidence. */
+  const send = useCallback(
+    async (run: (id: string) => Promise<SessionSnapshot>): Promise<string | null | false> => {
       if (!sessionId) return false;
       const mine = generation.current;
       setSubmitting(true);
       setAnswerError(null);
       try {
-        const next = await submitAnswer(sessionId, answer);
+        const next = await run(sessionId);
         if (generation.current !== mine) return false;
         setSnapshot(next);
         setPollAttempt(0);
-        return true;
+        return null;
       } catch (error) {
         if (generation.current !== mine) return false;
         if (isApiError(error, "session_not_found")) {
           await begin(null, true);
-        } else if (isApiError(error, "stale_question") || isApiError(error, "session_busy")) {
+          return false;
+        }
+        if (isApiError(error, "stale_question") || isApiError(error, "session_busy")) {
           // Our view is out of date: reload it and let the person try again.
-          setAnswerError(error.message);
           try {
             const fresh = await getSession(sessionId);
             if (generation.current === mine) setSnapshot(fresh);
           } catch {
             // The poll or the next action will surface a lasting problem.
           }
-        } else if (isApiError(error)) {
-          setAnswerError(error.message);
-        } else {
-          setAnswerError(OFFLINE_MESSAGE);
+          return error.message;
         }
-        return false;
+        return isApiError(error) ? error.message : OFFLINE_MESSAGE;
       } finally {
         if (generation.current === mine) setSubmitting(false);
       }
     },
     [sessionId, begin],
+  );
+
+  const submit = useCallback(
+    async (answer: AnswerIn) => {
+      const result = await send((id) => submitAnswer(id, answer));
+      if (typeof result === "string") setAnswerError(result);
+      return result === null;
+    },
+    [send],
+  );
+
+  const submitEvidence = useCallback(
+    async (personaId: string) => {
+      const result = await send((id) => submitNessieEvidence(id, personaId));
+      return result === false ? null : result;
+    },
+    [send],
   );
 
   const restart = useCallback(async () => {
@@ -172,6 +190,7 @@ export function useSession(): SessionController {
     expired,
     working: submitting || busy,
     submit,
+    submitEvidence,
     restart,
     clearAnswerError,
   };
