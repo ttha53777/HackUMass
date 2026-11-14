@@ -1,0 +1,98 @@
+{
+  "id": "capv-fuel-assistance",
+  "name": "Fuel Assistance (Home Energy Assistance / LIHEAP)",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "Free program that helps pay part of winter heating costs. Covers deliverable fuels (oil, kerosene, propane, coal, wood, pellets, biobricks), natural gas and electricity, and may help with heat included in rent. Expedited help for heating emergencies (November 1 - April 30), such as running out of fuel or a gas/electric shut-off notice.",
+  "info_url": "https://www.communityaction.us/program/fuel-assistance",
+  "apply_url": "https://www.toapply.org/CA",
+  "contact": "413-774-2310 or 800-370-0940 (toll-free); fuelassistance@communityaction.us (do not email confidential information)",
+  "documents_needed": [
+    "State or federally-issued photo ID for the applicant",
+    "Proof of citizenship or qualified alien status",
+    "Verification of all sources of income for the 30 days prior to the appointment",
+    "Dates of birth for all household members",
+    "Heating vendor, account number, and name of account holder",
+    "Renters: copy of lease (and verification of rental subsidy, if applicable)",
+    "Homeowners: mortgage, homeowner's insurance, and property tax bills",
+    "College students: current financial aid awards"
+  ],
+  "requirements": [
+    {
+      "id": "capv-fa-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "2026-2027 income guidelines, based on the size of the entire household (everyone who benefits from the heat): 1: $53,585; 2: $70,073; 3: $86,561; 4: $103,049; 5: $119,536; 6: $136,024; 7: $139,116; 8: $142,207; 9: $145,299; 10: $148,390. The page does not state whether these are yearly or gross amounts.",
+      "source_url": "https://www.communityaction.us/program/fuel-assistance",
+      "verified": true
+    },
+    {
+      "id": "capv-fa-heat-in-rent",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Fuel Assistance may pay for heat included in rent; renters provide a copy of their lease.",
+      "source_url": "https://www.communityaction.us/program/fuel-assistance",
+      "verified": true
+    },
+    {
+      "id": "capv-fa-season",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Apply anytime between October 1st and April 30th in person, on the phone or online.",
+      "source_url": "https://www.communityaction.us/program/fuel-assistance",
+      "verified": true
+    },
+    {
+      "id": "capv-fa-citizenship",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Proof of citizenship, qualified alien status or unqualified alien status is requested for all household members.",
+      "source_url": "https://www.communityaction.us/program/fuel-assistance",
+      "verified": true
+    },
+    {
+      "id": "capv-fa-area",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Community Action Pioneer Valley serves Hampshire County (it took on responsibility for Hampshire County in 2005) and Franklin County; offices in Greenfield, Northampton and Orange.",
+      "source_url": "https://www.communityaction.us/about/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Whether the income limits are annual and gross or net (page does not label the period)",
+    "Asset limits (none stated)",
+    "Benefit amounts",
+    "Whether CAPV is the officially designated LIHEAP agency for Amherst (mass.gov agency list could not be fetched; CAPV pages do not name Amherst)",
+    "Northampton office hours (page gives conflicting hours)"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "2026-2027 heating season (applications October 1 - April 30)"
+}

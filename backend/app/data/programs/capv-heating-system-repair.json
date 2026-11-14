@@ -1,0 +1,60 @@
+{
+  "id": "capv-heating-system-repair",
+  "name": "Heating System Repair and Replacement",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "utilities",
+    "housing"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "Helps homeowners by repairing or replacing heating systems that no longer work. Emergency (no-heat) program runs November 1 - April 30.",
+  "info_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+  "apply_url": null,
+  "contact": "413-376-1115; Energyprog@communityaction.us",
+  "documents_needed": [
+    "Name, address, phone, email and LIHEAP number (if you have one)",
+    "Copies of electric and natural gas bills"
+  ],
+  "requirements": [
+    {
+      "id": "hs-benefit",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+      "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+      "verified": true
+    },
+    {
+      "id": "hs-owner",
+      "kind": "categorical",
+      "field": "housing_status",
+      "op": "in",
+      "value": [
+        "own"
+      ],
+      "period": null,
+      "text": "For homeowners; tenants should contact their landlord.",
+      "source_url": "https://www.communityaction.us/program/help-my-heating-system-is-broken/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Income limits (none stated)",
+    "Program year",
+    "Cost to the homeowner, if any"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Applications from October 1; emergency program November 1 - April 30"
+}

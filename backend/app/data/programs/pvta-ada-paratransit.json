@@ -1,0 +1,68 @@
+{
+  "id": "pvta-ada-paratransit",
+  "name": "PVTA ADA Paratransit",
+  "provider": "Pioneer Valley Transit Authority (PVTA)",
+  "type": "government",
+  "categories": [
+    "transportation"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003"
+    ]
+  },
+  "description": "Shared-ride, door-to-door van transportation for individuals whose disabilities prevent them from riding the city bus. Available within 3/4 mile of a city bus route, on all days that city bus service operates. Requires a completed application mailed or dropped off at PVTA.",
+  "info_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
+  "apply_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
+  "contact": "413-732-6248 ext. 2237 or toll-free 800-752-1638 ext. 2237; PVTA, 2808 Main Street, Springfield, MA 01107",
+  "documents_needed": [
+    "Completed PVTA ADA paratransit application (must be completed in its entirety)"
+  ],
+  "requirements": [
+    {
+      "id": "ada-disability",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "For individuals whose disabilities prevent them from riding the city bus service. Eligibility is determined through the PVTA ADA application.",
+      "source_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
+      "verified": true
+    },
+    {
+      "id": "ada-service-area",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Service is available within 3/4 mile of a city bus route.",
+      "source_url": "https://www.pvta.com/van_service/ada_paratransit/index.php",
+      "verified": true
+    },
+    {
+      "id": "ada-fare-free",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "PVTA is Fare-Free for FY27; no fares or passes needed for vans.",
+      "source_url": "https://www.pvta.com/van_service/fares.php",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Specific disability criteria and how long a decision takes",
+    "Service hours for Amherst (in a separate PDF we did not read)",
+    "Whether a personal care attendant may ride",
+    "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

@@ -1,0 +1,41 @@
+{
+  "id": "asc-community-meals",
+  "name": "Amherst Survival Center Community Meals",
+  "provider": "Amherst Survival Center",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "Free hot lunch made fresh on site at 138 Sunderland Rd., North Amherst, to eat in the dining room or take to go. No registration is needed.",
+  "info_url": "https://amherstsurvival.org/community-meals/",
+  "apply_url": null,
+  "contact": "413-549-3968",
+  "documents_needed": [],
+  "requirements": [
+    {
+      "id": "asc-meals-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "All are welcome; no registration necessary. Meals are served Monday, Tuesday, Thursday, and Friday.",
+      "source_url": "https://amherstsurvival.org/community-meals/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Meal hours differ on the page: the meals section says 12-2:30pm, while the site footer lists Community Center & Meals hours as 12-3pm.",
+    "The page does not state a service area; the county is the meal site's location, not a residency rule."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

@@ -1,0 +1,28 @@
+{
+  "id": "way-finders-housing-centers",
+  "name": "Way Finders Housing Centers (housing help)",
+  "provider": "Way Finders",
+  "type": "community",
+  "categories": ["housing"],
+  "service_area": {"statewide": false, "state": "MA", "counties": ["Hampden", "Hampshire", "Franklin"], "zips": []},
+  "description": "Way Finders Housing Centers (including Northampton) help renters search for housing, apply for subsidies or Way Finders apartments, understand evictions and court processes, report health and safety issues to code enforcement, and apply for SNAP and other benefits. Staff provide shelter referrals for individuals without dependent children and guide people through the RAFT application. Families (including pregnant women) needing shelter must get a referral from EOHLC.",
+  "info_url": "https://www.wayfinders.org/housing-help/housing-centers/",
+  "apply_url": null,
+  "contact": "413-233-1500; Northampton Housing Center, 256 Pleasant Street, Northampton, MA 01060. Walk-in Mon and Wed 8:30am-1:00pm (RAFT, general assistance); Fri 8:30am-1:00pm (general assistance, not RAFT); closed Tue and Thu.",
+  "documents_needed": null,
+  "requirements": [
+    {"id": "wf-service-area", "kind": "residency", "field": null, "op": null, "value": null, "period": null,
+     "text": "Way Finders serves those seeking housing help in Hampden, Hampshire, and Franklin counties.",
+     "source_url": "https://www.wayfinders.org/housing-help/emergency-and-rental-assistance/", "verified": true},
+    {"id": "wf-family-shelter-referral", "kind": "text_only", "field": null, "op": null, "value": null, "period": null,
+     "text": "Way Finders does not offer shelter space directly. Families (including pregnant women) in need of shelter must get a referral from EOHLC (appointments: 1-866-584-0653).",
+     "source_url": "https://www.wayfinders.org/housing-help/homelessness/", "verified": true}
+  ],
+  "unknowns": [
+    "Eligibility or income rules for individual services",
+    "Whether all services are free",
+    "Response times beyond the note that it can take up to three business days to respond to housing help requests"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

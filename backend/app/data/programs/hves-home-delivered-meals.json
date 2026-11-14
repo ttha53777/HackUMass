@@ -1,0 +1,79 @@
+{
+  "id": "hves-home-delivered-meals",
+  "name": "Home Delivered Meals",
+  "provider": "Highland Valley Elder Services",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003",
+      "01012",
+      "01026",
+      "01027",
+      "01032",
+      "01035",
+      "01038",
+      "01050",
+      "01060",
+      "01070",
+      "01073",
+      "01096",
+      "01098"
+    ]
+  },
+  "description": "Meals prepared in Highland Valley Elder Services' kitchen and delivered to older adults at home. Meals are free to those who qualify; donations are accepted. Evening and weekend meals are also available.",
+  "info_url": "https://highlandvalley.org/services/home-delivered-meals/",
+  "apply_url": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
+  "contact": "(413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "hves-service-area",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+      "source_url": "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+      "verified": true
+    },
+    {
+      "id": "hves-meals-age",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "The page says the Nutrition Program aims for every person over 60 to receive at least one nutritionally balanced meal each day; it does not state an exact qualifying age for home-delivered meals.",
+      "source_url": "https://highlandvalley.org/services/home-delivered-meals/",
+      "verified": true
+    },
+    {
+      "id": "hves-meals-qualify",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Meals are free to all who qualify. The page does not list the qualification rules; call (413) 586-2000.",
+      "source_url": "https://highlandvalley.org/services/home-delivered-meals/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Exact eligibility rules (homebound status, age cut-off, income) are not stated on the page.",
+    "Delivery days and whether delivery reaches every address in Amherst are not stated on the meals page.",
+    "Private-pay pricing is not stated.",
+    "Not every town in Hampshire County is on the agency's 24-town list (e.g. it is unclear whether Belchertown, Granby, South Hadley or Ware residents are served); residency is a town list, not a whole county.",
+    "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

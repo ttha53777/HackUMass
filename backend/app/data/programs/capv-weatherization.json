@@ -1,0 +1,59 @@
+{
+  "id": "capv-weatherization",
+  "name": "Weatherization and Energy Efficiency Programs",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "utilities",
+    "housing"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "Free major home improvements to reduce energy usage (weatherization) and electric efficiency audits, for homeowners and renters who receive fuel assistance or the utility discount rate.",
+  "info_url": "https://www.communityaction.us/program/weatherization/",
+  "apply_url": "https://forms.monday.com/forms/0172eaed3ccf243cfac7464cba1fc6b9?r=use1",
+  "contact": "413-376-1140; energyprog@communityaction.us",
+  "documents_needed": [
+    "Name, LIHEAP application number (if you have one), home address, phone and email",
+    "Copy of electric bill (and natural gas account number/bill if not on fuel assistance)"
+  ],
+  "requirements": [
+    {
+      "id": "wx-benefit",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must receive fuel assistance or the utility discount rate for electricity or natural gas.",
+      "source_url": "https://www.communityaction.us/program/weatherization/",
+      "verified": true
+    },
+    {
+      "id": "wx-landlord",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Renters can apply but need landlord authorization; for 2-4 unit properties at least half of the tenants must meet the income-eligibility requirement; buildings over 4 units are referred to Lean Multifamily.",
+      "source_url": "https://www.communityaction.us/program/weatherization/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Income limits (none stated beyond fuel assistance / discount rate participation)",
+    "Program year",
+    "Wait times",
+    "Whether this is the federal Weatherization Assistance Program (WAP) (page does not name it)"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

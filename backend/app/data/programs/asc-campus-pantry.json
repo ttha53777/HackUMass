@@ -1,0 +1,45 @@
+{
+  "id": "asc-campus-pantry",
+  "name": "Campus Pantry at UMass Amherst",
+  "provider": "Amherst Survival Center",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003"
+    ]
+  },
+  "description": "Free groceries for members of the UMass Amherst community at 472 North Pleasant Street, Amherst. Shoppers can register online ahead of time or walk in, and can shop once per week.",
+  "info_url": "https://amherstsurvival.org/campus-pantry/",
+  "apply_url": null,
+  "contact": "(413) 545-8880",
+  "documents_needed": [
+    "UMass ID (or other UMass affiliated material)"
+  ],
+  "requirements": [
+    {
+      "id": "asc-campus-affiliation",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "For members of the UMass Amherst community; bring your UMass ID or other UMass affiliated material.",
+      "source_url": "https://amherstsurvival.org/campus-pantry/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The online registration link for the Campus Pantry was not fetched, so no apply URL is given.",
+    "The app cannot ask about UMass affiliation; the 'student' situation does not cover staff or other affiliates.",
+    "Service area set to Amherst ZIP codes; the pantry serves the UMass Amherst community."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

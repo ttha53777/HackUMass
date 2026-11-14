@@ -1,0 +1,70 @@
+{
+  "id": "eversource-ma-discount-rate",
+  "name": "Eversource Massachusetts Discount Program (discount rate)",
+  "provider": "Eversource",
+  "type": "community",
+  "categories": [
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003"
+    ]
+  },
+  "description": "Discount on Eversource electric or gas bills for customers who receive a qualifying public assistance benefit or meet household income requirements. Discounts as of Nov. 1, 2026 range from 22% to 92% depending on income, household size and heating type.",
+  "info_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+  "apply_url": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
+  "contact": "Call 211 or visit https://www.masscap.org/agencies/ to find your local Community Action Agency (income-based applications)",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "ev-customer",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Must be an Eversource electric or gas customer. (Eversource is listed as the electric company for Amherst by UMass Amherst.)",
+      "source_url": "https://www.umass.edu/global-affairs/international-students-scholars/resources/basics/utilities",
+      "verified": true
+    },
+    {
+      "id": "ev-benefit-or-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Qualify by receiving a public assistance benefit (e.g. HEAP/Fuel Assistance, SNAP, MassHealth Basic or Standard, TAFDC, EAEDC, WIC, Head Start, public or subsidized housing, SSP, Veterans' Chapter 115 benefits) OR by meeting household income requirements.",
+      "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+      "verified": true
+    },
+    {
+      "id": "ev-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Annual household income for all adults 18+ (combined gross income of all persons in the household) must be at or below 60% of State Median Income. Benefit recipients may qualify without meeting this test. Households receiving a qualifying public benefit can also qualify; see the provider page.",
+      "source_url": "https://www.eversource.com/residential/account-billing/payment-assistance/discount-rate",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The income table columns are not labelled on the page; the encoded limits are the highest (60% SMI) column",
+    "Whether the income test applies to someone who qualifies through a public assistance benefit (page presents them as alternatives)",
+    "Limits for households larger than 8",
+    "Specific documents required",
+    "Eversource phone number for this program (not shown on the page)",
+    "Whether the account must be in the applicant's name / primary residence (not stated on the page)",
+    "Amherst coverage confirmed only via a UMass Amherst page, not an Eversource service-territory page",
+    "Service area set to Amherst ZIP codes, the only area where Eversource service was confirmed from a fetched page."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Discount percentages as of Nov. 1, 2026"
+}

@@ -1,0 +1,43 @@
+{
+  "id": "fbwm-mobile-food-bank",
+  "name": "Mobile Food Bank",
+  "provider": "The Food Bank of Western Massachusetts",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampden",
+      "Hampshire",
+      "Berkshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "A truck brings free fresh and non-perishable groceries from the Food Bank's warehouse to community sites for same-day distribution. Hampshire County sites include Amherst Survival Center & The Boulders (125 Brittany Manor, Amherst) on the 1st Wednesday, 1:00-2:00 p.m.",
+  "info_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
+  "apply_url": null,
+  "contact": "Mobile Food Bank Hotline 413-419-0079",
+  "documents_needed": [],
+  "requirements": [
+    {
+      "id": "fbwm-mobile-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "There are no eligibility requirements to receive food from the Mobile Food Bank. Anyone can attend.",
+      "source_url": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Dates change monthly and some distributions are cancelled; the page advises calling the hotline for closures."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

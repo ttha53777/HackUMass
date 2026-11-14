@@ -1,0 +1,69 @@
+{
+  "id": "hves-benefits-support",
+  "name": "Benefits Support Program",
+  "provider": "Highland Valley Elder Services",
+  "type": "community",
+  "categories": [
+    "food",
+    "healthcare",
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003",
+      "01012",
+      "01026",
+      "01027",
+      "01032",
+      "01035",
+      "01038",
+      "01050",
+      "01060",
+      "01070",
+      "01073",
+      "01096",
+      "01098"
+    ]
+  },
+  "description": "A Benefits Support Specialist can help people access public benefits such as Medicaid (MassHealth), SNAP and Fuel Assistance. Free consultations with a Certified Application Counselor are scheduled by phone.",
+  "info_url": "https://highlandvalley.org/services/benefits-support-program/",
+  "apply_url": null,
+  "contact": "(413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "hves-service-area",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+      "source_url": "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+      "verified": true
+    },
+    {
+      "id": "hves-benefits-free",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Free consultation with a Certified Application Counselor, scheduled by calling (413) 586-2000. The page does not state who qualifies for this help.",
+      "source_url": "https://highlandvalley.org/services/benefits-support-program/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Who is eligible for benefits counseling (age or other criteria) is not stated on the page.",
+    "Eligibility for the underlying benefits (MassHealth, SNAP, Fuel Assistance) is set by those programs, not this page.",
+    "Not every town in Hampshire County is on the agency's 24-town list (e.g. it is unclear whether Belchertown, Granby, South Hadley or Ware residents are served); residency is a town list, not a whole county.",
+    "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}
