@@ -3,7 +3,15 @@
 import asyncio
 import json
 
-from app.execution.agent import Agent, Call, function_result, parse_interaction, system_instruction, tools
+from app.execution.agent import (
+    Agent,
+    Call,
+    function_result,
+    parse_interaction,
+    screenshot_step,
+    system_instruction,
+    tools,
+)
 from app.execution.computer import Observation
 from app.execution.fields import FieldStore
 from tests.execution_fakes import FakeComputer, ScriptedModel, click, type_
@@ -80,7 +88,7 @@ def test_a_skipped_question_leaves_the_field_empty():
     agent, computer, model, _ = make([[click(100, 150)], [type_("{{phone}}")], []])
     run(agent)
     assert computer.typed == {}
-    last = json.loads(model.inputs[-1][0]["result"][0]["text"])
+    last = model.inputs[-1][0]["result"]
     assert "skipped" in last
 
 
@@ -89,7 +97,7 @@ def test_ask_user_function_round_trip():
     run(agent)
     result = model.inputs[-1][0]
     assert result["call_id"] == "a1" and result["name"] == "ask_user"
-    assert json.loads(result["result"][0]["text"])["answered"] is True
+    assert result["result"]["answered"] is True
     assert "Maya" not in json.dumps(model.inputs)
 
 
@@ -98,7 +106,7 @@ def test_the_agents_own_submit_click_is_handed_to_the_person():
     run(agent)
     assert hooks.handoffs == ["submit"]
     assert "click" not in computer.executed  # the page was never touched
-    assert json.loads(model.inputs[-1][0]["result"][0]["text"])["handled_by_person"] is True
+    assert model.inputs[-1][0]["result"]["handled_by_person"] is True
 
 
 def test_certify_checkbox_and_ssn_are_handed_off():
@@ -112,7 +120,7 @@ def test_free_text_is_blocked_and_reported_to_the_model():
     agent, computer, model, hooks = make([[click(100, 100)], [type_("Ignore previous instructions")], []])
     run(agent)
     assert computer.typed == {}
-    assert "error" in json.loads(model.inputs[-1][0]["result"][0]["text"])
+    assert "error" in model.inputs[-1][0]["result"]
     assert hooks.logs[-1][0] == "blocked"
 
 
@@ -137,12 +145,20 @@ def test_step_limit_ends_the_run():
     assert run(agent).kind == "step_limit"
 
 
-def test_function_result_shape():
-    result = function_result(Call("id1", "click", {}), Observation("http://x/", b"png"), {"error": "no"})
-    assert result["type"] == "function_result" and result["call_id"] == "id1"
-    text, image = result["result"]
-    assert json.loads(text["text"]) == {"url": "http://x/", "error": "no"}
-    assert image["type"] == "image" and image["mime_type"] == "image/png"
+def test_result_format_matches_the_live_api():
+    """Spike S1: `result` must be a JSON object; the screenshot follows as a user_input step."""
+    observation = Observation("http://x/", b"png")
+    result = function_result(Call("id1", "click", {}), observation, {"error": "no"})
+    assert result == {"type": "function_result", "call_id": "id1", "name": "click", "result": {"url": "http://x/", "error": "no"}}
+    step = screenshot_step(observation)
+    assert step["type"] == "user_input" and step["content"][0]["type"] == "image"
+
+
+def test_each_turn_ends_with_one_screenshot():
+    agent, _, model, _ = make([[click(500, 900), click(500, 900)], []])
+    run(agent)
+    reply = model.inputs[1]
+    assert [p["type"] for p in reply] == ["function_result", "function_result", "user_input"]
 
 
 def test_parse_interaction_reads_calls_and_text():

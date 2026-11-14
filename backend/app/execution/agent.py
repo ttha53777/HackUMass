@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import asyncio
 import base64
-import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -149,10 +148,14 @@ class GeminiBrowserModel:
 
     def __init__(self, api_key: str, model: str, instruction: str, *, timeout: float = MODEL_TIMEOUT_SECONDS,
                  retries: int = MODEL_RETRIES, retry_delay: float = MODEL_RETRY_DELAY, interactions: Any = None) -> None:
+        self._client: Any = None
         if interactions is None:
             from google import genai  # imported only when a run starts
 
-            interactions = genai.Client(api_key=api_key).aio.interactions
+            # Keep the Client itself: if only `.aio.interactions` were kept, the Client
+            # would be garbage-collected and close its HTTP connection mid-run.
+            self._client = genai.Client(api_key=api_key)
+            interactions = self._client.aio.interactions
         self._interactions = interactions
         self._model, self._instruction, self._timeout = model, instruction, timeout
         self._retries, self._retry_delay = retries, retry_delay
@@ -224,15 +227,19 @@ def _image_part(observation: Observation) -> dict[str, Any]:
 
 
 def function_result(call: Call, observation: Observation, payload: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "type": "function_result",
-        "call_id": call.id,
-        "name": call.name,
-        "result": [
-            {"type": "text", "text": json.dumps({"url": observation.url, **payload})},
-            _image_part(observation),
-        ],
-    }
+    """One action's result: a plain JSON object.
+
+    Verified against the live API (spike S1, 2026-11-14): `result` must be an object.
+    The docs' list of text and image parts is rejected with a misleading 400
+    ("blocked due to safety violations"), so the screenshot travels separately,
+    in `screenshot_step`.
+    """
+    return {"type": "function_result", "call_id": call.id, "name": call.name, "result": {"url": observation.url, **payload}}
+
+
+def screenshot_step(observation: Observation) -> dict[str, Any]:
+    """The page after the turn's actions, sent once after all the function results."""
+    return {"type": "user_input", "content": [_image_part(observation)]}
 
 
 def describe(action: Action, target: Element | None, key: str | None) -> str:
@@ -296,6 +303,7 @@ class Agent:
             if not turn.calls:
                 return AgentEnd("finished", steps)  # the model is done talking
             results: list[dict[str, Any]] = []
+            observation = None
             for call in turn.calls:
                 if call.name == FINISH:
                     return AgentEnd("finished", steps)
@@ -309,8 +317,9 @@ class Agent:
                     payload = await self._handle(call)
                 if self.reached_stop_point:
                     return AgentEnd("stopped_before_submit", steps)
-                results.append(function_result(call, await self.computer.observe(), payload))
-            parts = results
+                observation = await self.computer.observe()
+                results.append(function_result(call, observation, payload))
+            parts = results + ([screenshot_step(observation)] if observation is not None else [])
 
     async def _handle(self, call: Call) -> dict[str, Any]:
         if call.name == ASK_USER:
