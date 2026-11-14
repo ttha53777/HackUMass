@@ -125,7 +125,15 @@ def store_from_profile(
 ) -> FieldStore:
     store = FieldStore()
     facts = profile.facts
-    zip_fact = facts.get("zip")
+    disputed = {c.field for c in profile.conflicts}
+
+    def usable(name: str):
+        """A fact the person gave or confirmed, and not in dispute: an unconfirmed
+        reading from a document or the bank is not the person's answer."""
+        fact = facts.get(name)
+        return fact if fact is not None and fact.confirmed and name not in disputed else None
+
+    zip_fact = usable("zip")
     if zip_fact is not None and re.fullmatch(r"\d{5}", str(zip_fact.value)):
         store.put("zip", str(zip_fact.value))
         region = region_for(str(zip_fact.value))
@@ -134,12 +142,11 @@ def store_from_profile(
                 store.put("city", region["city"])
             if region.get("state"):
                 store.put("state", region["state"])
-    size = facts.get("household_size")
+    size = usable("household_size")
     if size is not None and isinstance(size.value, (int, float)) and not isinstance(size.value, bool) and size.value > 0:
         store.put("household_size", str(int(size.value)))
-    income = facts.get("monthly_income")
-    # Only a confirmed figure: an unconfirmed document reading is not the person's answer.
-    if income is not None and income.confirmed and isinstance(income.value, (int, float)) and not isinstance(income.value, bool):
+    income = usable("monthly_income")
+    if income is not None and isinstance(income.value, (int, float)) and not isinstance(income.value, bool):
         store.put("monthly_income", f"{round(income.value):,}")
     return store
 
