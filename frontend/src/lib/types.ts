@@ -264,8 +264,29 @@ export type FinancialSummaryView = {
   avg_monthly_deposits: number;
   avg_monthly_outflow: number | null;
   utility_bill_signals: string[];
-  caveats: string[];
+  caveats: string[];  income_sources: IncomeSource[];
+  bills: BillLine[];
+  spending: SpendLine[];
+  /** benefits_held option ids the deposits point to; suggestions only. */
+  benefit_signals: string[];
 };
+
+/** Money coming in, grouped by kind (monthly averages; simulated). */
+export type IncomeSource = { label: string; kind: "wages" | "benefit" | "other"; avg_monthly: number };
+
+/** A recurring bill by payee; status is the most recent one. */
+export type BillLine = {
+  payee: string;
+  category: "rent" | "utilities" | "phone_internet" | "other";
+  avg_monthly: number;
+  status: "paid" | "pending" | "overdue";
+  day_of_month: number | null;
+};
+
+export type SpendLine = { category: "groceries" | "transport" | "household" | "other"; avg_monthly: number };
+
+/** An answer the (simulated) bank data points to; applied only once the person confirms it. */
+export type BankSuggestion = { question_id: string; answer: AnswerIn; shown: string; reason: string };
 
 export type Notice = { code: string; message: string };
 
@@ -301,6 +322,8 @@ export type SessionSnapshot = {
   plan_stale: boolean;
   agent_statuses: Partial<Record<AgentName, AgentStatus>>;
   financial_summary: FinancialSummaryView | null;
+  /** From a connected sandbox bank: answers to confirm. Empty when not connected. */
+  bank_suggestions: BankSuggestion[];
   notices: Notice[];
   /** Short labels for fields named in any assessment's missing_fields. */
   field_labels: Record<string, string>;
