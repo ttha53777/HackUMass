@@ -343,7 +343,7 @@ export type SessionSnapshot = {
 export type ReviewRow = {
   field: string;
   label: string;
-  value: number | string | string[] | null;
+  value: boolean | number | string | string[] | null;
   /** Human wording, e.g. "$1,240 a month". */
   display: string;
   in_conflict: boolean;
@@ -375,7 +375,8 @@ export type TraceEventView = {
 export type ReviewIn = {
   document_id: string;
   accept: string[];
-  edits: Record<string, number | string>;
+  /** field -> corrected value: an option id (or ids) for a choice, a number otherwise. */
+  edits: Record<string, number | string | string[]>;
 };
 
 export type IdentityKey =
@@ -393,8 +394,8 @@ export type IdentityKey =
 /** An identity detail read from a paper. Returned once; kept only on the device. */
 export type IdentityReading = { key: IdentityKey; value: string; source: string };
 
-/** POST /sessions/{id}/evidence/document (from Phase 3). */
-export type DocumentReadOut = { snapshot: SessionSnapshot; identity: IdentityReading[] };
+/** POST /sessions/{id}/evidence/document: the snapshot plus identity details, for the device only. */
+export type DocumentReadOut = SessionSnapshot & { identity: IdentityReading[] };
 
 /** GET /sessions/{id}/applications/readiness: fill-sheet keys only, never values. */
 export type ReadinessOut = {

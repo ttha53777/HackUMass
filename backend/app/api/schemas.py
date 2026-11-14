@@ -201,7 +201,7 @@ class ReviewRow(BaseModel):
 
     field: str
     label: str
-    value: float | str | int | list[str] | None
+    value: bool | int | float | str | list[str] | None
     display: str  # human wording, e.g. "$1,240 a month"
     in_conflict: bool = False
 
@@ -348,7 +348,8 @@ class ReviewIn(BaseModel):
 
     document_id: str = Field(max_length=64)
     accept: list[str] = Field(default_factory=list, max_length=20)
-    edits: dict[str, float | str | int] = Field(default_factory=dict, max_length=20)
+    # field -> corrected value: an option id (or ids) for a choice, a number otherwise.
+    edits: dict[str, float | int | str | list[str]] = Field(default_factory=dict, max_length=20)
 
 
 IdentityKey = Literal[
@@ -365,10 +366,11 @@ class IdentityReading(BaseModel):
     source: str  # "doc:<document id>"
 
 
-class DocumentReadOut(BaseModel):
-    """POST /sessions/{id}/evidence/document (Phase 3): the snapshot plus device-only details."""
+class DocumentReadOut(SessionSnapshot):
+    """POST /sessions/{id}/evidence/document: the snapshot, plus identity details read
+    from the paper. Those are for the person's device only: returned this once, with
+    Cache-Control: no-store, and never kept on the server."""
 
-    snapshot: SessionSnapshot
     identity: list[IdentityReading] = Field(default_factory=list)
 
 
