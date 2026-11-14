@@ -30,6 +30,12 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.graph.state import DocumentExtraction, Fact
+from app.services.document_patterns import (
+    KIND_FIELDS,
+    clean_text,
+    read_kind,
+    strip_identity,
+)
 from app.services.llm import get_llm
 
 MAX_BYTES = 2 * 1024 * 1024
@@ -105,19 +111,20 @@ def read_text(filename: str, data: bytes) -> str:
 # --------------------------------------------------------------------------
 
 _AMOUNT = r"\$?\s*(?P<amount>[0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)"
+# A label must start its line, so a sentence planted mid-paper cannot match.
 _INCOME_LINE = re.compile(
-    r"(?P<label>(?:gross|total|household|net)?\s*(?:(?P<p1>weekly|bi-?weekly|monthly|annual|yearly)\s+)?"
+    r"^[ \t]*(?P<label>(?:gross|total|household|net)?\s*(?:(?P<p1>weekly|bi-?weekly|monthly|annual|yearly)\s+)?"
     r"(?:income|pay|wages|earnings|benefits?))"
     r"(?:\s*\((?P<p2>per\s+(?:week|month|year)|weekly|monthly|yearly|annual)\))?"
     r"(?:\s+(?P<p3>per\s+(?:week|month|year)))?"
     r"\s*[:=\-]\s*" + _AMOUNT +
     r"(?:\s*(?:(?:/|per|a)\s*)?(?P<p4>bi-?weekly|weekly|monthly|yearly|week|month|year|wk|mo|yr)\b)?",
-    re.I,
+    re.I | re.M,
 )
 _HOUSEHOLD_LINE = re.compile(
-    r"(?:household\s+size|people\s+in\s+(?:the\s+)?household|household\s+members|"
+    r"^[ \t]*(?:household\s+size|people\s+in\s+(?:the\s+)?household|household\s+members|"
     r"number\s+(?:of\s+people\s+)?in\s+household)\s*[:=\-]\s*(\d{1,2})\b",
-    re.I,
+    re.I | re.M,
 )
 
 
@@ -184,39 +191,97 @@ def _in_range(numbers: ExtractedNumbers) -> ExtractedNumbers:
     return ExtractedNumbers(monthly_income=income, household_size=household)
 
 
-def extract(filename: str, data: bytes) -> DocumentExtraction:
-    """Read and extract. Raises DocumentRejected for files we do not accept."""
+LEGACY_FIELDS = frozenset({"monthly_income", "household_size"})
+
+
+@dataclass
+class DocumentReading:
+    """One paper, read. `identity` goes to the person's device only, never to state."""
+
+    extraction: DocumentExtraction
+    identity: dict[str, str]
+
+
+def read_document(filename: str, data: bytes, kind: str | None = None) -> DocumentReading:
+    """Read and extract. Raises DocumentRejected for files we do not accept.
+
+    With no `kind` (older callers), only income and household size are read.
+    With a kind, only that kind's fields (document_patterns.KIND_FIELDS).
+    """
     text = read_text(filename, data)
+    document_id = uuid.uuid4().hex
+    known_kind = kind if kind in KIND_FIELDS else None
+    allowed = KIND_FIELDS[known_kind] if known_kind else (frozenset() if kind else LEGACY_FIELDS)
+    notes: list[str] = [] if known_kind or not kind else ["kind_not_read"]
+    identity: dict[str, str] = {}
+    other: dict[str, object] = {}
     try:
+        text, dropped = clean_text(text)
+        notes += dropped
         numbers = _in_range(pattern_extract(text))
-        if numbers.monthly_income is None or numbers.household_size is None:
-            found = model_extract(text)
+        wanted = allowed & LEGACY_FIELDS
+        missing = [name for name in wanted if getattr(numbers, name) is None]
+        if missing:
+            # The model sees the paper without names, birth dates or addresses.
+            found = model_extract(strip_identity(text))
             if found is not None:
                 found = _in_range(found)
                 numbers = ExtractedNumbers(
                     monthly_income=numbers.monthly_income if numbers.monthly_income is not None else found.monthly_income,
                     household_size=numbers.household_size if numbers.household_size is not None else found.household_size,
                 )
+        if known_kind:
+            reading = read_kind(known_kind, text)
+            other = {k: v for k, v in reading.facts.items() if k in allowed or k.startswith("_")}
+            identity = reading.identity
+            notes += [n for n in reading.notes if n not in notes]
     finally:
         del text  # nothing below may see the document text
+
+    # Self-check: a stated household size must match the people listed, if any are.
+    rows = other.pop("_member_rows", 0)
+    if "household_size" in allowed and numbers.household_size is not None and rows and rows != numbers.household_size:
+        numbers = numbers.model_copy(update={"household_size": None})
+        notes.append("household_count_mismatch")
+
     now = datetime.now(timezone.utc)
+    source = f"doc:{document_id}"
     facts: dict[str, Fact] = {}
-    if numbers.monthly_income is not None:
+    if "monthly_income" in allowed and numbers.monthly_income is not None:
         facts["monthly_income"] = Fact(
             value=numbers.monthly_income, provenance="document_extracted", updated_at=now,
-            period="month", confirmed=False,
+            period="month", confirmed=False, source=source,
         )
-    if numbers.household_size is not None:
+    if "household_size" in allowed and numbers.household_size is not None:
         facts["household_size"] = Fact(
-            value=numbers.household_size, provenance="document_extracted", updated_at=now, confirmed=False
+            value=numbers.household_size, provenance="document_extracted", updated_at=now,
+            confirmed=False, source=source,
         )
+    for name, value in other.items():
+        facts[name] = Fact(
+            value=value, provenance="document_extracted", updated_at=now, confirmed=False, source=source
+        )
+    if "full_name" in identity and "first_name" not in identity:
+        parts = identity["full_name"].split()
+        if len(parts) >= 2:
+            identity["first_name"], identity["last_name"] = parts[0], parts[-1]
+
     safe_name = re.sub(r"[^\w.\- ]", "_", os.path.basename(filename or "document"))[:80]
-    return DocumentExtraction(
-        document_id=uuid.uuid4().hex,
+    extraction = DocumentExtraction(
+        document_id=document_id,
         filename=safe_name,
-        status="extracted" if facts else "failed",
+        status="extracted" if facts or identity else "failed",
         extracted_facts=facts,
+        kind=known_kind,
+        notes=notes,
+        identity_keys=sorted(identity),
     )
+    return DocumentReading(extraction=extraction, identity=identity)
+
+
+def extract(filename: str, data: bytes, kind: str | None = None) -> DocumentExtraction:
+    """The extraction only (identity details dropped)."""
+    return read_document(filename, data, kind).extraction
 
 
 # --------------------------------------------------------------------------

@@ -8,6 +8,11 @@ Rules
     a user-reported fact. If it disagrees, a `Conflict` is opened, the user's
     fact is kept but marked unconfirmed, and Eligibility treats it as such.
   * Evidence on its own is stored unconfirmed until the user confirms it.
+    Two pieces of evidence that disagree (a paper and the bank, or two
+    papers) open a conflict too; two that agree are still unconfirmed:
+    agreement is never confirmation.
+  * Papers come from the Document Agent through `document_queue`; review
+    card answers arrive as `review_decisions`.
   * `changed_fields` lists every field whose value, provenance or confirmation
     changed, so the Administrator re-assesses exactly what depends on it.
 
@@ -27,20 +32,22 @@ from app.graph.questions import (
     CONFIRMATION_FOR,
     OTHER_OPTION_ID,
     QuestionSpec,
+    evidence_from_source,
     get_spec,
     unconfirmed_evidence,
 )
 from app.graph.state import (
     AnswerIn,
     Conflict,
+    DocumentExtraction,
     Fact,
     FinancialSummary,
     Profile,
+    ReviewDecision,
     SafeError,
     SessionState,
 )
 from app.services.free_text import match_other
-from app.services.documents import DocumentInbox
 from app.services.nessie import NessieService
 
 # Two money amounts within this fraction of each other are treated as the same
@@ -48,6 +55,20 @@ from app.services.nessie import NessieService
 MONEY_TOLERANCE = 0.10
 
 EVIDENCE_PROVENANCES = frozenset({"nessie_sandbox", "document_extracted", "inferred"})
+
+# Evidence values ranked so the stronger one stands without a question: a
+# shut-off notice outranks "behind on a bill" from the bill itself.
+STRENGTH: dict[str, dict[Any, int]] = {
+    "utility_urgency": {"reduce": 0, "behind": 1, "shutoff": 2},
+}
+
+# Fields read from the same paper that settle together: confirming the
+# household size from a household paper also confirms its age groups.
+LINKED: dict[str, tuple[str, ...]] = {"household_size": ("household_who",)}
+
+
+def _origin(fact: Fact) -> str:
+    return fact.source or fact.provenance
 
 
 def note_field(field: str) -> str:
@@ -136,10 +157,11 @@ def apply_evidence_fact(profile: Profile, field: str, fact: Fact) -> list[str]:
     incoming = fact.model_copy(update={"confirmed": False})
     previous = profile.facts.get(field)
 
-    if previous is None or previous.provenance != "user_reported":
-        # Nothing from the user yet: newest evidence stands, unconfirmed.
+    if previous is None:
         profile.facts[field] = incoming
-        return [] if _same_fact(previous, incoming) else [field]
+        return [field]
+    if previous.provenance != "user_reported":
+        return _merge_evidence(profile, field, previous, incoming)
 
     # While a conflict is open the stored fact is flagged; compare against the
     # user's own candidate so repeated evidence is judged against what they said.
@@ -164,6 +186,27 @@ def apply_evidence_fact(profile: Profile, field: str, fact: Fact) -> list[str]:
     flagged = user_fact.model_copy(update={"confirmed": False})
     profile.facts[field] = flagged
     return [] if _same_fact(previous, flagged) else [field]
+
+
+def _merge_evidence(profile: Profile, field: str, previous: Fact, incoming: Fact) -> list[str]:
+    """Evidence meets evidence (nothing from the user yet)."""
+    open_conflict = _conflict_for(profile, field)
+    candidates = list(open_conflict.candidates) if open_conflict else [previous]
+    # A newer reading from the same source replaces that source's old one.
+    candidates = [c for c in candidates if _origin(c) != _origin(incoming)] + [incoming]
+    if field in STRENGTH:
+        rank = STRENGTH[field]
+        strongest = max(candidates, key=lambda c: rank.get(c.value, -1))
+        _drop_conflict(profile, field)
+        profile.facts[field] = strongest
+        return [] if _same_fact(previous, strongest) else [field]
+    disagree = any(not values_agree(c.value, candidates[0].value) for c in candidates[1:])
+    _drop_conflict(profile, field)
+    if disagree:
+        profile.conflicts.append(Conflict(field=field, candidates=candidates))
+    # The newest reading is the stored value, unconfirmed either way.
+    profile.facts[field] = incoming
+    return [field] if disagree or open_conflict or not _same_fact(previous, incoming) else []
 
 
 def apply_evidence_facts(profile: Profile, facts: dict[str, Fact]) -> list[str]:
@@ -239,7 +282,13 @@ def apply_confirmation(profile: Profile, field: str, confirmed: bool, now: datet
     if evidence is None:
         return []
     if confirmed:
-        return apply_user_fact(profile, field, evidence.model_copy(update={"updated_at": now}))
+        changed = apply_user_fact(profile, field, evidence.model_copy(update={"updated_at": now}))
+        if evidence.source:
+            for linked in LINKED.get(field, ()):
+                other = evidence_from_source(profile, linked, evidence.source)
+                if other is not None:
+                    changed += apply_user_fact(profile, linked, other.model_copy(update={"updated_at": now}))
+        return changed
     conflict = _conflict_for(profile, field)
     if conflict is not None:
         user = next((c for c in conflict.candidates if c.provenance == "user_reported"), None)
@@ -248,6 +297,56 @@ def apply_confirmation(profile: Profile, field: str, confirmed: bool, now: datet
     profile.facts.pop(field, None)
     _drop_conflict(profile, field)
     return [field]
+
+
+def reject_evidence(profile: Profile, field: str, source: str) -> list[str]:
+    """The person said a paper's reading of `field` is wrong: forget that reading."""
+    conflict = _conflict_for(profile, field)
+    if conflict is not None:
+        rest = [c for c in conflict.candidates if c.source != source]
+        _drop_conflict(profile, field)
+        user = next((c for c in rest if c.provenance == "user_reported"), None)
+        if user is not None:
+            apply_user_fact(profile, field, user)
+        elif len(rest) > 1:
+            profile.conflicts.append(Conflict(field=field, candidates=rest))
+            profile.facts[field] = rest[-1].model_copy(update={"confirmed": False})
+        elif rest:
+            profile.facts[field] = rest[0].model_copy(update={"confirmed": False})
+        else:
+            profile.facts.pop(field, None)
+        return [field]
+    fact = profile.facts.get(field)
+    if fact is not None and fact.source == source and not fact.confirmed:
+        profile.facts.pop(field)
+        return [field]
+    return []
+
+
+def apply_review(
+    profile: Profile, decision: ReviewDecision, documents: list[DocumentExtraction], now: datetime
+) -> list[str]:
+    """One review card: ticked rows are confirmed, edited rows become the person's
+    answer, and rows left unticked are dropped. Values were validated by the API."""
+    document = next((d for d in documents if d.document_id == decision.document_id), None)
+    if document is None:
+        return []
+    source = f"doc:{document.document_id}"
+    changed: list[str] = []
+    for field in document.extracted_facts:
+        evidence = evidence_from_source(profile, field, source)
+        if evidence is None:
+            continue
+        if field in decision.edits:
+            changed += apply_user_fact(profile, field, Fact(
+                value=decision.edits[field], provenance="user_reported", updated_at=now,
+                period=evidence.period, source="chat",
+            ))
+        elif field in decision.accept:
+            changed += apply_user_fact(profile, field, evidence.model_copy(update={"updated_at": now}))
+        else:
+            changed += reject_evidence(profile, field, source)
+    return changed
 
 
 # --------------------------------------------------------------------------
@@ -262,20 +361,14 @@ def _income_fact(summary: FinancialSummary, now: datetime) -> Fact:
         updated_at=now,
         period="month",
         confirmed=False,
+        source=f"bank:{summary.persona_id}",
     )
 
 
-NO_FACTS_MESSAGE = (
-    "We couldn't find household income or household size in that document. "
-    "You can type them in instead."
-)
-
-
-def make_user_intelligence(
-    nessie: NessieService | None = None, inbox: DocumentInbox | None = None
-):
-    """`nessie` supplies simulated bank summaries (None: seeded personas only);
-    `inbox` holds facts extracted from an uploaded document."""
+def make_user_intelligence(nessie: NessieService | None = None, inbox: Any = None):
+    """`nessie` supplies simulated bank summaries (None: seeded personas only).
+    Papers arrive from the Document Agent via `document_queue`; `inbox` is unused
+    and kept so older callers still work."""
     service = nessie
 
     def user_intelligence(state: SessionState) -> dict[str, Any]:
@@ -309,18 +402,19 @@ def make_user_intelligence(
                     SafeError(code=code, message=message, agent="user_intelligence", at=now)
                 ]
 
-        if evidence is not None and evidence.kind == "document" and evidence.document_ref:
-            update["consents"] = {**(state.get("consents") or {}), "document": True}
-            extraction = inbox.pop(evidence.document_ref) if inbox else None
-            if extraction is not None:
-                # Facts only: the document's text never reaches state.
-                update["documents"] = list(state.get("documents") or []) + [extraction]
-                changed += apply_evidence_facts(profile, dict(extraction.extracted_facts))
-            if extraction is None or not extraction.extracted_facts:
-                update["errors"] = list(update.get("errors") or state.get("errors") or []) + [
-                    SafeError(code="document_no_facts", message=NO_FACTS_MESSAGE,
-                              agent="user_intelligence", at=now)
-                ]
+        documents = list(state.get("documents") or [])
+        queue = state.get("document_queue") or []
+        if queue:
+            update["consents"] = {**(update.get("consents") or state.get("consents") or {}), "document": True}
+            by_id = {d.document_id: d for d in documents}
+            for document_id in queue:
+                extraction = by_id.get(document_id)
+                if extraction is not None:
+                    # Facts only: the document's text never reaches state.
+                    changed += apply_evidence_facts(profile, dict(extraction.extracted_facts))
+
+        for decision in state.get("review_decisions") or []:
+            changed += apply_review(profile, decision, documents, now)
 
         return {
             **update,
@@ -328,6 +422,8 @@ def make_user_intelligence(
             "changed_fields": _unique(changed),
             "user_answer": None,
             "pending_evidence": None,
+            "document_queue": [],
+            "review_decisions": [],
         }
 
     return user_intelligence

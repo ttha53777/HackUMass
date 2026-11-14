@@ -19,12 +19,15 @@ from app.api.schemas import (
     NessieEvidenceIn,
     PersonaOut,
     SessionSnapshot,
+    DocumentReadOut,
+    IdentityReading,
+    ReviewIn,
 )
 from app.api.views import build_snapshot
-from app.graph.answers import AnswerError, validate_answer
-from app.graph.questions import get_spec
-from app.graph.state import EvidenceRequest, IntakeState
-from app.services.documents import MAX_BYTES, DocumentRejected, extract
+from app.graph.answers import AnswerError, normalize_answer, validate_answer
+from app.graph.questions import evidence_from_source, get_spec, spec_for_field
+from app.graph.state import EvidenceRequest, IntakeState, Profile, ReviewDecision
+from app.services.documents import MAX_BYTES, DocumentRejected, read_document
 from app.services.conversation import interpret
 from app.services.web_search import search_available, search_needs
 from app.services.llm import get_llm
@@ -251,7 +254,7 @@ async def submit_nessie_evidence(
 
 @router.post(
     "/sessions/{session_id}/evidence/document",
-    response_model=SessionSnapshot,
+    response_model=DocumentReadOut,
     status_code=202,
 )
 async def submit_document(
@@ -259,12 +262,17 @@ async def submit_document(
     session_id: str,
     file: UploadFile = File(...),
     consent: str = Form(""),
+    kind: str = Form(""),
 ) -> JSONResponse:
-    """Read household size and income from a PDF or text file (2 MB max).
+    """Read a PDF or text file (2 MB max). `kind` is the paper's kind from the
+    wallet (e.g. "income", "dob", "lease"); only that kind's fields are read.
+    Without it, only income and household size are.
 
     The file is parsed from a temporary copy that is deleted straight away; only
-    the extracted facts are kept, and they stay unconfirmed until the person
-    confirms them. 200 when finished on the fast path, 202 while still going.
+    the extracted facts go to the graph, and they stay unconfirmed until the
+    person confirms them. Identity details (name, address...) come back in this
+    response only, for the person's device, and are never kept here.
+    200 when finished on the fast path, 202 while still going.
     """
     manager = _manager(request)
     meta = _session(request, session_id)
@@ -276,15 +284,74 @@ async def submit_document(
     data = await file.read(MAX_BYTES + 1)  # never read more than we would accept
     await file.close()
     try:
-        extraction = await run_in_threadpool(extract, file.filename or "", data)
+        reading = await run_in_threadpool(read_document, file.filename or "", data, kind.strip()[:32] or None)
     except DocumentRejected as exc:
         raise ApiError(415, "unsupported_file", str(exc)) from exc
     finally:
         del data
 
-    document_id = request.app.state.documents.put(extraction)
+    document_id = request.app.state.documents.put(reading.extraction)
     request_in = EvidenceRequest(kind="document", document_ref=document_id)
     finished = await manager.submit(session_id, {"pending_evidence": request_in})
+    snapshot = _snapshot(request, session_id, meta)
+    source = f"doc:{document_id}"
+    out = DocumentReadOut(
+        **snapshot.model_dump(),
+        identity=[IdentityReading(key=k, value=v, source=source) for k, v in sorted(reading.identity.items())],
+    )
+    return JSONResponse(
+        status_code=200 if finished else 202,
+        content=out.model_dump(mode="json"),
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+def _review_value(field: str, value):
+    """Turn an edited review row into the value the field's own question would store."""
+    spec = spec_for_field(field)
+    if spec is None:
+        raise AnswerError("That can't be changed here.")
+    kind = spec.question.type
+    if kind in ("single_select", "multi_select"):
+        ids = value if isinstance(value, list) else [value]
+        answer = AnswerIn(question_id=spec.question.id, selected_option_ids=[str(i) for i in ids])
+    else:
+        answer = AnswerIn(question_id=spec.question.id, value=value)
+    return normalize_answer(spec, answer)
+
+
+@router.post(
+    "/sessions/{session_id}/evidence/review",
+    response_model=SessionSnapshot,
+    status_code=202,
+)
+async def submit_review(request: Request, session_id: str, body: ReviewIn) -> JSONResponse:
+    """The person's answer to one paper's review card: ticked rows are confirmed,
+    edited rows become their own answer, and unticked rows are dropped."""
+    manager = _manager(request)
+    meta = _session(request, session_id)
+    if meta.busy:
+        raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
+    values = manager.values(session_id)
+    document = next((d for d in values.get("documents") or [] if d.document_id == body.document_id), None)
+    if document is None:
+        raise ApiError(422, "validation_error", "We couldn't find that paper. Try reading it again.")
+    profile = values.get("profile") or Profile()
+    source = f"doc:{document.document_id}"
+    waiting = {f for f in document.extracted_facts if evidence_from_source(profile, f, source) is not None}
+    unknown = (set(body.accept) | set(body.edits)) - waiting
+    if unknown:
+        raise ApiError(422, "validation_error", "Some of those details aren't on this paper's card any more.")
+    edits = {}
+    for field, value in body.edits.items():
+        try:
+            edits[field] = _review_value(field, value)
+        except AnswerError as exc:
+            raise ApiError(422, "validation_error", str(exc)) from exc
+    decision = ReviewDecision(
+        document_id=body.document_id, accept=[f for f in body.accept if f not in edits], edits=edits
+    )
+    finished = await manager.submit(session_id, {"review_decisions": [decision]})
     snapshot = _snapshot(request, session_id, meta)
     return JSONResponse(
         status_code=200 if finished else 202, content=snapshot.model_dump(mode="json")

@@ -26,6 +26,7 @@ from app.graph.administrator import (
     USER_INTELLIGENCE,
     administrator,
 )
+from app.graph import trace
 from app.graph.state import AgentStatus, SafeError, SessionState
 from app.services.log_safety import describe_exception
 
@@ -39,8 +40,8 @@ RECURSION_LIMIT = 25
 
 
 def _document_analysis_not_wired(state: SessionState) -> dict[str, Any]:
-    """Placeholder until the Document Agent lands (Phase 3). Never routed to yet."""
-    return {}
+    """Used when no Document Agent is wired (tests): consumes the paper, reads nothing."""
+    return {"pending_evidence": None}
 
 
 def _guarded(name: str, specialist: Specialist) -> Specialist:
@@ -71,10 +72,13 @@ def _guarded(name: str, specialist: Specialist) -> Specialist:
             status = "failed"
             if name == USER_INTELLIGENCE:
                 # Consume the input even on failure so the run cannot loop on it.
-                update.update(user_answer=None, pending_evidence=None, changed_fields=[])
+                update.update(user_answer=None, pending_evidence=None, changed_fields=[],
+                              document_queue=[], review_decisions=[])
             elif name == DOCUMENT_ANALYSIS:
                 update.update(pending_evidence=None)
         update["agent_statuses"] = {name: AgentStatus(status=status, updated_at=now)}
+        trace.append(state, update, step=status, node=name,
+                     **(trace.finished_event(name, state, update) if status == "completed" else {}))
         return update
 
     return node

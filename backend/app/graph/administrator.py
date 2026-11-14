@@ -4,7 +4,9 @@
 specialist work; it only looks at state and chooses exactly one of:
 
   0. (no dispatch)       store an application result and mark the plan dirty
-  1. user_intelligence   an answer or evidence request is waiting
+  1a. document_analysis  a read paper is waiting (the Document Agent)
+  1b. user_intelligence  an answer, bank evidence, a review card answer or a
+                         queued paper is waiting (the Profile Agent)
   2. program_discovery   needs or location changed and both are known
   3. ask a core question (ends the run; phase "intake")
   4. eligibility         some assessments are out of date
@@ -27,10 +29,12 @@ from typing import Any, Literal
 from langgraph.graph import END
 from langgraph.types import Command
 
+from app.graph import trace
 from app.graph.questions import (
     get_spec,
     next_awaiting_question,
     next_core_question,
+    paper_title,
     referenced_fields,
 )
 from app.graph.state import (
@@ -50,8 +54,8 @@ DISCOVERY = "program_discovery"
 ELIGIBILITY = "eligibility"
 PLANNING = "action_planning"
 SPECIALISTS = (USER_INTELLIGENCE, DISCOVERY, ELIGIBILITY, PLANNING)
-# The Document Agent reads papers into `documents` for User Intelligence (the
-# Profile Agent) to apply. Registered in the graph; decide() routes to it from Phase 3.
+# The Document Agent moves read papers into `documents` and queues them for User
+# Intelligence (the Profile Agent), which is still the only writer of `profile`.
 DOCUMENT_ANALYSIS = "document_analysis"
 
 # Fields whose change means the set of candidate programs may be different.
@@ -127,6 +131,15 @@ def _absorb_application(state: SessionState, dirty: DirtyFlags, update: dict[str
     dirty.plan = True
 
 
+def source_labels(state: SessionState) -> dict[str, str]:
+    """Fact.source -> how to name it to the person, e.g. "doc:ab12" -> "your pay stub"."""
+    labels = {f"doc:{d.document_id}": paper_title(d.kind) for d in state.get("documents") or []}
+    summary = state.get("financial_summary")
+    if summary is not None:
+        labels[f"bank:{summary.persona_id}"] = "the simulated bank profile"
+    return labels
+
+
 def decide(state: SessionState) -> Decision:
     update: dict[str, Any] = {}
     dirty = (state.get("dirty") or DirtyFlags()).model_copy(deep=True)
@@ -135,6 +148,9 @@ def decide(state: SessionState) -> Decision:
     counts = dict(state.get("run_counts") or {})
     errors = list(state.get("errors") or [])
 
+    if not counts and state.get("dispatched") is None:
+        update["invoke_count"] = (state.get("invoke_count") or 0) + 1
+
     _absorb_return(state, dirty, update)
     _absorb_application(state, dirty, update)
     programs = state.get("programs") or []
@@ -142,9 +158,13 @@ def decide(state: SessionState) -> Decision:
         "eligibility_assessments", state.get("eligibility_assessments") or {}
     )
 
-    def dispatch(name: str, phase: str | None) -> Decision | None:
+    def dispatch(
+        name: str, phase: str | None, reason: str, fields: list[str] | None = None,
+        count: int | None = None,
+    ) -> Decision | None:
         """Route to a specialist, or return None if its budget is spent."""
         if counts.get(name, 0) >= MAX_RUNS_PER_SPECIALIST:
+            trace.append(state, update, step="skipped", node=name, reason="budget_spent")
             errors.append(
                 SafeError(
                     code="run_budget_exceeded",
@@ -166,6 +186,8 @@ def decide(state: SessionState) -> Decision:
         )
         if phase:
             update["workflow_phase"] = phase
+        trace.append(state, update, step="routed", node=name, reason=reason,
+                     fields=fields or [], count=count)
         return Decision(goto=name, update=update)
 
     def finish(phase: Literal["intake", "awaiting_user", "complete"], question: Question | None):
@@ -180,11 +202,27 @@ def decide(state: SessionState) -> Decision:
         update.update(
             dirty=dirty, intake=intake, pending_question=question, workflow_phase=phase
         )
+        if question is not None:
+            trace.append(state, update, step="asked", node="administrator", reason=question.origin,
+                         fields=[question.target_field], question_id=question.id)
+        else:
+            trace.append(state, update, step="routed", node="end", reason="complete")
         return Decision(goto=END, update=update)
 
-    # 1. An answer or evidence request is waiting.
+    # 1a. A read paper is waiting for the Document Agent.
+    evidence = state.get("pending_evidence")
+    if evidence is not None and evidence.kind == "document":
+        decision = dispatch(DOCUMENT_ANALYSIS, None, "evidence_document")
+        if decision:
+            return decision
+        update.update(pending_evidence=None)
+        evidence = None
+
+    # 1b. An answer, bank evidence, a review card or a queued paper is waiting.
     answer = state.get("user_answer")
-    if answer is not None or state.get("pending_evidence") is not None:
+    queue = state.get("document_queue") or []
+    reviews = state.get("review_decisions") or []
+    if answer is not None or evidence is not None or queue or reviews:
         if answer is not None:
             spec = get_spec(answer.question_id)
             if spec is not None:
@@ -199,15 +237,27 @@ def decide(state: SessionState) -> Decision:
                         intake.skipped_fields.append(target)
                 elif target in intake.skipped_fields:
                     intake.skipped_fields.remove(target)
-        decision = dispatch(USER_INTELLIGENCE, None)
+        if answer is not None:
+            reason, fields = "answer", []
+            spec = get_spec(answer.question_id)
+            if spec is not None:
+                fields = [spec.question.target_field]
+        elif evidence is not None:
+            reason, fields = "evidence_bank", []
+        elif reviews:
+            reason, fields = "review", []
+        else:
+            reason, fields = "document_queue", []
+        decision = dispatch(USER_INTELLIGENCE, None, reason, fields,
+                            len(queue) if reason == "document_queue" else None)
         if decision:
             return decision
         # Budget spent: drop the input so the run can still end.
-        update.update(user_answer=None, pending_evidence=None)
+        update.update(user_answer=None, pending_evidence=None, document_queue=[], review_decisions=[])
 
     # 2. Candidate programs are out of date and we know enough to look.
     if dirty.discovery and REQUIRED_FOR_DISCOVERY <= set(profile.facts):
-        decision = dispatch(DISCOVERY, "discovering")
+        decision = dispatch(DISCOVERY, "discovering", "needs_or_zip_changed")
         if decision:
             return decision
         dirty.discovery = False
@@ -219,14 +269,15 @@ def decide(state: SessionState) -> Decision:
 
     # 4. Assessments are out of date.
     if dirty.eligibility_ids:
-        decision = dispatch(ELIGIBILITY, "evaluating")
+        decision = dispatch(ELIGIBILITY, "evaluating", "facts_changed",
+                            count=len(dirty.eligibility_ids))
         if decision:
             return decision
         dirty.eligibility_ids = []
 
     # 5. The plan is out of date.
     if dirty.plan:
-        decision = dispatch(PLANNING, "planning")
+        decision = dispatch(PLANNING, "planning", "results_changed")
         if decision:
             return decision
         dirty.plan = False
@@ -237,6 +288,7 @@ def decide(state: SessionState) -> Decision:
         profile, intake, programs, assessments,
         # Already given a bank profile or a document: don't offer another source.
         has_summary=state.get("financial_summary") is not None or bool(state.get("documents")),
+        source_labels=source_labels(state),
     )
     if question is not None:
         return finish("awaiting_user", question)

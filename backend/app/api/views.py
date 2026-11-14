@@ -18,14 +18,31 @@ from app.api.schemas import (
     LastChange,
     Notice,
     OpenQuestionView,
+    PendingReview,
     ProfileSummaryItem,
+    ReviewRow,
+    TraceEventView,
     ProgramCard,
     RegionView,
     SessionSnapshot,
 )
 from app.graph.answers import display_value
-from app.graph.questions import get_spec, open_questions, question_for_field, spec_for_field
-from app.graph.state import DirtyFlags, EligibilityAssessment, IntakeState, Profile, Program
+from app.graph.questions import (
+    evidence_from_source,
+    get_spec,
+    open_questions,
+    paper_title,
+    question_for_field,
+    spec_for_field,
+)
+from app.graph.state import (
+    DirtyFlags,
+    DocumentExtraction,
+    EligibilityAssessment,
+    IntakeState,
+    Profile,
+    Program,
+)
 from app.services.session_store import SessionMeta
 
 UNSUPPORTED_MESSAGE = (
@@ -51,6 +68,46 @@ def _shown_with_note(spec, profile: Profile) -> str:
         names = ", ".join(labels.get(i, i) for i in matched.value)
         shown += f" (we also matched this to {names})"
     return shown
+
+
+TRACE_SHOWN = 60
+
+NOTE_TEXT = {
+    "ssn_line_dropped": "A line that looked like a Social Security number was skipped. We never read those.",
+    "household_count_mismatch": "The household size didn't match the people listed, so we left it out.",
+    "kind_not_read": "We keep this paper for you, but don't read details from this kind yet.",
+}
+
+
+def pending_reviews(documents: list[DocumentExtraction], profile: Profile) -> list[PendingReview]:
+    """One card per paper that still has readings waiting for the person."""
+    disputed = {c.field for c in profile.conflicts}
+    reviews: list[PendingReview] = []
+    for document in documents:
+        source = f"doc:{document.document_id}"
+        rows: list[ReviewRow] = []
+        for field in document.extracted_facts:
+            fact = evidence_from_source(profile, field, source)
+            if fact is None:
+                continue
+            spec = spec_for_field(field)
+            display = display_value(spec, fact) if spec is not None else str(fact.value)
+            rows.append(ReviewRow(
+                field=field,
+                label=spec.label if spec is not None else field.replace("_", " ").capitalize(),
+                value=fact.value,
+                display=display,
+                in_conflict=field in disputed,
+            ))
+        if rows:
+            reviews.append(PendingReview(
+                document_id=document.document_id,
+                kind=document.kind,
+                title=paper_title(document.kind),
+                rows=rows,
+                notes=[NOTE_TEXT[n] for n in document.notes if n in NOTE_TEXT],
+            ))
+    return reviews
 
 
 def check_views(
@@ -201,4 +258,6 @@ def build_snapshot(
         # Only programs that are on this person's list.
         automatable_program_ids=[p.id for p in programs if p.id in (automation_modes or {})],
         automation_modes={p.id: (automation_modes or {})[p.id] for p in programs if p.id in (automation_modes or {})},
+        pending_reviews=pending_reviews(values.get("documents") or [], profile),
+        trace=[TraceEventView(**event.model_dump()) for event in (values.get("trace") or [])[-TRACE_SHOWN:]],
     )
