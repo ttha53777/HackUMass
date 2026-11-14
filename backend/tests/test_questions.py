@@ -132,6 +132,15 @@ def test_income_table_also_references_household_size(repo):
     assert referenced_fields(repo.get("fixture-ride-service")) == set()
 
 
+def test_income_floor_table_also_references_household_size(repo):
+    program = repo.get("fixture-food-benefit")
+    floor = program.requirements[0].model_copy(update={"kind": "income_min", "op": "gte"})
+    assert referenced_fields(program.model_copy(update={"requirements": [floor]})) == {
+        "monthly_income",
+        "household_size",
+    }
+
+
 def test_registry_is_consistent():
     fields = [spec.question.target_field for spec in REGISTRY.values()]
     assert len(fields) == len(set(fields)), "each question fills its own field"

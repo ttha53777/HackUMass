@@ -31,6 +31,9 @@ MAX_TOTAL_QUESTIONS = 10
 
 OTHER_OPTION_ID = "other"
 
+# Requirement kinds that compare household income, possibly by household size.
+INCOME_KINDS = frozenset({"income_max", "income_min"})
+
 
 @dataclass(frozen=True)
 class QuestionSpec:
@@ -207,7 +210,7 @@ def referenced_fields(program: Program) -> set[str]:
         if requirement.field:
             fields.add(requirement.field)
         # An income table keyed by household size also needs the household size.
-        if requirement.kind == "income_max" and isinstance(requirement.value, dict):
+        if requirement.kind in INCOME_KINDS and isinstance(requirement.value, dict):
             fields.add("household_size")
     return fields
 
