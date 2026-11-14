@@ -4,14 +4,14 @@ A guided assistant that helps people find government assistance programs and loc
 
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
-> **Project status: planning complete, implementation not started.**
-> The repository currently contains documentation only. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md). Commands marked **unverified** have not been run yet and will be confirmed or corrected when the scaffold lands.
+> **Project status: scaffold and shared contracts are in place; the guided intake is not built yet.**
+> Today the app shows a placeholder page and a backend health check. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
 
 ## Who it is for
 
 Adults facing financial or logistical hardship who need help finding food, utility, housing, healthcare, transportation, or senior services. The interface is meant to be usable by people of any technical ability.
 
-## How it works for the user
+## How it works for the user (Planned)
 
 The app leads; the user answers. It is not an open-ended chatbot.
 
@@ -50,17 +50,16 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 - An Anthropic API key (only for live model mode)
 - A Capital One Nessie sandbox API key (optional)
 
-## Setup and run (Planned — commands unverified)
+## Setup and run
 
 Backend:
 
 ```bash
 cd backend
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"
+.venv/bin/pip install -e ".[dev]"
 cp .env.example .env
-uvicorn app.main:app --port 8000
+.venv/bin/uvicorn app.main:app --port 8000 --env-file .env
 ```
 
 Frontend, in a second terminal:
@@ -71,11 +70,13 @@ npm install
 npm run dev
 ```
 
-Then open <http://localhost:3000>.
+Open the URL that `npm run dev` prints. It is <http://localhost:3000> unless that port is taken, in which case Next.js picks the next free one. The page shows "Backend connected" when the proxy reaches FastAPI.
 
-## Environment variables (Planned)
+The frontend forwards `/api/*` to `http://127.0.0.1:8000`. Set `BACKEND_URL` when starting the frontend to point it elsewhere.
 
-Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data.
+## Environment variables
+
+Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data. Only the health check reads them today; the model and Nessie integrations are planned.
 
 | Variable | Required | Purpose |
 |---|---|---|
@@ -93,14 +94,20 @@ The frontend needs no secrets. The browser only calls same-origin `/api/*`, whic
 - Restarting the backend clears every session. The app then shows a "session expired" message and starts a new one.
 - Run the backend without auto-reload during a demo so a file save does not wipe the session.
 
-## Tests and checks (Planned — commands unverified)
+## Tests and checks
 
 ```bash
 # backend
-cd backend && pytest
+cd backend && .venv/bin/pytest
 
 # frontend
-cd frontend && npm run lint && npx tsc --noEmit
+cd frontend && npm run lint && npm run typecheck
+```
+
+The backend and frontend share one snapshot fixture, `backend/tests/fixtures/snapshot.json`. After editing it, regenerate the typed frontend copy, or the backend contract test fails:
+
+```bash
+cd frontend && npm run sync:fixture
 ```
 
 ## Reproducing the demo (Planned)
@@ -122,35 +129,47 @@ Script: choose *Food* and *Utilities* → enter a supported ZIP → *Retired* �
 
 ## Repository structure
 
-Present today:
-
 ```text
-CLAUDE.md                  guidance for coding agents
-README.md                  this file
-docs/foundation-plan.md    architecture, contracts, tickets, risks
+CLAUDE.md                       guidance for coding agents
+docs/foundation-plan.md         architecture, contracts, tickets, risks
+backend/app/main.py             FastAPI entry point
+backend/app/api/routes.py       routes (health only so far)
+backend/app/api/schemas.py      request/response shapes        (contract file)
+backend/app/graph/state.py      shared LangGraph state models  (contract file)
+backend/app/agents/             the four specialists           (empty, planned)
+backend/app/services/           LLM, Nessie, programs, sessions (empty, planned)
+backend/app/data/programs/      curated program records         (empty, planned)
+backend/tests/                  pytest suite and the shared snapshot fixture
+frontend/src/app/               pages (placeholder home page)
+frontend/src/components/        UI components; `ui/` holds shadcn components
+frontend/src/lib/types.ts       TypeScript mirror of the API   (contract file)
+frontend/src/lib/fixtures/      generated copy of the snapshot fixture
 ```
 
-Planned:
+Contract files are shared by every workstream. Agree changes with the team first, and change the Python and TypeScript sides together.
 
-```text
-backend/app/graph/         shared state, graph wiring, Administrator, question registry
-backend/app/agents/        the four specialists, one file each
-backend/app/services/      LLM wrapper, Nessie client, programs repository, session store
-backend/app/api/           routes and request/response schemas
-backend/app/data/programs/ curated program records, one JSON file per program
-backend/tests/
-frontend/src/app/          pages
-frontend/src/components/   question controls, program cards, roadmap, activity panel
-frontend/src/lib/          API client and shared types
-```
-
-Where to make changes, once the scaffold exists:
+Where changes will go as the planned pieces are built:
 
 - **An agent's behaviour:** its file in `backend/app/agents/`. Graph wiring and shared state are contract files; coordinate before editing them.
 - **A program record:** add or edit a file in `backend/app/data/programs/`, following the curation procedure in the [foundation plan](docs/foundation-plan.md) (section B.7). Copy URLs from the provider's page; never write one from memory.
-- **A question:** the question registry in `backend/app/graph/`.
+- **A question:** the question registry in `backend/app/graph/` (planned).
 - **An integration:** `backend/app/services/`.
 
 ## Troubleshooting
 
-This section will be filled in with validated commands once the application runs. Expected topics: session expired after a backend restart, missing model key in live mode, Nessie unavailable, and an unsupported ZIP code.
+- **"Backend not reachable" on the home page.** Start the backend on port 8000, or set `BACKEND_URL` for the frontend.
+- **The frontend opens a different app, or a port other than 3000.** Something else is using port 3000. Use the URL printed by `npm run dev`.
+- **`npm run lint` hangs, or Node fails with odd errors inside `node_modules`, on macOS.** This happens when the checkout is in an iCloud-synced folder such as Desktop or Documents and iCloud offloads dependency files. Either move the checkout outside iCloud, or keep dependencies in a folder iCloud skips:
+
+  ```bash
+  cd frontend
+  rm -rf node_modules
+  npm ci
+  mv node_modules node_modules.nosync
+  ln -s node_modules.nosync node_modules
+  ```
+
+  Repeat the last two lines after any `npm install` or `npm ci`, because npm replaces the link with a real folder.
+- **`Cannot find name 'LayoutProps'` from `tsc`.** Run `npm run typecheck`, which generates Next.js route types first, instead of calling `tsc` directly.
+
+Planned topics once the features exist: session expired after a backend restart, missing model key in live mode, Nessie unavailable, unsupported ZIP code.

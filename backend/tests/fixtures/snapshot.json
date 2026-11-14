@@ -1,0 +1,201 @@
+{
+  "session_id": "00000000-0000-4000-8000-000000000001",
+  "phase": "awaiting_user",
+  "busy": false,
+  "pending_question": {
+    "id": "age_60_plus",
+    "prompt": "Are you 60 or older?",
+    "reason": "Some nearby programs are only for people aged 60 and over.",
+    "type": "single_select",
+    "options": [
+      { "id": "yes", "label": "Yes" },
+      { "id": "no", "label": "No" }
+    ],
+    "allow_other": false,
+    "skippable": true,
+    "target_field": "age_60_plus",
+    "origin": "eligibility_followup"
+  },
+  "answered": [
+    {
+      "question_id": "needs",
+      "prompt": "What are you having the most trouble with right now?",
+      "display_value": "Food & groceries, Utilities",
+      "skipped": false
+    },
+    {
+      "question_id": "zip",
+      "prompt": "What ZIP code do you live in?",
+      "display_value": "00000",
+      "skipped": false
+    },
+    {
+      "question_id": "household_size",
+      "prompt": "How many people live in your household, including you?",
+      "display_value": "1",
+      "skipped": false
+    },
+    {
+      "question_id": "monthly_income",
+      "prompt": "About how much income does your household receive in a month?",
+      "display_value": "$1,400 per month",
+      "skipped": false
+    }
+  ],
+  "profile_summary": [
+    {
+      "field": "needs",
+      "label": "Needs",
+      "display_value": "Food & groceries, Utilities",
+      "provenance": "user_reported"
+    },
+    {
+      "field": "household_size",
+      "label": "Household size",
+      "display_value": "1",
+      "provenance": "user_reported"
+    },
+    {
+      "field": "monthly_income",
+      "label": "Monthly income",
+      "display_value": "$1,400",
+      "provenance": "user_reported"
+    }
+  ],
+  "coverage": "supported",
+  "programs": [
+    {
+      "program": {
+        "id": "fixture-food-benefit",
+        "name": "Fixture Food Benefit (not a real program)",
+        "provider": "Fixture State Agency",
+        "type": "government",
+        "categories": ["food"],
+        "service_area": {
+          "statewide": true,
+          "state": "ZZ",
+          "counties": [],
+          "zips": []
+        },
+        "description": "Fictional monthly grocery benefit used only for contract tests.",
+        "info_url": "https://example.org/fixture-food-benefit",
+        "apply_url": "https://example.org/fixture-food-benefit/apply",
+        "contact": null,
+        "documents_needed": ["Proof of income"],
+        "requirements": [
+          {
+            "id": "income",
+            "kind": "income_max",
+            "field": "monthly_income",
+            "op": "lte",
+            "value": { "1": 2000, "2": 2700 },
+            "period": "month",
+            "text": "Gross monthly income at or below the fixture limit for household size.",
+            "source_url": "https://example.org/fixture-food-benefit/limits",
+            "verified": true
+          }
+        ],
+        "unknowns": ["Asset limits"],
+        "verified_on": "2026-11-14",
+        "program_period": "Fixture year 2026"
+      },
+      "assessment": {
+        "status": "possibly_eligible",
+        "criteria": [
+          {
+            "requirement_id": "income",
+            "result": "met",
+            "evidence": "monthly_income = 1400 (user reported), household_size = 1"
+          }
+        ],
+        "missing_fields": [],
+        "explanation": "Your reported income is under the listed limit. Other rules could not be verified.",
+        "source_urls": ["https://example.org/fixture-food-benefit/limits"],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    },
+    {
+      "program": {
+        "id": "fixture-senior-pantry",
+        "name": "Fixture Senior Pantry (not a real program)",
+        "provider": "Fixture Community Center",
+        "type": "community",
+        "categories": ["food"],
+        "service_area": {
+          "statewide": false,
+          "state": "ZZ",
+          "counties": [],
+          "zips": ["00000"]
+        },
+        "description": "Fictional weekly grocery pickup used only for contract tests.",
+        "info_url": "https://example.org/fixture-senior-pantry",
+        "apply_url": null,
+        "contact": null,
+        "documents_needed": null,
+        "requirements": [
+          {
+            "id": "age",
+            "kind": "age_min",
+            "field": "age_60_plus",
+            "op": "eq",
+            "value": true,
+            "period": null,
+            "text": "For residents aged 60 and over.",
+            "source_url": "https://example.org/fixture-senior-pantry",
+            "verified": true
+          }
+        ],
+        "unknowns": [],
+        "verified_on": "2026-11-14",
+        "program_period": null
+      },
+      "assessment": {
+        "status": "insufficient_information",
+        "criteria": [
+          { "requirement_id": "age", "result": "unknown", "evidence": null }
+        ],
+        "missing_fields": ["age_60_plus"],
+        "explanation": "We need to know whether you are 60 or older to check this program.",
+        "source_urls": ["https://example.org/fixture-senior-pantry"],
+        "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
+      },
+      "stale": false
+    }
+  ],
+  "action_plan": [
+    {
+      "rank": 1,
+      "program_id": "fixture-food-benefit",
+      "action_type": "confirm_eligibility",
+      "rationale": "Your reported income is under the listed limit.",
+      "next_step": "Review the requirements on the provider's page, then start an application.",
+      "documents": ["Proof of income"],
+      "link": "https://example.org/fixture-food-benefit/apply",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "Asset limits were not verified."
+    },
+    {
+      "rank": 2,
+      "program_id": "fixture-senior-pantry",
+      "action_type": "get_more_information",
+      "rationale": "This pantry serves your ZIP code but has an age requirement we have not checked.",
+      "next_step": "Answer the age question, or contact the provider.",
+      "documents": null,
+      "link": "https://example.org/fixture-senior-pantry",
+      "urgency": "unknown",
+      "depends_on": [],
+      "uncertainty": "Age not yet provided."
+    }
+  ],
+  "plan_stale": false,
+  "agent_statuses": {
+    "user_intelligence": { "status": "completed", "updated_at": "2026-11-14T15:00:01Z" },
+    "program_discovery": { "status": "completed", "updated_at": "2026-11-14T15:00:02Z" },
+    "eligibility": { "status": "completed", "updated_at": "2026-11-14T15:00:03Z" },
+    "action_planning": { "status": "completed", "updated_at": "2026-11-14T15:00:04Z" }
+  },
+  "financial_summary": null,
+  "notices": []
+}

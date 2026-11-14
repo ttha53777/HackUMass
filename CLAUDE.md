@@ -19,6 +19,7 @@ The Administrator (`backend/app/graph/`) routes deterministically. Specialists (
 
 ## Discipline
 - Stay in your workstream. Coordinate before editing `graph/state.py`, `graph/build.py`, `api/schemas.py`, `frontend/src/lib/types.ts`.
-- Paths and commands are **planned until the scaffold lands**; verify, then update this file and `README.md`.
-- Checks: `pytest` (backend); `npm run lint && npx tsc --noEmit` (frontend).
+- After changing `backend/tests/fixtures/snapshot.json`, run `npm run sync:fixture` in `frontend/`.
+- Checks: `.venv/bin/pytest` in `backend/`; `npm run lint && npm run typecheck` in `frontend/`.
+- Keep `README.md` in sync with any command or path change.
 - Design detail: `docs/foundation-plan.md`.
