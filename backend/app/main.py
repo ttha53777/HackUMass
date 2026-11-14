@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 import os
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -18,11 +21,76 @@ from app.services.nessie import NessieService
 from app.services.programs_repo import ProgramsRepository, repository_from_env
 from app.services.session_store import SessionManager, get_checkpointer
 
+if TYPE_CHECKING:
+    from app.execution.manager import ExecutionManager
+
+logger = logging.getLogger(__name__)
+
+
+def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> None:
+    """Mount the browser execution agent when BROWSER_PROVIDER is set (or a test passes one).
+
+    With the provider off, nothing from the execution package beyond its config
+    is imported and the routes don't exist.
+    """
+    from app.execution.config import AgentSettings, automation_records
+
+    settings = AgentSettings.from_env()
+    app.state.agent_settings = settings
+    app.state.automation = {}
+    app.state.automatable_ids = frozenset()
+    app.state.execution = None
+    if execution is None and settings.provider != "off" and not settings.gemini_api_key:
+        logger.warning("BROWSER_PROVIDER is set but GEMINI_API_KEY is not; the browser agent is off")
+    elif execution is None and settings.provider != "off":
+        from app.execution.manager import ExecutionManager
+        from app.execution.provider import ProviderError, make_provider
+
+        try:
+            provider = make_provider(settings)
+        except ProviderError:
+            logger.warning("BROWSER_PROVIDER=%s is not configured; the browser agent is off", settings.provider)
+            provider = None
+        if provider is not None:
+            execution = ExecutionManager(provider, settings)
+    if execution is None:
+        return
+
+    from app.api.execution_routes import router as execution_router
+    from app.api.practice_routes import router as practice_router
+    from app.execution.manager import ExecutionError
+    from app.execution.results import make_recorder
+
+    if not execution.has_result_callback:
+        execution.set_result_callback(make_recorder(app.state.sessions))
+
+    records = automation_records()
+    app.state.automation = records
+    app.state.automatable_ids = frozenset(records)
+    app.state.execution = execution
+    app.include_router(execution_router)
+    app.include_router(practice_router)
+
+    @app.exception_handler(ExecutionError)
+    async def _execution_error(_: Request, exc: ExecutionError):
+        return error_response(exc.status, exc.code, exc.message)
+
+
+@asynccontextmanager
+async def _lifespan(app: FastAPI):
+    yield
+    # Release every cloud browser on shutdown.
+    if getattr(app.state, "execution", None) is not None:
+        await app.state.execution.shutdown()
+
 
 def create_app(
-    repository: ProgramsRepository | None = None, nessie: NessieService | None = None
+    repository: ProgramsRepository | None = None,
+    nessie: NessieService | None = None,
+    execution: Any = None,
 ) -> FastAPI:
-    app = FastAPI(title="Community Resource Navigator API", version="0.1.0")
+    """`execution` (an ExecutionManager) is for tests; normally BROWSER_PROVIDER decides."""
+    app = FastAPI(title="Community Resource Navigator API", version="0.1.0", lifespan=_lifespan)
 
     programs = repository or repository_from_env(os.environ.get("PROGRAM_SOURCE"))
     nessie = nessie or NessieService.from_env()
@@ -50,6 +118,7 @@ def create_app(
         return error_response(422, "validation_error", "That answer isn't in a format we can read.")
 
     app.include_router(router)
+    _mount_browser_agent(app, execution)
     return app
 
 

@@ -61,15 +61,17 @@ def _snapshot(request: Request, session_id: str, meta: SessionMeta) -> SessionSn
         meta,
         fixture_data=request.app.state.programs.is_fixture,
         region_for=request.app.state.programs.region,
+        automatable_ids=request.app.state.automatable_ids,
     )
 
 
 @router.get("/health", response_model=HealthOut)
-def health() -> HealthOut:
+def health(request: Request) -> HealthOut:
     # "live" only when a model client is actually configured.
     return HealthOut(
         llm_mode="live" if get_llm() is not None else "off",
         nessie_configured=bool(os.environ.get("NESSIE_API_KEY")),
+        browser_agent=request.app.state.execution is not None,
     )
 
 

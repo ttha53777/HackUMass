@@ -47,6 +47,7 @@ import { formatDate } from "@/lib/format";
 import type { GuideWay, ProgramCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { ApplyAssistant } from "./apply-assistant";
 import { ProgramNode } from "./benefits-view";
 
 const WAY_ICON: Record<GuideWay["kind"], LucideIcon> = {
@@ -373,6 +374,7 @@ export function GuideView({ card }: { card: ProgramCard }) {
             </div>
             <span className="select-text">{script}</span>
           </div>
+          <ApplyAssistant program={p} />
           {!app ? (
             <div className="mt-[22px] flex flex-wrap items-center gap-2.5">
               <button type="button" className={btn("gov")} onClick={() => changeStage("gather")}>

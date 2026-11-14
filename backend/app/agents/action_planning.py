@@ -15,6 +15,10 @@ Order (foundation plan B.4, with urgency as a tie-breaker inside a tier):
   4. speed:    open-access community programs first (no application).
   5. name.
 
+An application the person sent with the browser agent (status "submitted") moves
+below every unstarted item and says when it was sent; one whose outcome is
+"unclear" asks the person to check, using the provider's own contact details.
+
 Urgency comes only from the user's answers (a shutoff notice, no stable
 housing); otherwise it is "unknown". Nothing here invents a deadline.
 """
@@ -27,6 +31,7 @@ from app.agents.eligibility import field_phrase
 from app.graph.questions import get_spec
 from app.graph.state import (
     ActionItem,
+    ApplicationRecord,
     EligibilityAssessment,
     IntakeState,
     Profile,
@@ -118,6 +123,21 @@ def _next_step(program: Program, action: str, assessment: EligibilityAssessment,
     return f"To ask whether you qualify, {_reach(program)}"
 
 
+def _sent_date(record: ApplicationRecord) -> str:
+    return f"{record.updated_at:%B} {record.updated_at.day}, {record.updated_at.year}"
+
+
+def _application_step(program: Program, record: ApplicationRecord | None) -> str | None:
+    """The next step once the person has applied through the app, or None."""
+    if record is None:
+        return None
+    if record.status == "submitted":
+        return f"Sent on {_sent_date(record)}. Watch for a reply from {program.provider}."
+    if record.status == "unclear":
+        return f"Check whether your application went through: {_reach(program)}"
+    return None  # in progress or stopped: the usual next step still applies
+
+
 def _uncertainty(program: Program) -> str:
     parts = []
     if program.documents_needed is None:
@@ -133,12 +153,14 @@ def build_plan(
     assessments: dict[str, EligibilityAssessment],
     profile: Profile,
     skipped_fields: list[str] | None = None,
+    applications: dict[str, ApplicationRecord] | None = None,
 ) -> list[ActionItem]:
     needs_fact = profile.facts.get("needs")
     needs = [n for n in (needs_fact.value if needs_fact else []) or [] if isinstance(n, str)]
     need_rank = {need: i for i, need in enumerate(dict.fromkeys(needs))}
     labels = _need_labels()
     skipped = set(skipped_fields or [])
+    applications = applications or {}
 
     rows = []
     for program in programs:
@@ -150,7 +172,9 @@ def build_plan(
         matched = sorted((need_rank[c], c) for c in program.categories if c in need_rank)
         rank_need = matched[0][0] if matched else len(need_rank)
         fast = 0 if program.type == "community" and _is_open_access(program) else 1
-        key = (TIER_ORDER[action], URGENCY_ORDER[urgency], rank_need, fast, program.name.lower())
+        record = applications.get(program.id)
+        sent = 1 if record is not None and record.status == "submitted" else 0
+        key = (sent, TIER_ORDER[action], URGENCY_ORDER[urgency], rank_need, fast, program.name.lower())
         rows.append((key, program, assessment, action, urgency, matched))
 
     items: list[ActionItem] = []
@@ -163,7 +187,8 @@ def build_plan(
                 program_id=program.id,
                 action_type=action,
                 rationale=rationale,
-                next_step=_next_step(program, action, assessment, skipped),
+                next_step=_application_step(program, applications.get(program.id))
+                or _next_step(program, action, assessment, skipped),
                 documents=program.documents_needed,
                 link=program.apply_url or program.info_url,
                 urgency=urgency,
@@ -181,6 +206,7 @@ def action_planning(state: SessionState) -> dict[str, Any]:
         state.get("eligibility_assessments") or {},
         state.get("profile") or Profile(),
         intake.skipped_fields,
+        state.get("applications") or {},
     )
     # Live mode only: rephrase rationale and next step. Order, links and
     # documents are never sent for rewriting.

@@ -3,6 +3,7 @@
 `decide(state)` is a pure function. It never calls a model and never does
 specialist work; it only looks at state and chooses exactly one of:
 
+  0. (no dispatch)       store an application result and mark the plan dirty
   1. user_intelligence   an answer or evidence request is waiting
   2. program_discovery   needs or location changed and both are known
   3. ask a core question (ends the run; phase "intake")
@@ -106,6 +107,23 @@ def _absorb_return(state: SessionState, dirty: DirtyFlags, update: dict[str, Any
         update["dispatched"] = None
 
 
+def _absorb_application(state: SessionState, dirty: DirtyFlags, update: dict[str, Any]) -> None:
+    """Store a result from the browser execution agent. Deterministic: no specialist runs
+    for it; Action Planning picks it up because the plan is marked out of date."""
+    result = state.get("application_result")
+    if result is None:
+        return
+    applications = dict(state.get("applications") or {})
+    previous = applications.get(result.program_id)
+    # A sent application stays sent: a later run that stopped or was unclear
+    # (say, the person reopened the form) must not hide that it went through.
+    if previous is None or previous.status != "submitted" or result.status == "submitted":
+        applications[result.program_id] = result
+    update["applications"] = applications
+    update["application_result"] = None
+    dirty.plan = True
+
+
 def decide(state: SessionState) -> Decision:
     update: dict[str, Any] = {}
     dirty = (state.get("dirty") or DirtyFlags()).model_copy(deep=True)
@@ -115,6 +133,7 @@ def decide(state: SessionState) -> Decision:
     errors = list(state.get("errors") or [])
 
     _absorb_return(state, dirty, update)
+    _absorb_application(state, dirty, update)
     programs = state.get("programs") or []
     assessments = update.get(
         "eligibility_assessments", state.get("eligibility_assessments") or {}

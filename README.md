@@ -93,9 +93,25 @@ All routes are under `/api`. Errors have the shape `{"error": {"code", "message"
 | `GET /nessie/personas` | The fictional demo bank profiles, each labelled *Simulated*. |
 | `POST /sessions/{id}/evidence/nessie` | Body `{"persona_id", "consent": true}`. Uses a simulated bank profile; `200` or `202` like answers. Deposits become an **unconfirmed** income estimate, and the app asks the person to confirm it before relying on it. |
 | `POST /sessions/{id}/evidence/document` | Multipart: `file` (PDF or `.txt`, 2 MB max) and `consent=true`. Reads only household size and income from labelled lines such as "Gross monthly pay: $1,400". The file is deleted right after reading, and its text is never stored. Found numbers wait for the person to confirm them. |
-| `GET /health` | Liveness and configuration flags. No secrets. |
+| `GET /health` | Liveness and configuration flags (`browser_agent` is true when the browser assistant is mounted). No secrets. |
 
 Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (409), `validation_error` (422), `consent_required` (400), `unsupported_file` (415).
+
+### Browser assistant (optional)
+
+Only mounted when `BROWSER_PROVIDER` is `steel` or `local` and `GEMINI_API_KEY` is set. It fills an application form from the person's answers, asks for anything missing, and hands the browser to the person for every step that must be theirs (signing, signing in, CAPTCHA, the final submit). Design: [docs/browser-agent-plan.md](docs/browser-agent-plan.md).
+
+| Route | Purpose |
+|---|---|
+| `POST /sessions/{id}/applications` | Body `{"program_id", "consent": true}`. Starts a run for a program listed in `automatable_program_ids`. `201`; `409 run_active` if one is running. |
+| `GET /sessions/{id}/applications/{run_id}` | Run status, step log, pending question, handoff reason, live-view URL, seconds left. Poll about once a second. When the run ends, its outcome goes into the main graph (`applications` and the plan's next step); `result_recorded` turns true once it has. |
+| `POST /sessions/{id}/applications/{run_id}/answer` | Answer the assistant's question (`AnswerIn` shape, `text` or `skipped`). |
+| `POST /sessions/{id}/applications/{run_id}/control` | `{"action": "take"}` gives the person the browser; `"return"` hands it back. |
+| `POST /sessions/{id}/applications/{run_id}/stop` | Ends the run and releases the browser. |
+| `GET /sessions/{id}/applications/{run_id}/frame` | Latest screenshot (PNG), the fallback view when there is no embeddable live view. |
+| `GET /practice/` | Our own practice application form (not under `/api`). Practice copy, never sent anywhere. |
+
+Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
 Try it with the backend running:
 
@@ -116,6 +132,12 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for reading typed chat messages, matching "Other" answers, and plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
+| `BROWSER_PROVIDER` | No | `off` (default) hides the browser assistant and imports nothing for it. `local` drives Chrome on this machine (development; needs `pip install -e ".[browser]"`). `steel` uses a Steel cloud browser with an embeddable live view (needs `STEEL_API_KEY`). Also needs `GEMINI_API_KEY`, or the assistant stays off. |
+| `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
+| `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-4-hydrogen`. |
+| `PRACTICE_BASE_URL` | No | Where the browser reaches the backend's practice form. Default `http://127.0.0.1:8000`; a cloud browser needs a public URL (for example a tunnel). |
+| `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome; empty uses Playwright's Chromium (`.venv/bin/playwright install chromium`). |
+| `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. |
 | `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
 
 The frontend needs no secrets. The browser only calls same-origin `/api/*`, which Next.js forwards to the backend.
@@ -171,6 +193,12 @@ docs/foundation-plan.md            architecture, contracts, tickets, risks
 docs/demo-script.md                the demo, step by step, with recovery steps
 backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
 backend/app/api/routes.py          HTTP routes
+backend/app/api/execution_routes.py  browser assistant routes (mounted only when enabled)
+backend/app/api/practice_routes.py serves the practice application form at /practice/
+backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
+                                   run manager, fill sheet, outcome check, practice form
+backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
+backend/scripts/spikes/            Phase 0 spikes: Gemini Computer Use, Steel, real forms
 backend/app/api/views.py           builds the client snapshot from graph state
 backend/app/api/schemas.py         request/response shapes          (contract file)
 backend/app/graph/state.py         shared LangGraph state models    (contract file)

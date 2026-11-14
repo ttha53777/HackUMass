@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 from app.graph.state import (
     ActionItem,
     AgentStatus,
+    ApplicationRecord,
     AnswerIn,
     Coverage,
     CriterionResult,
@@ -27,6 +28,7 @@ from app.graph.state import (
 
 __all__ = [
     "AnswerIn",
+    "ApplicationRecord",
     "AnsweredItem",
     "AssessmentView",
     "CheckView",
@@ -56,6 +58,13 @@ ErrorCode = Literal[
     "consent_required",
     "unsupported_file",
     "too_many_messages",
+    # Browser execution agent (app/api/execution_routes.py).
+    "run_not_found",
+    "run_active",
+    "run_finished",
+    "not_automatable",
+    "browser_unavailable",
+    "too_many_runs",
 ]
 
 
@@ -72,6 +81,7 @@ class HealthOut(BaseModel):
     status: Literal["ok"] = "ok"
     llm_mode: Literal["live", "off"]
     nessie_configured: bool
+    browser_agent: bool = False  # BROWSER_PROVIDER is set and not "off"
 
 
 class AnsweredItem(BaseModel):
@@ -180,6 +190,10 @@ class SessionSnapshot(BaseModel):
     # Short labels for profile fields named in any assessment's missing_fields,
     # e.g. {"monthly_income": "Monthly income"}.
     field_labels: dict[str, str] = Field(default_factory=dict)
+    # Applications sent (or attempted) with the browser agent, by program id.
+    applications: dict[str, ApplicationRecord] = Field(default_factory=dict)
+    # Programs the browser agent can help fill in. Empty when the feature is off.
+    automatable_program_ids: list[str] = Field(default_factory=list)
 
 
 class NessieEvidenceIn(BaseModel):

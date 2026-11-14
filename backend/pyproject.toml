@@ -22,6 +22,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
+# Optional browser assistant (BROWSER_PROVIDER=local or steel). Steel is called
+# over its REST API with httpx, so no provider SDK is needed.
+browser = ["playwright>=1.49"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

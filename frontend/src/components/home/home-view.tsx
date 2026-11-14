@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { ArrowRight, CalendarDays, Check, CircleHelp, HandHeart, Landmark, Sparkles, UserRound, Wallet } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, CircleHelp, HandHeart, Landmark, Send, Sparkles, UserRound, Wallet } from "lucide-react";
 
 import { HouseArt } from "@/components/front-door/house-art";
 import { docLabel } from "@/components/od/doc-kinds";
@@ -15,6 +15,7 @@ import {
   actionFor,
   answerFor,
   benefits,
+  cardById,
   dayName,
   isStepDone,
   liveCount,
@@ -100,6 +101,14 @@ export function HomeView() {
   const leadId = ns.kind === "resume" || ns.kind === "plan" ? ns.card.program.id : null;
   const rest = todo.filter((c) => c.program.id !== leadId);
   const shownRest = showAll ? rest : rest.slice(0, 3);
+  // Applications the person sent with the browser assistant. Their next step comes from
+  // Action Planning ("Sent on ... Watch for a reply from ...").
+  const sent = Object.values(snapshot.applications ?? {})
+    .filter((a) => a.status === "submitted" || a.status === "unclear")
+    .flatMap((a) => {
+      const card = cardById(snapshot, a.program_id);
+      return card ? [{ record: a, card }] : [];
+    });
 
   const govLive = liveCount(benefits(snapshot));
   const locLive = liveCount(localHelp(snapshot));
@@ -225,6 +234,48 @@ export function HomeView() {
 
       <div className="mb-[30px] grid items-start gap-[22px] min-[1101px]:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0">
+          {sent.length ? (
+            <section className="mb-[30px]">
+              <SectionHead title="Applications you sent" />
+              <ul className="flex flex-col gap-2">
+                {sent.map(({ record, card }) => {
+                  const href = guideHref(card);
+                  const ok = record.status === "submitted";
+                  const detail =
+                    actionFor(snapshot, card.program.id)?.next_step ??
+                    (ok ? `Watch for a reply from ${card.program.provider}.` : "Check with the provider whether it went through.");
+                  const inner = (
+                    <>
+                      <span className={cn("grid size-[30px] shrink-0 place-items-center rounded-[10px]", ok ? "bg-brand-soft text-brand-text" : "bg-amber text-amber-ink")}>
+                        {ok ? <Send aria-hidden className="size-4" /> : <CircleHelp aria-hidden className="size-4" />}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                        <b className="text-sm">{card.program.guide?.short_name ?? card.program.name}</b>
+                        <small className="text-xs leading-[1.5] text-muted-foreground">
+                          {detail}
+                          {ok && record.confirmation ? ` Reference ${record.confirmation}.` : ""}
+                        </small>
+                      </span>
+                      {href ? <ArrowRight aria-hidden className="size-4 shrink-0 text-faint" /> : null}
+                    </>
+                  );
+                  const cls = "flex w-full items-center gap-3.5 rounded-2xl border border-line bg-surface px-4 py-3.5 text-left";
+                  return (
+                    <li key={card.program.id}>
+                      {href ? (
+                        <Link href={href} className={cn(cls, "transition-[border-color] hover:border-brand-line")}>
+                          {inner}
+                        </Link>
+                      ) : (
+                        <div className={cls}>{inner}</div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
+
           {rest.length ? (
             <section className="mb-[30px]">
               <SectionHead title="After that">

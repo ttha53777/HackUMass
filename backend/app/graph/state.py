@@ -323,6 +323,26 @@ class ActionItem(BaseModel):
 
 
 # --------------------------------------------------------------------------
+# Applications (written by the browser execution agent, stored by the Administrator)
+# --------------------------------------------------------------------------
+
+ApplicationStatus = Literal["in_progress", "submitted", "stopped", "unclear"]
+
+
+class ApplicationRecord(BaseModel):
+    """What happened when the person applied with the browser agent's help.
+
+    Only an outcome the provider's page states is "submitted"; anything else stays
+    "unclear". It never holds a typed value, only the page's own confirmation text.
+    """
+
+    program_id: str
+    status: ApplicationStatus
+    updated_at: datetime
+    confirmation: str | None = Field(default=None, max_length=200)
+
+
+# --------------------------------------------------------------------------
 # Execution metadata (owned by the Administrator)
 # --------------------------------------------------------------------------
 
@@ -357,7 +377,8 @@ class SessionState(TypedDict, total=False):
 
     Writers:
       Administrator      workflow_phase, pending_question, intake, dirty,
-                         dispatched, run_counts; clears changed_fields; prunes
+                         dispatched, run_counts, applications; clears
+                         changed_fields and application_result; prunes
                          assessments and plan items whose program is gone
       User Intelligence  profile, changed_fields, consents, financial_summary,
                          documents; clears user_answer and pending_evidence
@@ -382,6 +403,10 @@ class SessionState(TypedDict, total=False):
     programs: list[Program]
     eligibility_assessments: dict[str, EligibilityAssessment]
     action_plan: list[ActionItem]
+    # Input from the browser execution agent. The Administrator stores it in
+    # `applications` (keyed by program id) and clears it.
+    application_result: ApplicationRecord | None
+    applications: dict[str, ApplicationRecord]
     dirty: DirtyFlags
     agent_statuses: Annotated[dict[str, AgentStatus], merge_statuses]
     errors: list[SafeError]

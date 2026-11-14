@@ -304,6 +304,81 @@ export type SessionSnapshot = {
   notices: Notice[];
   /** Short labels for fields named in any assessment's missing_fields. */
   field_labels: Record<string, string>;
+  /** Applications sent (or attempted) with the browser assistant, by program id. */
+  applications: Record<string, ApplicationRecord>;
+  /** Programs the browser assistant can help fill in. Empty when the feature is off. */
+  automatable_program_ids: string[];
+};
+
+// ---------------------------------------------------------------------------
+// Browser execution agent (backend/app/execution/models.py)
+// ---------------------------------------------------------------------------
+
+export type ApplicationStatus = "in_progress" | "submitted" | "stopped" | "unclear";
+
+export type ApplicationRecord = {
+  program_id: string;
+  status: ApplicationStatus;
+  updated_at: string;
+  /** The provider page's own confirmation text, when it showed one. */
+  confirmation: string | null;
+};
+
+/** Browser run state (`RunStatus` in backend/app/execution/models.py). */
+export type BrowserRunStatus =
+  | "starting"
+  | "working"
+  | "needs_answer"
+  | "needs_you"
+  | "verifying"
+  | "done"
+  | "stopped"
+  | "failed";
+
+export type HandoffReason =
+  | "submit"
+  | "attestation"
+  | "sign_in"
+  | "captcha"
+  | "sensitive_field"
+  | "file_upload"
+  | "safety_confirmation"
+  | "unknown_field"
+  | "stuck"
+  | "person_requested";
+
+export type StepLog = {
+  at: string;
+  kind: "action" | "blocked" | "question" | "handoff" | "note";
+  /** Never contains a typed value. */
+  text: string;
+};
+
+export type Outcome = {
+  status: "submitted" | "not_submitted" | "unclear";
+  confirmation_text: string | null;
+};
+
+export type RunView = {
+  run_id: string;
+  program_id: string;
+  mode: "practice" | "stop_before_submit";
+  status: BrowserRunStatus;
+  steps: StepLog[];
+  /** Set while status is needs_answer. */
+  question: Question | null;
+  /** Set while status is needs_you. */
+  handoff: { reason: HandoffReason; message: string } | null;
+  /** The provider's live view. A credential: never log or share it. */
+  live_view_url: string | null;
+  interactive: boolean;
+  /** GET .../frame has a screenshot (fallback when there is no live view). */
+  has_frame: boolean;
+  seconds_left: number | null;
+  outcome: Outcome | null;
+  message: string | null;
+  /** The outcome is in the main graph: refresh the session snapshot. */
+  result_recorded: boolean;
 };
 
 export type ErrorCode =
@@ -313,7 +388,13 @@ export type ErrorCode =
   | "validation_error"
   | "consent_required"
   | "unsupported_file"
-  | "too_many_messages";
+  | "too_many_messages"
+  | "run_not_found"
+  | "run_active"
+  | "run_finished"
+  | "not_automatable"
+  | "browser_unavailable"
+  | "too_many_runs";
 
 export type ErrorBody = { error: { code: ErrorCode; message: string } };
 
@@ -321,6 +402,7 @@ export type HealthOut = {
   status: "ok";
   llm_mode: "live" | "off";
   nessie_configured: boolean;
+  browser_agent: boolean;
 };
 
 export type NessieEvidenceIn = { persona_id: string; consent: true };

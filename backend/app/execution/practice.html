@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Benefits application (practice copy)</title>
+<style>
+  :root { --ink:#1d2433; --muted:#5b6475; --line:#d5dae3; --bg:#f4f6f9; --card:#fff; --accent:#2f5d8a; --warn:#fff4d6; --warn-ink:#6b4d00; --err:#a3261b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; color:var(--ink); background:var(--bg); }
+  .banner { background:var(--warn); color:var(--warn-ink); font-weight:700; text-align:center; padding:10px 16px; border-bottom:1px solid #ecd9a0; }
+  main { max-width:720px; margin:24px auto; padding:0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:24px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  h2 { font-size:19px; margin:0 0 16px; }
+  .steps { display:flex; gap:8px; margin:16px 0 20px; padding:0; list-style:none; color:var(--muted); font-size:14px; }
+  .steps li { flex:1; border-top:4px solid var(--line); padding-top:6px; }
+  .steps li.on { border-color:var(--accent); color:var(--ink); font-weight:700; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px 16px; }
+  .full { grid-column:1 / -1; }
+  label { display:block; font-weight:600; font-size:14px; margin-bottom:4px; }
+  input[type=text], input[type=email], input[type=tel], textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px; font:inherit; }
+  textarea { min-height:70px; }
+  .hint { color:var(--muted); font-size:13px; }
+  .error { color:var(--err); font-size:13px; min-height:18px; }
+  .actions { display:flex; justify-content:space-between; margin-top:22px; }
+  button { font:inherit; font-weight:700; padding:11px 20px; border-radius:8px; border:1px solid var(--accent); cursor:pointer; }
+  .primary { background:var(--accent); color:#fff; }
+  .secondary { background:#fff; color:var(--accent); }
+  .review { background:var(--bg); border-radius:8px; padding:12px 14px; margin-bottom:16px; }
+  .review dt { color:var(--muted); font-size:13px; }
+  .review dd { margin:0 0 6px; font-weight:600; }
+  .check { display:flex; gap:10px; align-items:flex-start; margin:12px 0; }
+  .check input { margin-top:4px; width:18px; height:18px; }
+  [hidden] { display:none !important; }
+  @media (max-width:560px) { .grid { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="banner" role="note">Practice copy, not sent to any agency</div>
+<main>
+  <div class="card">
+    <h1>Benefits application</h1>
+    <p class="hint">A practice form for trying the application assistant. Nothing you enter leaves this page.</p>
+    <ol class="steps" aria-label="Progress">
+      <li data-step="1">1. Contact</li><li data-step="2">2. Household</li><li data-step="3">3. Review and sign</li>
+    </ol>
+
+    <form id="form" novalidate autocomplete="off">
+      <section data-panel="1" aria-labelledby="h1">
+        <h2 id="h1">Your contact details</h2>
+        <div class="grid">
+          <div><label for="first_name">First name</label><input type="text" id="first_name" name="first_name" required></div>
+          <div><label for="last_name">Last name</label><input type="text" id="last_name" name="last_name" required></div>
+          <div><label for="dob">Date of birth</label><input type="text" id="dob" name="dob" placeholder="MM/DD/YYYY" required></div>
+          <div><label for="phone">Phone number</label><input type="tel" id="phone" name="phone" required></div>
+          <div class="full"><label for="email">Email address</label><input type="email" id="email" name="email"><div class="hint">Optional</div></div>
+          <div class="full"><label for="street">Street address</label><input type="text" id="street" name="street" required></div>
+          <div><label for="city">City or town</label><input type="text" id="city" name="city" required></div>
+          <div><label for="state">State</label><input type="text" id="state" name="state" required></div>
+          <div><label for="zip">ZIP code</label><input type="text" id="zip" name="zip" inputmode="numeric" required></div>
+        </div>
+      </section>
+
+      <section data-panel="2" aria-labelledby="h2" hidden>
+        <h2 id="h2">Your household</h2>
+        <div class="grid">
+          <div><label for="household">Number of people in your household</label><input type="text" id="household" name="household" inputmode="numeric" required></div>
+          <div><label for="income">Total monthly household income ($)</label><input type="text" id="income" name="income" inputmode="decimal" required></div>
+          <div class="full"><label for="notes">Anything else you'd like us to know?</label><textarea id="notes" name="notes"></textarea><div class="hint">Optional</div></div>
+        </div>
+      </section>
+
+      <section data-panel="3" aria-labelledby="h3" hidden>
+        <h2 id="h3">Review and sign</h2>
+        <dl class="review" id="review"></dl>
+        <div class="check">
+          <input type="checkbox" id="certify" name="certify" required>
+          <label for="certify">I certify that the information in this application is true to the best of my knowledge.</label>
+        </div>
+        <label for="signature">Signature: type your full name</label>
+        <input type="text" id="signature" name="signature" required>
+      </section>
+
+      <p class="error" id="error" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="secondary" id="back">Back</button>
+        <button type="button" class="primary" id="next">Next</button>
+        <button type="submit" class="primary" id="submit" hidden>Submit application</button>
+      </div>
+    </form>
+
+    <section id="done" hidden aria-live="polite">
+      <h2>Practice application received</h2>
+      <p id="ref"></p>
+      <p class="hint">This was a practice copy. Nothing was sent to any agency, and nothing was saved.</p>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  const form = document.getElementById("form");
+  const err = document.getElementById("error");
+  const back = document.getElementById("back"), next = document.getElementById("next"), submit = document.getElementById("submit");
+  let step = 1;
+  const panel = (n) => form.querySelector(`[data-panel="${n}"]`);
+  const LABELS = { first_name: "First name", last_name: "Last name", dob: "Date of birth", phone: "Phone", email: "Email",
+    street: "Street address", city: "City or town", state: "State", zip: "ZIP code", household: "People in household", income: "Monthly income" };
+
+  function show(n) {
+    step = n;
+    [1, 2, 3].forEach((i) => { panel(i).hidden = i !== n; });
+    document.querySelectorAll(".steps li").forEach((li) => li.classList.toggle("on", Number(li.dataset.step) === n));
+    back.hidden = n === 1; next.hidden = n === 3; submit.hidden = n !== 3; err.textContent = "";
+    if (n === 3) {
+      const review = document.getElementById("review");
+      review.replaceChildren();
+      for (const [name, label] of Object.entries(LABELS)) {
+        const dt = document.createElement("dt"); dt.textContent = label;
+        const dd = document.createElement("dd"); dd.textContent = form.elements[name].value || "(blank)";
+        review.append(dt, dd);
+      }
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function valid(n) {
+    const missing = Array.from(panel(n).querySelectorAll("[required]")).filter((el) => el.type === "checkbox" ? !el.checked : !el.value.trim());
+    if (missing.length) {
+      err.textContent = "Please fill in: " + missing.map((el) => (el.labels[0]?.textContent || el.name).replace(/:.*/, "")).join(", ");
+      missing[0].focus();
+      return false;
+    }
+    return true;
+  }
+
+  next.addEventListener("click", () => { if (valid(step)) show(step + 1); });
+  back.addEventListener("click", () => show(step - 1));
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (step !== 3 || !valid(3)) return;
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const ref = Array.from(crypto.getRandomValues(new Uint8Array(6)), (b) => alphabet[b % alphabet.length]).join("");
+    form.reset();
+    form.hidden = true;
+    document.querySelector(".steps").hidden = true;
+    document.getElementById("ref").textContent = "Reference: PRACTICE-" + ref;
+    document.getElementById("done").hidden = false;
+  });
+  // Enter in a text field must never send the form.
+  form.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") e.preventDefault(); });
+  show(1);
+})();
+</script>
+</body>
+</html>
