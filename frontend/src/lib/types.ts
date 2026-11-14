@@ -84,6 +84,7 @@ export type Requirement = {
   id: string;
   kind:
     | "income_max"
+    | "income_min"
     | "age_min"
     | "age_max"
     | "residency"

@@ -147,6 +147,7 @@ class Requirement(BaseModel):
     id: str
     kind: Literal[
         "income_max",
+        "income_min",
         "age_min",
         "age_max",
         "residency",
