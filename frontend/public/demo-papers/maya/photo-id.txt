@@ -1,0 +1,7 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Sample ID card (fictional)
+Name: Maya Rivera
+Date of birth: 03/14/1994
+Address: 12 Example Street, Apt 3, Amherst, MA 01002
+ID number: SAMPLE-0000
+Not a real document. Created for the OpenDoor demo.

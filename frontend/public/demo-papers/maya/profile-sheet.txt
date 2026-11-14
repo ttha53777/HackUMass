@@ -1,0 +1,26 @@
+OPENDOOR DEMO PROFILE - FICTIONAL
+
+Maya Rivera, ZIP 01002. Household on paper: 3 people (Maya, born 03/14/1994; Leo, born 06/02/2023; Rosa, born 06/02/1962).
+
+1. Paste into the chat's first question:
+   I'm a single mom with a little boy. I work part time at a grocery store and I'm behind on my electric bill. We need help with food and heat.
+
+2. Answer the chat questions:
+   ZIP code: 01002
+   How many people live with you: 2   <- the deliberate mismatch; the household paper says 3
+   Does anyone at home fit any of these: A child under 5 or a pregnancy
+   Housing: I rent
+
+3. Documents page: Demo kit -> Add all, then read the pay stub and household paper.
+   The household paper should raise: "Your document shows a household of 3..."
+
+4. Bank (Your money -> Connect a bank): part time irregular.
+
+5. Details for forms (Fill this in with me):
+   First name: Maya
+   Last name: Rivera
+   Date of birth: 03/14/1994
+   Street address: 12 Example Street, Apt 3
+   City: Amherst   State: MA   ZIP: 01002
+   Phone: 413-555-0142
+   Email: maya.rivera@example.com

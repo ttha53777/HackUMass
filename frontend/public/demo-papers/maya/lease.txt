@@ -1,0 +1,8 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Residential lease (fictional)
+Tenant: Maya Rivera
+Unit: 12 Example Street, Apt 3, Amherst, MA 01002
+Monthly rent: $900, due on the 1st
+Heat included: No
+Lease term: September 1, 2026 - August 31, 2027
+Landlord: Sample Property Management

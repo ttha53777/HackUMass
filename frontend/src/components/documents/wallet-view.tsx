@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ArrowUpDown, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, ClipboardCopy, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import { docLabel } from "@/components/od/doc-kinds";
@@ -14,7 +14,7 @@ import { cardById, docsFor, readiness, shortName, toneOf, walletKinds, walletPro
 import { cn } from "@/lib/utils";
 
 import { InfoPanel } from "./info-panel";
-import { ACCEPT, DEMO_PAPERS, MAX_BYTES, guessKind, usePapers } from "./paper-store";
+import { ACCEPT, DEMO_BASE, MAX_BYTES, demoName, guessKind, loadDemoManifest, usePapers } from "./paper-store";
 import { PaperGrid, PaperList, type Row } from "./paper-views";
 
 type Filter = "all" | "needed" | "ready" | string; // or a program id
@@ -146,16 +146,28 @@ export function WalletView() {
   const loadDemo = async () => {
     setLoadingDemo(true);
     try {
-      for (const d of DEMO_PAPERS) {
-        if (papers.some((p) => p.demo && p.name === d.name)) continue;
-        const res = await fetch(`/demo-papers/${d.file}`);
+      for (const d of await loadDemoManifest()) {
+        const name = demoName(d);
+        if (papers.some((p) => p.demo && p.name === name)) continue;
+        const res = await fetch(`${DEMO_BASE}/${d.pdf}`);
         if (!res.ok) continue;
-        const blob = new Blob([await res.arrayBuffer()], { type: d.type });
-        await add(blob, d.kinds, true, d.name);
+        const blob = new Blob([await res.arrayBuffer()], { type: "application/pdf" });
+        await add(blob, d.kinds, true, name);
       }
       toast("Demo papers added. They're fictional, and you can remove them any time.");
     } finally {
       setLoadingDemo(false);
+    }
+  };
+
+  /** The fictional demo person's answers and form details, ready to paste. */
+  const copySheet = async () => {
+    try {
+      const text = await fetch(`${DEMO_BASE}/profile-sheet.txt`).then((r) => r.text());
+      await navigator.clipboard.writeText(text);
+      toast("Demo profile copied. Paste it into the chat or a form.");
+    } catch {
+      window.open(`${DEMO_BASE}/profile-sheet.txt`, "_blank", "noopener");
     }
   };
 
@@ -335,7 +347,11 @@ export function WalletView() {
                 <button type="button" className={btn("ghost", "sm")} disabled={loadingDemo} onClick={() => void loadDemo()}>
                   <Sparkles aria-hidden className="size-4" /> {loadingDemo ? "Adding…" : "Use demo papers"}
                 </button>
-              ) : null}
+              ) : (
+                <button type="button" className={btn("ghost", "sm")} onClick={() => void copySheet()}>
+                  <ClipboardCopy aria-hidden className="size-4" /> Copy demo profile
+                </button>
+              )}
             </div>
 
             {/* Progress */}

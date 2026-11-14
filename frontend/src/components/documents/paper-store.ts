@@ -153,15 +153,21 @@ export function guessKind(fileName: string, available: string[]): string | null 
   return null;
 }
 
-/** The fictional demo papers in public/demo-papers/ and what each counts as. */
-export const DEMO_PAPERS: { file: string; name: string; type: string; kinds: string[]; readable?: boolean }[] = [
-  { file: "pay-stub.pdf", name: "Pay stub (sample).pdf", type: "application/pdf", kinds: ["income"], readable: true },
-  { file: "lease.pdf", name: "Lease (sample).pdf", type: "application/pdf", kinds: ["lease", "address"] },
-  { file: "utility-bill.pdf", name: "Electric bill (sample).pdf", type: "application/pdf", kinds: ["heat", "address"] },
-  { file: "photo-id.svg", name: "Photo ID (sample).svg", type: "image/svg+xml", kinds: ["id"] },
-  { file: "proof-of-address.pdf", name: "Address letter (sample).pdf", type: "application/pdf", kinds: ["address"] },
-  { file: "household-birth-dates.pdf", name: "Household birth dates (sample).pdf", type: "application/pdf", kinds: ["dob"] },
-];
+/** The fictional demo papers, generated into public/demo-papers/<slug>/ with a manifest. */
+export const DEMO_BASE = "/demo-papers/maya";
+
+export type DemoPaper = { file: string; title: string; kinds: string[]; pdf: string; txt: string; household_member?: string };
+
+export async function loadDemoManifest(): Promise<DemoPaper[]> {
+  const res = await fetch(`${DEMO_BASE}/manifest.json`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { papers?: DemoPaper[] };
+  return data.papers ?? [];
+}
+
+/** Shown as the file name: "Pay stub (sample).pdf". */
+export const demoName = (p: DemoPaper) =>
+  `${p.title.replace(/\s*\(fictional\)\s*$/i, "").replace(/\s+-\s+.*$/, "")} (sample).pdf`;
 
 export const isReadable = (p: Pick<Paper, "type" | "name">) =>
   p.type === "application/pdf" || p.type === "text/plain" || /\.(pdf|txt)$/i.test(p.name);

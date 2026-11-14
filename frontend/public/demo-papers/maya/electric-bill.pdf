@@ -15,12 +15,17 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 6 0 obj
-<< /Length 279 >>
+<< /Length 578 >>
 stream
 BT /F2 9 Tf 72 760 Td (SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY) Tj ET
-BT /F1 18 Tf 72 726 Td (Household members and birth dates \(fictional\)) Tj ET
-BT /F2 11 Tf 72 690 Td (Maya Rivera - adult - born 1994) Tj ET
-BT /F2 11 Tf 72 672 Td (Leo Rivera - child - born 2023) Tj ET
+BT /F1 18 Tf 72 726 Td (Electric bill - Sample Electric Co. \(fictional\)) Tj ET
+BT /F2 11 Tf 72 690 Td (Account holder: Maya Rivera) Tj ET
+BT /F2 11 Tf 72 672 Td (Service address: 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
+BT /F2 11 Tf 72 654 Td (Phone: 413-555-0142) Tj ET
+BT /F2 11 Tf 72 636 Td (Email: maya.rivera@example.com) Tj ET
+BT /F2 11 Tf 72 618 Td (Billing period: October 2026) Tj ET
+BT /F2 11 Tf 72 600 Td (Amount due: $78.40) Tj ET
+BT /F2 11 Tf 72 582 Td (Status: Past due) Tj ET
 endstream
 endobj
 xref
@@ -35,5 +40,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-726
+1025
 %%EOF

@@ -13,6 +13,9 @@ import { cn } from "@/lib/utils";
 import { ACCEPT, isReadable, sizeLabel } from "./paper-store";
 import { STATUS_LABEL, useObjectUrl, type Row } from "./paper-views";
 
+/** Papers the reader can take facts from today: income, and household size from a household list. */
+const READABLE_KINDS = new Set(["income", "dob"]);
+
 /**
  * Finder's "Get Info" / Quick Look for one kind of paper: a preview, what each
  * provider asks for (their words, never ours), and every action in one place.
@@ -167,7 +170,7 @@ export function InfoPanel({
         ) : null}
 
         {/* Read income and household */}
-        {paper && isReadable(paper) && row.kind === "income" ? (
+        {paper && isReadable(paper) && READABLE_KINDS.has(row.kind) ? (
           <div className="rounded-[14px] border border-line p-3.5">
             <p className="flex items-center gap-2 text-[13.5px] font-extrabold">
               <FileSearch aria-hidden className="size-4 text-brand-text" /> Read this for me

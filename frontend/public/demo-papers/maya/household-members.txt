@@ -1,0 +1,7 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Household members and birth dates (fictional)
+Household size: 3
+Maya Rivera - self - born 03/14/1994
+Leo Rivera - son - born 06/02/2023
+Rosa Rivera - mother - born 06/02/1962
+Address: 12 Example Street, Apt 3, Amherst, MA 01002

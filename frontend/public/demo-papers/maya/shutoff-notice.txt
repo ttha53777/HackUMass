@@ -1,0 +1,7 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Notice of service disconnection (fictional)
+Account holder: Maya Rivera
+Service address: 12 Example Street, Apt 3, Amherst, MA 01002
+Amount past due: $156.80
+Disconnection scheduled: December 1, 2026
+Call to set up a payment plan before that date.
