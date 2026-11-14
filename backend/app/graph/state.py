@@ -60,6 +60,8 @@ class Question(BaseModel):
     skippable: bool = True
     target_field: str
     origin: QuestionOrigin = "core"
+    min: float | None = None  # bounds for number / currency inputs
+    max: float | None = None
 
 
 class AnswerIn(BaseModel):
@@ -254,7 +256,9 @@ class SessionState(TypedDict, total=False):
     """LangGraph state. Each node returns only the keys it owns.
 
     Writers:
-      Administrator      workflow_phase, pending_question, intake, dirty
+      Administrator      workflow_phase, pending_question, intake, dirty,
+                         dispatched, run_counts; clears changed_fields; prunes
+                         assessments and plan items whose program is gone
       User Intelligence  profile, changed_fields, consents, financial_summary,
                          documents; clears user_answer and pending_evidence
       Program Discovery  programs, coverage
@@ -281,3 +285,6 @@ class SessionState(TypedDict, total=False):
     dirty: DirtyFlags
     agent_statuses: Annotated[dict[str, AgentStatus], merge_statuses]
     errors: list[SafeError]
+    # Per-run execution metadata. The API resets run_counts on every invoke.
+    dispatched: str | None  # specialist the Administrator is waiting on
+    run_counts: dict[str, int]  # specialist name -> runs in the current invoke

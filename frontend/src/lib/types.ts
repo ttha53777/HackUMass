@@ -58,6 +58,9 @@ export type Question = {
   skippable: boolean;
   target_field: string;
   origin: QuestionOrigin;
+  /** Bounds for number and currency inputs. */
+  min: number | null;
+  max: number | null;
 };
 
 /** Body of POST /api/sessions/{id}/answers. Also used for edits and skips. */

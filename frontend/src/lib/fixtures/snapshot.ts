@@ -24,7 +24,9 @@ export const snapshotFixture: SessionSnapshot = {
     "allow_other": false,
     "skippable": true,
     "target_field": "age_60_plus",
-    "origin": "eligibility_followup"
+    "origin": "eligibility_followup",
+    "min": null,
+    "max": null
   },
   "answered": [
     {
