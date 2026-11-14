@@ -52,7 +52,7 @@ export function shown(q: Question): { prompt: string; reason: string | null } {
 
 /** Plainer chip labels for some options (ids unchanged). */
 const OPTION_LABEL: Record<string, Record<string, string>> = {
-  household_who: { "60": "60 or older", "55": "55 to 59", child: "A child under 5, or a pregnancy", none: "No one like that" },
+  household_who: { "60": "60 or older", "55": "55 to 59", child: "A child under 5 or a pregnancy", none: "No one like that" },
 };
 
 export function optionLabel(q: Question, optionId: string, fallback: string): string {
@@ -316,4 +316,42 @@ export function reviewRows(s: SessionSnapshot | null): ReviewRow[] {
     rows.push({ id, label: REVIEW_LABEL[id] ?? item.question.prompt, value });
   }
   return rows;
+}
+
+/**
+ * Help that often goes together, offered once after the needs answer
+ * ("Would any of these help too?"). A fixed, reviewable map: no guessing.
+ */
+export const RELATED: Record<string, string[]> = {
+  childcare: ["employment", "food"],
+  employment: ["childcare", "taxes"],
+  housing: ["legal", "utilities"],
+  utilities: ["phone_internet", "housing"],
+  safety: ["housing", "legal", "mental_health"],
+  food: ["taxes", "utilities"],
+  legal: ["housing", "mental_health"],
+  mental_health: ["healthcare"],
+  healthcare: ["mental_health", "transportation"],
+  transportation: ["employment"],
+  taxes: ["employment"],
+  phone_internet: ["utilities"],
+};
+
+/** The needs option ids the person has chosen (including ones matched from their words). */
+export function chosenNeedIds(s: SessionSnapshot | null): string[] {
+  const item = answered(s, "needs");
+  if (!item) return [];
+  const labels = new Set(chosenLabels(item));
+  return item.question.options.filter((o) => labels.has(o.label)).map((o) => o.id);
+}
+
+/** Up to three related needs not chosen yet, most connected first. */
+export function relatedNeeds(chosen: string[], max = 3): string[] {
+  const score = new Map<string, number>();
+  chosen.forEach((id) =>
+    (RELATED[id] ?? []).forEach((r, i) => {
+      if (!chosen.includes(r)) score.set(r, (score.get(r) ?? 0) + (3 - Math.min(i, 2)));
+    }),
+  );
+  return [...score.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id).slice(0, max);
 }

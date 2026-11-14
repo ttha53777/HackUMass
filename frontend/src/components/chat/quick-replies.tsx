@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, Baby, Briefcase, Bus, Check, Flame, House, Minus, Stethoscope, UserRound, Users, Utensils, type LucideIcon } from "lucide-react";
+import { ArrowRight, Baby, Brain, Briefcase, Bus, Check, ChevronDown, Flame, House, Minus, Receipt, Scale, ShieldCheck, Stethoscope, UserRound, Users, Utensils, Wifi, type LucideIcon } from "lucide-react";
 
 import type { AnswerIn, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,12 @@ const ICON: Record<string, LucideIcon> = {
   healthcare: Stethoscope,
   transportation: Bus,
   employment: Briefcase,
+  mental_health: Brain,
+  legal: Scale,
+  childcare: Baby,
+  safety: ShieldCheck,
+  taxes: Receipt,
+  phone_internet: Wifi,
   "60": UserRound,
   "55": UserRound,
   child: Baby,
@@ -27,6 +33,15 @@ const EXCLUSIVE = new Set(["none"]);
 
 const HOUSEHOLD = [1, 2, 3, 4, 5, 6];
 
+/** How many needs chips show before "more options". */
+const STARTER = 6;
+
+/** Options with the given ids first (in that order), then the rest as they were. */
+function ordered<T extends { id: string }>(options: T[], first: string[]): T[] {
+  const rank = new Map(first.map((id, i) => [id, i] as const));
+  return [...options].sort((a, b) => (rank.get(a.id) ?? 99) - (rank.get(b.id) ?? 99));
+}
+
 /**
  * Tap-to-answer chips under the latest question. Single choices send on tap;
  * multiple choices collect, then send with Done. Focus lands on the first chip.
@@ -36,8 +51,10 @@ export function QuickReplies({
   initial,
   confirm,
   first: firstId,
+  priority,
   skip,
   pause,
+  decline,
   disabled,
   onAnswer,
 }: {
@@ -47,14 +64,19 @@ export function QuickReplies({
   confirm?: { label: string; answer: AnswerIn };
   /** Show this option first (e.g. a place to stay, after a safety message). */
   first?: string;
+  /** Options to show first, in order (what the person's words point to). */
+  priority?: string[];
   /** Offer a quiet "Skip" for a question that can be skipped. */
   skip?: boolean;
   /** Offer a soft "Not right now" that pauses the conversation. */
   pause?: () => void;
+  /** A quiet way to say no to an optional offer ("No, that's everything"). */
+  decline?: { label: string; onClick: () => void };
   disabled: boolean;
   onAnswer: (answer: AnswerIn) => void;
 }) {
   const [picked, setPicked] = useState<string[]>(initial ?? []);
+  const [expanded, setExpanded] = useState(false);
   const first = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     first.current?.focus({ preventScroll: true });
@@ -71,10 +93,16 @@ export function QuickReplies({
         icon: n === 1 ? UserRound : Users,
       }))
     : multi || question.type === "single_select"
-      ? [...question.options]
-          .sort((a, b) => Number(b.id === firstId) - Number(a.id === firstId))
-          .map((o) => ({ id: o.id, label: optionLabel(question, o.id, o.label), icon: ICON[o.id] }))
+      ? ordered(question.options, [...(firstId ? [firstId] : []), ...(priority ?? [])]).map((o) => ({
+          id: o.id,
+          label: optionLabel(question, o.id, o.label),
+          icon: ICON[o.id],
+        }))
       : [];
+  // A long list (the needs question) starts with the first few; the rest are a tap away.
+  const collapsible = question.id === "needs" && chips.length > STARTER + 1;
+  const hidden = collapsible && !expanded ? chips.filter((c, i) => i >= STARTER && !picked.includes(c.id)) : [];
+  const visible = chips.filter((c) => !hidden.includes(c));
 
   const toggle = (id: string) => {
     if (EXCLUSIVE.has(id)) return setPicked((p) => (p.includes(id) ? [] : [id]));
@@ -108,7 +136,7 @@ export function QuickReplies({
         </motion.button>
       ) : null}
       <div role="group" aria-label={question.prompt} className="flex flex-wrap gap-2">
-        {chips.map((chip, i) => {
+        {visible.map((chip, i) => {
           const on = picked.includes(chip.id);
           const Icon = chip.icon;
           return (
@@ -135,6 +163,15 @@ export function QuickReplies({
             </motion.button>
           );
         })}
+        {hidden.length ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-dashed border-line px-4 py-2 text-[14px] font-semibold text-muted-foreground hover:border-brand-line hover:text-ink"
+          >
+            {hidden.length} more options <ChevronDown aria-hidden className="size-4" />
+          </button>
+        ) : null}
       </div>
       {multi ? (
         <motion.button
@@ -150,7 +187,7 @@ export function QuickReplies({
           <ArrowRight aria-hidden className="size-4" />
         </motion.button>
       ) : null}
-      {skip || pause ? (
+      {skip || pause || decline ? (
         <div className="mt-3 flex flex-wrap gap-3">
           {skip ? (
             <button
@@ -160,6 +197,16 @@ export function QuickReplies({
               className="rounded-lg px-1 py-1.5 text-[13.5px] font-semibold text-muted-foreground underline-offset-4 hover:text-ink hover:underline disabled:opacity-50"
             >
               Skip this one
+            </button>
+          ) : null}
+          {decline ? (
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={decline.onClick}
+              className="rounded-lg px-1 py-1.5 text-[13.5px] font-semibold text-muted-foreground underline-offset-4 hover:text-ink hover:underline disabled:opacity-50"
+            >
+              {decline.label}
             </button>
           ) : null}
           {pause ? (

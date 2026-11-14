@@ -8,7 +8,7 @@ import { useApp } from "@/components/session/session-provider";
 import { interpretMessage } from "@/lib/api";
 import { coreDone } from "@/lib/derive";
 import { saveConfirmed } from "@/lib/device-state";
-import type { AnswerIn, InterpretOut, NotedFacts, Question, SessionSnapshot } from "@/lib/types";
+import type { AnswerIn, InterpretOut, NotedFacts, Question, SafetyContact, SessionSnapshot } from "@/lib/types";
 
 import { BotMessage, SafetyCard, TypingBubble, UserMessage } from "./bubbles";
 import { Composer } from "./composer";
@@ -25,9 +25,11 @@ import {
   answered,
   bridge,
   chosenLabels,
+  chosenNeedIds,
   confirmation,
   greeting,
   parseTyped,
+  relatedNeeds,
   reviewRows,
   shown,
   typingMs,
@@ -39,7 +41,7 @@ type Entry =
   | { key: string; kind: "bot" | "warn"; text: string; animate: boolean }
   | { key: string; kind: "question"; prompt: string; reason: string | null; animate: boolean }
   | { key: string; kind: "user"; text: string; questionId: string; animate: boolean }
-  | { key: string; kind: "safety" }
+  | { key: string; kind: "safety"; contacts: SafetyContact[] }
   | { key: string; kind: "review" };
 
 /** chat: answering questions. review: looking over the summary. paused: "not right now". */
@@ -48,7 +50,11 @@ type Asking = {
   question: Question;
   confirm?: { label: string; answer: AnswerIn };
   first?: string;
+  /** Options to show first, in order. */
+  priority?: string[];
   pause?: boolean;
+  /** A "would any of these help too?" offer; holds the needs already chosen. */
+  related?: string[];
 };
 
 const isCore = (id: string) => (CORE_IDS as readonly string[]).includes(id);
@@ -103,6 +109,8 @@ export function ChatIntake({
   // Facts the person mentioned for questions not asked yet; confirmed before use.
   const noted = useRef<NotedFacts>(EMPTY_NOTED);
   const safetyShown = useRef(false);
+  // "Would any of these help too?" is offered once, after the first needs answer.
+  const relatedOffered = useRef(false);
   // Each "I can't search for X yet" is said once per conversation.
   const unsupportedSaid = useRef(new Set<string>());
   // Extras are offered once each; a skip counts as answered.
@@ -217,14 +225,25 @@ export function ChatIntake({
       const line = ack(q.id, s, Boolean(typed?.before.length));
       await say(typed?.after ? `${line} ${typed.after}` : line, "bot", Boolean(typed?.before.length));
       if (!alive.current) return;
+      if (q.id === "needs" && !relatedOffered.current && !autoplay) {
+        relatedOffered.current = true;
+        const chosen = chosenNeedIds(s);
+        const extra = relatedNeeds(chosen);
+        const options = extra.map((id) => q.options.find((o) => o.id === id)).filter((o) => !!o);
+        if (options.length) {
+          await say("People in a similar spot often look for these too. Would any of them help?", "bot", true);
+          if (alive.current) setAsking({ question: { ...q, options }, related: chosen });
+          return;
+        }
+      }
       await advance();
     },
-    [advance, push, say, send],
+    [advance, autoplay, push, say, send],
   );
 
   /** A typed message: read it on the server, then reply, answer, or ask again gently. */
   const understand = useCallback(
-    async (raw: string, q: Question) => {
+    async (raw: string, q: Question, base?: string[]) => {
       setAsking(null);
       setHint(null);
       setMode("chat");
@@ -248,7 +267,7 @@ export function ChatIntake({
       if (urgent && !safetyShown.current) {
         safetyShown.current = true;
         setTyping(false);
-        push({ key: nextKey(), kind: "safety" });
+        push({ key: nextKey(), kind: "safety", contacts: result?.safety_contacts ?? [] });
         await wait(reduced ? 0 : 500);
       }
       if (result?.off_topic) {
@@ -265,7 +284,11 @@ export function ChatIntake({
       }
       // Income amounts and ZIPs are read here as well; the server doesn't map them.
       const local = q.id === "income_band" || q.type === "zip" ? parseTyped(q, raw) : null;
-      const body = result?.answer ?? (local && !("hint" in local) ? local : null);
+      let body = result?.answer ?? (local && !("hint" in local) ? local : null);
+      // Typed during "would any of these help too?": add to what was already chosen.
+      if (body && base?.length) {
+        body = { ...body, selected_option_ids: [...new Set([...base, ...(body.selected_option_ids ?? [])])].filter((id) => id !== "other") };
+      }
       const fresh = (result?.unsupported_needs ?? []).filter((n) => !unsupportedSaid.current.has(n));
       fresh.forEach((n) => unsupportedSaid.current.add(n));
       const reply = result?.reply ?? null;
@@ -276,11 +299,21 @@ export function ChatIntake({
       if (after) await say(after, "bot", true);
       await say(bridge(q, { urgent, replied: Boolean(reply) }), "bot", Boolean(reply || after));
       if (alive.current) {
-        setAsking({ question: q, first: urgent && q.id === "needs" ? "housing" : undefined, pause: urgent });
+        setAsking({
+          question: q,
+          priority: urgent && q.id === "needs" ? ["safety", "housing", "mental_health"] : undefined,
+          pause: urgent,
+        });
       }
     },
     [answer, push, reduced, say],
   );
+
+  const declineRelated = useCallback(async () => {
+    setAsking(null);
+    await say("Okay. I'll focus on what you picked.");
+    if (alive.current) await advance();
+  }, [advance, say]);
 
   const pause = useCallback(async () => {
     if (!asking) return;
@@ -306,7 +339,7 @@ export function ChatIntake({
       if ("hint" in parsed) return setHint(parsed.hint || null);
       return void answer(parsed, q);
     }
-    void understand(raw, q);
+    void understand(raw, q, asking?.related);
   };
 
   const edit = useCallback(
@@ -499,7 +532,7 @@ export function ChatIntake({
                 <motion.div key={e.key} layout="position" transition={{ type: "spring", stiffness: 400, damping: 36 }}>
                   {e.kind === "bot" ? <BotMessage lead={lead} animate={e.animate}>{e.text}</BotMessage> : null}
                   {e.kind === "warn" ? <BotMessage lead={lead} tone="warn" animate={e.animate}>{e.text}</BotMessage> : null}
-                  {e.kind === "safety" ? <SafetyCard title={SAFETY_TEXT.title} lines={SAFETY_TEXT.lines} /> : null}
+                  {e.kind === "safety" ? <SafetyCard title={SAFETY_TEXT.title} lines={SAFETY_TEXT.lines} contacts={e.contacts} /> : null}
                   {e.kind === "question" ? (
                     <BotMessage lead={lead} tone="question" animate={e.animate}>
                       {e.prompt}
@@ -539,10 +572,17 @@ export function ChatIntake({
                     question={asking.question}
                     confirm={asking.confirm}
                     first={asking.first}
+                    priority={asking.priority}
                     skip={asking.question.skippable && asking.question.id !== "income_band"}
                     pause={asking.pause ? () => void pause() : undefined}
+                    decline={asking.related ? { label: "No, that's everything", onClick: () => void declineRelated() } : undefined}
                     disabled={app.working || autoplay}
-                    onAnswer={(a) => void answer(a, asking.question)}
+                    onAnswer={(a) => {
+                      const base = asking.related;
+                      if (base) {
+                        void answer({ ...a, selected_option_ids: [...base, ...(a.selected_option_ids ?? [])] }, asking.question);
+                      } else void answer(a, asking.question);
+                    }}
                   />
                 </motion.div>
               ) : null}
