@@ -120,6 +120,24 @@ class SessionManager:
         """Latest checkpointed state. Safe to read while a run is in progress."""
         return self._graph.get_state(run_config(session_id)).values
 
+    async def disconnect_bank(self, session_id: str) -> bool:
+        """Forget the connected (simulated) bank: its summary, and any income figure read
+        from it that the person never confirmed. A confirmed figure is their own answer
+        now and stays. Then one run so questions and results catch up."""
+        values = self.values(session_id)
+        update: dict[str, Any] = {"financial_summary": None}
+        profile = values.get("profile")
+        if profile is not None:
+            kept = {
+                name: fact
+                for name, fact in profile.facts.items()
+                if not (fact.provenance == "nessie_sandbox" and not fact.confirmed)
+            }
+            update["profile"] = profile.model_copy(update={"facts": kept})
+            update["changed_fields"] = sorted(set(profile.facts) - set(kept))
+        self._graph.update_state(run_config(session_id), update, as_node="user_intelligence")
+        return await self.submit(session_id, {"run_counts": {}})
+
     async def submit(self, session_id: str, graph_input: dict[str, Any]) -> bool:
         """Run the graph with new input. Returns True if it finished on the fast path.
 

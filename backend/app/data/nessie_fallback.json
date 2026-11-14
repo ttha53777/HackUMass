@@ -6,25 +6,25 @@
     {
       "id": "retired-fixed-income",
       "label": "Simulated: retired, fixed monthly income",
-      "description": "One adult. A single benefit deposit of about $1,400 each month, plus electric and heating bills.",
+      "description": "One adult. A Social Security deposit of about $1,400 each month; pays rent, electric and heating oil. The latest heating oil bill is unpaid.",
       "balance": 612.4,
       "deposits": [
         {
           "transaction_date": "2026-08-03",
           "amount": 1400.0,
-          "description": "Monthly benefit deposit",
+          "description": "Social Security benefit deposit",
           "status": "completed"
         },
         {
           "transaction_date": "2026-09-03",
           "amount": 1400.0,
-          "description": "Monthly benefit deposit",
+          "description": "Social Security benefit deposit",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-03",
           "amount": 1400.0,
-          "description": "Monthly benefit deposit",
+          "description": "Social Security benefit deposit",
           "status": "completed"
         }
       ],
@@ -57,97 +57,184 @@
           "payment_date": "2026-10-20",
           "payee": "Heating oil supplier",
           "payment_amount": 186.5,
+          "status": "pending"
+        },
+        {
+          "payment_date": "2026-08-01",
+          "payee": "Apartment rent",
+          "payment_amount": 650.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-01",
+          "payee": "Apartment rent",
+          "payment_amount": 650.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-01",
+          "payee": "Apartment rent",
+          "payment_amount": 650.0,
           "status": "completed"
         }
       ],
-      "purchases_total": [
-        910.0,
-        980.0,
-        1015.0
+      "purchases": [
+        {
+          "purchase_date": "2026-08-10",
+          "description": "Grocery market",
+          "amount": 324.87,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-14",
+          "description": "Pharmacy",
+          "amount": 139.23,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-18",
+          "description": "PVTA bus and rides",
+          "amount": 38.67,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-22",
+          "description": "Household and other",
+          "amount": 270.72,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-10",
+          "description": "Grocery market",
+          "amount": 349.86,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-14",
+          "description": "Pharmacy",
+          "amount": 149.94,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-18",
+          "description": "PVTA bus and rides",
+          "amount": 41.65,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-22",
+          "description": "Household and other",
+          "amount": 291.55,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-10",
+          "description": "Grocery market",
+          "amount": 362.36,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-14",
+          "description": "Pharmacy",
+          "amount": 155.29,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-18",
+          "description": "PVTA bus and rides",
+          "amount": 43.14,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-22",
+          "description": "Household and other",
+          "amount": 301.96,
+          "status": "completed"
+        }
       ]
     },
     {
       "id": "part-time-irregular",
       "label": "Simulated: part-time work, uneven pay",
-      "description": "Weekly paychecks that change with hours worked. Electric and phone bills; behind on one electric payment.",
+      "description": "One adult with uneven part-time pay. Pays rent, electric and phone; the latest electric bill is unpaid.",
       "balance": 84.15,
       "deposits": [
         {
           "transaction_date": "2026-08-07",
           "amount": 310.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-08-14",
           "amount": 245.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-08-21",
           "amount": 402.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-08-28",
           "amount": 280.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-09-04",
           "amount": 226.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-09-11",
           "amount": 388.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-09-18",
           "amount": 295.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-09-25",
           "amount": 350.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-02",
           "amount": 240.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-09",
           "amount": 412.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-16",
           "amount": 276.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-23",
           "amount": 330.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         },
         {
           "transaction_date": "2026-10-30",
           "amount": 298.0,
-          "description": "Payroll deposit",
+          "description": "Payroll deposit, part-time job",
           "status": "completed"
         }
       ],
@@ -162,7 +249,7 @@
           "payment_date": "2026-09-18",
           "payee": "Electric company",
           "payment_amount": 76.85,
-          "status": "completed"
+          "status": "pending"
         },
         {
           "payment_date": "2026-08-22",
@@ -181,18 +268,87 @@
           "payee": "Phone company",
           "payment_amount": 45.0,
           "status": "completed"
+        },
+        {
+          "payment_date": "2026-08-01",
+          "payee": "Apartment rent",
+          "payment_amount": 900.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-01",
+          "payee": "Apartment rent",
+          "payment_amount": 900.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-01",
+          "payee": "Apartment rent",
+          "payment_amount": 900.0,
+          "status": "completed"
         }
       ],
-      "purchases_total": [
-        1180.0,
-        1240.0,
-        1205.0
+      "purchases": [
+        {
+          "purchase_date": "2026-08-10",
+          "description": "Grocery market",
+          "amount": 283.2,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-14",
+          "description": "Gas station fuel",
+          "amount": 106.2,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-18",
+          "description": "Household and other",
+          "amount": 318.6,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-10",
+          "description": "Grocery market",
+          "amount": 297.6,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-14",
+          "description": "Gas station fuel",
+          "amount": 111.6,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-18",
+          "description": "Household and other",
+          "amount": 334.8,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-10",
+          "description": "Grocery market",
+          "amount": 289.2,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-14",
+          "description": "Gas station fuel",
+          "amount": 108.45,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-18",
+          "description": "Household and other",
+          "amount": 325.35,
+          "status": "completed"
+        }
       ]
     },
     {
       "id": "two-earner-family",
       "label": "Simulated: family of four, two paychecks",
-      "description": "Two adults paid every two weeks. Electric and gas bills.",
+      "description": "A family of four with two paychecks. Pays rent, electric, gas and internet; all bills are paid.",
       "balance": 1950.0,
       "deposits": [
         {
@@ -310,12 +466,99 @@
           "payee": "Gas company",
           "payment_amount": 96.3,
           "status": "completed"
+        },
+        {
+          "payment_date": "2026-08-01",
+          "payee": "Apartment rent",
+          "payment_amount": 1650.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-01",
+          "payee": "Apartment rent",
+          "payment_amount": 1650.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-01",
+          "payee": "Apartment rent",
+          "payment_amount": 1650.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-08-20",
+          "payee": "Internet provider",
+          "payment_amount": 65.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-09-20",
+          "payee": "Internet provider",
+          "payment_amount": 65.0,
+          "status": "completed"
+        },
+        {
+          "payment_date": "2026-10-20",
+          "payee": "Internet provider",
+          "payment_amount": 65.0,
+          "status": "completed"
         }
       ],
-      "purchases_total": [
-        4300.0,
-        4450.0,
-        4390.0
+      "purchases": [
+        {
+          "purchase_date": "2026-08-10",
+          "description": "Grocery market",
+          "amount": 827.75,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-14",
+          "description": "Gas station fuel",
+          "amount": 283.8,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-08-18",
+          "description": "Household and other",
+          "amount": 1253.45,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-10",
+          "description": "Grocery market",
+          "amount": 856.63,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-14",
+          "description": "Gas station fuel",
+          "amount": 293.7,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-09-18",
+          "description": "Household and other",
+          "amount": 1297.18,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-10",
+          "description": "Grocery market",
+          "amount": 845.08,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-14",
+          "description": "Gas station fuel",
+          "amount": 289.74,
+          "status": "completed"
+        },
+        {
+          "purchase_date": "2026-10-18",
+          "description": "Household and other",
+          "amount": 1279.68,
+          "status": "completed"
+        }
       ]
     }
   ]

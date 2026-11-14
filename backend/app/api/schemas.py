@@ -13,6 +13,9 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from app.graph.state import (
+    BillLine,
+    IncomeSource,
+    SpendLine,
     ActionItem,
     AgentStatus,
     ApplicationRecord,
@@ -31,6 +34,7 @@ __all__ = [
     "ApplicationRecord",
     "AnsweredItem",
     "AssessmentView",
+    "BankSuggestion",
     "CheckView",
     "LastChange",
     "OpenQuestionView",
@@ -153,6 +157,20 @@ class FinancialSummaryView(BaseModel):
     avg_monthly_outflow: float | None = None
     utility_bill_signals: list[str] = Field(default_factory=list)
     caveats: list[str] = Field(default_factory=list)
+    income_sources: list[IncomeSource] = Field(default_factory=list)
+    bills: list[BillLine] = Field(default_factory=list)
+    spending: list[SpendLine] = Field(default_factory=list)
+    benefit_signals: list[str] = Field(default_factory=list)
+
+
+class BankSuggestion(BaseModel):
+    """An answer the (simulated) bank data points to. Applied only when the person confirms it,
+    through the normal answers endpoint."""
+
+    question_id: str
+    answer: AnswerIn
+    shown: str  # the answer as the person would see it
+    reason: str  # why, in plain words, from the totals only
 
 
 class Notice(BaseModel):
@@ -187,6 +205,8 @@ class SessionSnapshot(BaseModel):
     plan_stale: bool = False
     agent_statuses: dict[str, AgentStatus] = Field(default_factory=dict)
     financial_summary: FinancialSummaryView | None = None
+    # From a connected sandbox bank: answers to confirm. Empty when not connected.
+    bank_suggestions: list[BankSuggestion] = Field(default_factory=list)
     notices: list[Notice] = Field(default_factory=list)
     # Short labels for profile fields named in any assessment's missing_fields,
     # e.g. {"monthly_income": "Monthly income"}.

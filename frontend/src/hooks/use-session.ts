@@ -8,6 +8,7 @@ import {
   isApiError,
   submitAnswer,
   submitNessieEvidence,
+  disconnectBank as disconnectBankApi,
   uploadDocument,
 } from "@/lib/api";
 import type { AnswerIn, SessionSnapshot } from "@/lib/types";
@@ -54,6 +55,8 @@ export type SessionController = {
   submit: (answer: AnswerIn) => Promise<boolean>;
   /** Use a simulated bank profile (consent given). Returns an error message, or null. */
   submitEvidence: (personaId: string) => Promise<string | null>;
+  /** Forget the connected (simulated) bank. Returns an error message, or null. */
+  disconnectBank: () => Promise<string | null>;
   /** Upload a document (consent given). Returns an error message, or null. */
   submitDocument: (file: File) => Promise<string | null>;
   restart: () => Promise<void>;
@@ -190,6 +193,11 @@ export function useSession(): SessionController {
     [send],
   );
 
+  const disconnectBank = useCallback(async () => {
+    const result = await send((id) => disconnectBankApi(id));
+    return result === false ? null : result;
+  }, [send]);
+
   const submitDocument = useCallback(
     async (file: File) => {
       const result = await send((id) => uploadDocument(id, file));
@@ -243,6 +251,7 @@ export function useSession(): SessionController {
     working: submitting || busy,
     submit,
     submitEvidence,
+    disconnectBank,
     submitDocument,
     restart,
     clearAnswerError,

@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any, Callable
 
 from app.agents.eligibility import inputs_hash
+from app.api.bank import bank_suggestions
 from app.api.schemas import (
     AnsweredItem,
     AssessmentView,
@@ -171,15 +172,13 @@ def build_snapshot(
     }
 
     summary = values.get("financial_summary")
+    open_items = open_questions(profile, intake, programs, assessments)
     return SessionSnapshot(
         session_id=session_id,
         phase=values.get("workflow_phase") or "intake",
         busy=meta.busy,
         pending_question=values.get("pending_question"),
-        open_questions=[
-            OpenQuestionView(question=item.question, affects=item.affects)
-            for item in open_questions(profile, intake, programs, assessments)
-        ],
+        open_questions=[OpenQuestionView(question=item.question, affects=item.affects) for item in open_items],
         last_change=LastChange(**meta.last_change) if meta.last_change else None,
         answered=answered,
         profile_summary=profile_summary,
@@ -195,6 +194,7 @@ def build_snapshot(
         financial_summary=FinancialSummaryView(**summary.model_dump(exclude={"total_deposits", "balance_snapshot"}))
         if summary
         else None,
+        bank_suggestions=bank_suggestions(summary, [item.question for item in open_items]),
         notices=notices,
         field_labels=field_labels,
         applications=values.get("applications") or {},

@@ -111,6 +111,29 @@ class Profile(BaseModel):
     conflicts: list[Conflict] = Field(default_factory=list)
 
 
+class IncomeSource(BaseModel):
+    """Money coming in, grouped by kind. Monthly averages only; never single transactions."""
+
+    label: str
+    kind: Literal["wages", "benefit", "other"]
+    avg_monthly: float
+
+
+class BillLine(BaseModel):
+    """A recurring bill, by payee. `status` is the most recent one: paid, pending or overdue."""
+
+    payee: str
+    category: Literal["rent", "utilities", "phone_internet", "other"]
+    avg_monthly: float
+    status: Literal["paid", "pending", "overdue"] = "paid"
+    day_of_month: int | None = None
+
+
+class SpendLine(BaseModel):
+    category: Literal["groceries", "transport", "household", "other"]
+    avg_monthly: float
+
+
 class FinancialSummary(BaseModel):
     source: Literal["nessie_sandbox", "seeded_fallback"]
     simulated: Literal[True] = True
@@ -123,6 +146,12 @@ class FinancialSummary(BaseModel):
     utility_bill_signals: list[str] = Field(default_factory=list)
     balance_snapshot: float | None = None
     caveats: list[str] = Field(default_factory=list)
+    # The richer picture behind the totals (bank connector). All simulated.
+    income_sources: list[IncomeSource] = Field(default_factory=list)
+    bills: list[BillLine] = Field(default_factory=list)
+    spending: list[SpendLine] = Field(default_factory=list)
+    # Kinds of benefit deposits seen ("social_security", "unemployment"); suggestions only.
+    benefit_signals: list[str] = Field(default_factory=list)
 
 
 class EvidenceRequest(BaseModel):

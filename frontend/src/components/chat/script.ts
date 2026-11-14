@@ -292,7 +292,7 @@ const REVIEW_LABEL: Record<string, string> = {
   housing_status: "Housing",
 };
 
-export type ReviewRow = { id: string; label: string; value: string };
+export type ReviewRow = { id: string; label: string; value: string; note?: string; locked?: boolean };
 
 /** One row per answered core or extra question, for the review card. */
 export function reviewRows(s: SessionSnapshot | null): ReviewRow[] {
@@ -314,6 +314,17 @@ export function reviewRows(s: SessionSnapshot | null): ReviewRow[] {
       }
     }
     rows.push({ id, label: REVIEW_LABEL[id] ?? item.question.prompt, value });
+  }
+  // A monthly income confirmed from the connected bank (no chat question behind it).
+  const income = s.profile_summary.find((p) => p.field === "monthly_income");
+  if (income && !rows.some((r) => r.id === "income_band")) {
+    rows.push({
+      id: "monthly_income",
+      label: "Monthly income",
+      value: income.display_value,
+      note: s.financial_summary ? "From your connected demo bank. Change it on About you." : "Change it on About you.",
+      locked: true,
+    });
   }
   return rows;
 }

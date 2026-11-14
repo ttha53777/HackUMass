@@ -137,3 +137,8 @@ export function runFrameUrl(sessionId: string, runId: string, tick: number): str
 export function getWebResources(sessionId: string): Promise<WebResourcesOut> {
   return request<WebResourcesOut>(`/sessions/${encodeURIComponent(sessionId)}/web-resources`);
 }
+
+/** Disconnect the simulated bank: its summary and any unconfirmed income read from it are dropped. */
+export function disconnectBank(sessionId: string): Promise<SessionSnapshot> {
+  return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/nessie/disconnect`, { method: "POST" });
+}

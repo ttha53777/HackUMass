@@ -1,4 +1,4 @@
-import { HandHeart, House, Landmark, UserRound, Wallet, type LucideIcon } from "lucide-react";
+import { HandHeart, House, Landmark, PiggyBank, UserRound, Wallet, type LucideIcon } from "lucide-react";
 
 export type NavItem = { href: string; label: string; sub: string; icon: LucideIcon };
 
@@ -7,5 +7,6 @@ export const NAV: NavItem[] = [
   { href: "/benefits", label: "Government benefits", sub: "Apply with a guide", icon: Landmark },
   { href: "/local", label: "Local help", sub: "Call or visit", icon: HandHeart },
   { href: "/documents", label: "Documents", sub: "Your paper wallet", icon: Wallet },
+  { href: "/money", label: "Your money", sub: "Bank, budget, taxes", icon: PiggyBank },
   { href: "/about", label: "About you", sub: "Your answers", icon: UserRound },
 ];

@@ -23,6 +23,7 @@ function Fixture({ children }: { children: ReactNode }) {
     working: false,
     submit: async () => true,
     submitEvidence: async () => null,
+    disconnectBank: async () => null,
     submitDocument: async () => null,
     restart: async () => {},
     clearAnswerError: () => {},

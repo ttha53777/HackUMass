@@ -3283,6 +3283,7 @@ export const snapshotFixture: SessionSnapshot = {
     }
   },
   "financial_summary": null,
+  "bank_suggestions": [],
   "notices": [],
   "field_labels": {
     "umass_affiliation": "UMass Amherst community",

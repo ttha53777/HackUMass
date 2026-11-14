@@ -4,6 +4,7 @@ import { AnimatePresence, MotionConfig, motion, useReducedMotion } from "motion/
 import { HandHeart, RotateCcw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { ConnectBankModal } from "@/components/bank/connect-modal";
 import { useApp } from "@/components/session/session-provider";
 import { interpretMessage } from "@/lib/api";
 import { coreDone } from "@/lib/derive";
@@ -90,6 +91,7 @@ export function ChatIntake({
   const [mode, setMode] = useState<Mode>("chat");
   const [ghost, setGhost] = useState<string | undefined>(undefined);
   const [thinking, setThinking] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
   // "Try a sample" plays until the review card; afterwards the person drives.
   const [sampleDone, setSampleDone] = useState(false);
   const autoplay = sample && !sampleDone;
@@ -138,7 +140,10 @@ export function ChatIntake({
   /** Ask a question, as a confirmation when the person already mentioned the answer. */
   const ask = useCallback(
     async (q: Question, extra?: Omit<Asking, "question" | "confirm">) => {
-      const confirm = confirmation(q, noted.current);
+      const bank = latest.current.snapshot?.bank_suggestions.find((b) => b.question_id === q.id);
+      const confirm =
+        confirmation(q, noted.current) ??
+        (bank ? { prompt: `${bank.reason} Is that about right?`, label: `Yes, ${bank.shown}`, answer: bank.answer } : null);
       const { prompt, reason } = confirm ? { prompt: confirm.prompt, reason: null } : shown(q);
       setTyping(true);
       await wait(typingMs(prompt, reduced));
@@ -172,6 +177,10 @@ export function ChatIntake({
       const q = s.pending_question;
       if (q && isCore(q.id)) return ask(q);
       return review();
+    }
+    // A figure read from the connected bank (or a document) is confirmed before anything else.
+    if (s.pending_question?.origin === "conflict" && !s.answered.some((a) => a.question_id === s.pending_question?.id)) {
+      return ask(s.pending_question);
     }
     const next = EXTRA_IDS.map((id) => s.open_questions.find((o) => o.question.id === id)?.question).find(
       (q) => q && !s.answered.some((a) => a.question_id === q.id) && !extrasAsked.current.has(q.id),
@@ -584,6 +593,15 @@ export function ChatIntake({
                       } else void answer(a, asking.question);
                     }}
                   />
+                  {asking.question.id === "income_band" && !app.snapshot?.financial_summary && !asking.confirm && !autoplay ? (
+                    <button
+                      type="button"
+                      onClick={() => setBankOpen(true)}
+                      className="ml-11 mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-brand-text underline-offset-4 hover:underline"
+                    >
+                      Or connect a demo bank account instead
+                    </button>
+                  ) : null}
                 </motion.div>
               ) : null}
               {mode === "paused" && !typing ? (
@@ -610,6 +628,15 @@ export function ChatIntake({
             onSend={typed}
           />
         </div>
+        <ConnectBankModal
+          open={bankOpen}
+          onClose={() => setBankOpen(false)}
+          onConnected={() => {
+            setAsking(null);
+            // Once the bank is read, carry on: its income comes back as a question to confirm.
+            void latest.current.whenIdle().then(() => advance());
+          }}
+        />
       </section>
     </MotionConfig>
   );
