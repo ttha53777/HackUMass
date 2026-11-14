@@ -233,3 +233,13 @@ Where to make changes:
 - **`/api/health` says `llm_mode: off` although `LLM_MODE=live`.** `GEMINI_API_KEY` is missing or empty in `backend/.env`. The app uses its template wording, which gives the same statuses, links and order. Restart the backend after setting the key.
 - **"The bank sandbox didn't respond…" or "…has no copy of this simulated profile yet".** Nessie is unreachable, or the sandbox was never seeded for this key. The built-in simulated persona is used instead. To seed it: `cd backend && .venv/bin/python scripts/seed_nessie.py` (this writes fictional records to the shared sandbox).
 - **An upload says "We can only read PDF or plain text".** Only `.pdf` and `.txt` files up to 2 MB are accepted. Scanned PDFs without a text layer contain no readable text; type the numbers instead.
+
+
+## OpenDoor UI notes (Phases 0-3)
+
+- Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
+- Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`; the previous UI is at `/legacy`.
+- `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
+- `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.
+- Regenerate the contract fixture: `.venv/bin/python scripts/make_snapshot.py` in `backend/`, then `npm run sync:fixture` in `frontend/`.
+- If the project sits in an iCloud-synced folder, a `.venv` can be evicted ("dataless") and Python will hang on import. Keep the venv outside iCloud and run `pip install -e ".[dev]"` into it.
