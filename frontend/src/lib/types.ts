@@ -188,6 +188,8 @@ export type FinancialSummaryView = {
 
 export type Notice = { code: string; message: string };
 
+export type RegionView = { zip: string; city: string; county: string; state: string };
+
 export type SessionSnapshot = {
   session_id: string;
   phase: WorkflowPhase;
@@ -197,12 +199,16 @@ export type SessionSnapshot = {
   answered: AnsweredItem[];
   profile_summary: ProfileSummaryItem[];
   coverage: Coverage;
+  /** Set when coverage is "supported". */
+  region: RegionView | null;
   programs: ProgramCard[];
   action_plan: ActionItem[];
   plan_stale: boolean;
   agent_statuses: Partial<Record<AgentName, AgentStatus>>;
   financial_summary: FinancialSummaryView | null;
   notices: Notice[];
+  /** Short labels for fields named in any assessment's missing_fields. */
+  field_labels: Record<string, string>;
 };
 
 export type ErrorCode =

@@ -37,6 +37,7 @@ __all__ = [
     "Notice",
     "PersonaOut",
     "ProfileSummaryItem",
+    "RegionView",
     "ProgramCard",
     "SessionSnapshot",
 ]
@@ -115,6 +116,15 @@ class Notice(BaseModel):
     message: str
 
 
+class RegionView(BaseModel):
+    """The supported area the user's ZIP code belongs to, for headings."""
+
+    zip: str
+    city: str
+    county: str
+    state: str
+
+
 class SessionSnapshot(BaseModel):
     session_id: str
     phase: WorkflowPhase
@@ -123,12 +133,16 @@ class SessionSnapshot(BaseModel):
     answered: list[AnsweredItem] = Field(default_factory=list)
     profile_summary: list[ProfileSummaryItem] = Field(default_factory=list)
     coverage: Coverage = "unknown"
+    region: RegionView | None = None  # set when coverage is "supported"
     programs: list[ProgramCard] = Field(default_factory=list)
     action_plan: list[ActionItem] = Field(default_factory=list)
     plan_stale: bool = False
     agent_statuses: dict[str, AgentStatus] = Field(default_factory=dict)
     financial_summary: FinancialSummaryView | None = None
     notices: list[Notice] = Field(default_factory=list)
+    # Short labels for profile fields named in any assessment's missing_fields,
+    # e.g. {"monthly_income": "Monthly income"}.
+    field_labels: dict[str, str] = Field(default_factory=dict)
 
 
 class NessieEvidenceIn(BaseModel):
