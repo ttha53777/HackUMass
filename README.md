@@ -242,4 +242,4 @@ Where to make changes:
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.
 - Regenerate the contract fixture: `.venv/bin/python scripts/make_snapshot.py` in `backend/`, then `npm run sync:fixture` in `frontend/`.
-- If the project sits in an iCloud-synced folder, a `.venv` can be evicted ("dataless") and Python will hang on import. Keep the venv outside iCloud and run `pip install -e ".[dev]"` into it.
+- Keep the repo out of iCloud-synced folders (Desktop, Documents). With "Optimize Mac Storage" on, macOS evicts synced files when disk space is low: Python then hangs on imports and `.git` can be corrupted. Also never symlink `node_modules` elsewhere: the lockfile records the symlinked paths.
