@@ -1,6 +1,6 @@
 # OpenDoor: Demo-to-App Build Plan
 
-> **Status (2026-11-14): Phases 0-3 done.** See "Build log" at the end for what changed, deviations and open items.
+> **Status (2026-11-14): Phases 0-4 done.** See "Build log" at the end for what changed, deviations and open items.
 
 Source of truth for the look and behavior: the "OpenDoor Welcome Flow" artifact (claude.ai/artifact/UjUZ8vsSvz7kbsUQ1MB6bM).
 Companion to `docs/foundation-plan.md` (architecture). This plan covers only the product shell, UX and the contract changes needed to support it.
@@ -218,7 +218,7 @@ Phases 0-2, then Phase 3 steps 1-3, then Phase 4 Home + one Guide (Fuel Assistan
 
 **Phase 2.** `/` is the front door: Welcome (language chips, name kept on device, "Try a sample" through the real API), the 3 core questions, Building (never outlasts the backend), then `/home`. Refresh resumes; an outside-coverage ZIP shows the backend's notice instead of asking more.
 
-**Open items:** Phase 4-7 as planned; real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
+**Open items:** Phase 5-7 as planned; real screenshots for `docs/ui-reference/`; teammates should review the contract commit (`state.py`, `schemas.py`, `types.ts`, `snapshot.json`).
 
 ### Architecture review (after Phase 3)
 
@@ -231,3 +231,20 @@ Fixed:
 - Verified with a production `next build` (cache components + client `use(params)`) and a manual run through the real API.
 
 Known, accepted for now: the legacy intake still runs its own session hook (removed when `/legacy` retires in Phase 6); `BACKEND_URL` is read at build time by `next build` (documented in the README).
+
+### Phase 4 (frontend only, no contract change)
+
+- **Home** (`components/home/`): next-step hero (resume a started guide, else first plan step, else best open question, else all caught up), "After that" list with show-all, path cards with live counts, Sharpen card (head of `open_questions`, "affects N", skip when skippable), glance strip (next question, next posted hours, documents ready), out-of-coverage callout with "Change ZIP".
+- **One answer path** (`components/session/answer-provider.tsx`): every surface answers through `useAnswer()`, which waits for the backend, toasts from `last_change` ("Got it. 2 moved to likely fit...") and highlights moved cards for 2.6s. Rejected answers are toasted once.
+- **Program card + drawer** (`components/program/`): unified card with inline chips for "one question away" (single choice answers on tap; multi choice opens the drawer); drawer with focus trap, Escape, reasons, one inline question, next step, hours, contact, documents, unknowns, sourced rules, verified date.
+- **Government benefits** (`components/benefits/benefits-view.tsx`): how-it-works, benefit cards (status or stage, who decides, questions/documents/when meters), need filter, "One yes opens more" from `guide.unlocks`, "Not a fit right now".
+- **Guide** (`components/benefits/guide-view.tsx`): the 5 sections plus sourced rules; eligibility asks and tailoring questions inline, `conditional_notes` shown when the answer matches, ways best-first with copyable phone chips, call script, ask-them list (copy all), stage tracker; approving a benefit with `held_benefit` adds it to `benefits_held` through the real API.
+- **Local help** (`components/local/local-view.tsx`): grouped by `access`, need filter, week calendar from `hours` (unknown hours left out, with a count of places to call first).
+- `lib/derive.ts` gained the pure selectors (tone/label, asks, plan items, next step, week events, docs, wallet kinds, guide notes, tailoring); `lib/device-state.ts` gained the per-session plan state (stage, done, docs). It was pulled forward from Phase 5 because the guide's stage tracker and "I have this" need it. The Documents and About pages are still Phase 5.
+- Verified: lint, typecheck, `next build`, 291 backend tests, selectors run against `snapshot.json`, and every answer path (sharpen, out of order, skip, tailoring) exercised through the dev proxy against a curated-data backend. **Not yet clicked through in a browser.**
+
+Gaps noticed:
+- A tailoring question shows in a guide only when it is in `open_questions` or already answered (the snapshot has no definition otherwise). The backend accepts them; exposing their definitions (e.g. `guide_questions`) would need a contract change.
+- Matching `conditional_notes` compares option labels with `display_value`, because `AnsweredItem` carries no option ids. An additive `selected_option_ids` on `AnsweredItem` would make this exact.
+- After answering `benefits_held = snap`, `last_change.moved_to_fit` listed the SNAP program itself (it became "You have this"), so the toast says "moved to likely fit". Worth a look on the backend side.
+- The demo's dated timing strip (deadlines) and "other programs outside what you picked" are not built: the snapshot has neither the dates as data nor the unmatched programs.

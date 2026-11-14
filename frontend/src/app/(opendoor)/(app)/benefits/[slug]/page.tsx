@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { use } from "react";
 
+import { GuideView } from "@/components/benefits/guide-view";
+import { btn } from "@/components/od/ui";
 import { useApp } from "@/components/session/session-provider";
 import { PageHead } from "@/components/shell/page-head";
 
@@ -9,12 +12,15 @@ export default function GuidePage({ params }: { params: Promise<{ slug: string }
   const { slug } = use(params);
   const { snapshot } = useApp();
   const card = snapshot?.programs.find((c) => c.program.guide?.slug === slug);
-  if (!card?.program.guide) return <PageHead title="We couldn't find that guide" />;
-  return (
-    <>
-      <PageHead kind={{ label: "Government benefit", tone: "gov" }} title={card.program.guide.short_name}>
-        {card.program.guide.what}
-      </PageHead>
-    </>
-  );
+  if (!card?.program.guide) {
+    return (
+      <>
+        <PageHead title="We couldn't find that guide">It may not match what you picked. Your benefits list shows every guide for you.</PageHead>
+        <Link href="/benefits" className={btn("ghost")}>
+          All government benefits
+        </Link>
+      </>
+    );
+  }
+  return <GuideView card={card} />;
 }
