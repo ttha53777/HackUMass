@@ -101,6 +101,20 @@ def test_links_documents_and_unknowns_come_from_the_record():
     assert "413-555-0100" in second.next_step
 
 
+def test_next_step_uses_the_programs_own_first_step_when_it_has_one():
+    from app.graph.state import FirstStep
+
+    p = program("p").model_copy(update={"first_step": FirstStep(title="Call the pantry", detail="Call 413-555-0100 to register.")})
+    unsure = program("q").model_copy(update={"first_step": FirstStep(title="Ask", detail="Ask them.")})
+    plan = build_plan([p, unsure],
+                      {"p": assessed("p", "likely_eligible"), "q": assessed("q", "insufficient_information", ["monthly_income"])},
+                      make_profile())
+    by_id = {i.program_id: i for i in plan}
+    assert by_id["p"].next_step == "Call 413-555-0100 to register."
+    # Not enough information yet: the step still asks for the missing answer, not the first step.
+    assert by_id["q"].next_step != "Ask them."
+
+
 def test_skipped_field_step_invites_the_answer():
     p = program("p")
     plan = build_plan([p], {"p": assessed("p", "insufficient_information", ["monthly_income"])},

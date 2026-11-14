@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight, Check, FileText, Lock, Wallet } from "lucide-react";
 
+import { DocumentCard } from "@/components/evidence/evidence-cards";
 import { docLabel } from "@/components/od/doc-kinds";
 import { btn, Callout, Panel, ProgressBar, Ring } from "@/components/od/ui";
 import { usePlan } from "@/components/session/plan-state";
@@ -257,6 +258,9 @@ export function WalletView() {
           ))}
         </Panel>
       ) : null}
+      <div className="mt-[22px] max-w-[560px]">
+        <DocumentCard compact />
+      </div>
       <Callout tone="info">Your checklist is saved on this device only, for this session. Starting over clears it.</Callout>
     </>
   );

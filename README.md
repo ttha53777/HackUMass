@@ -188,10 +188,17 @@ docs/nessie-spike.md               what was verified about the Nessie API
 docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
-frontend/src/components/intake/    guided intake: question card, answered list,
-                                   progress, follow-up framing, change summary
-frontend/src/components/results/   results: next steps, program cards, status badges,
-                                   activity panel
+frontend/src/components/front-door/ Welcome, the 3 core questions, Building
+frontend/src/components/home/      Home: next step, plan, sharpen card, glance strip
+frontend/src/components/benefits/  Government benefits and the step-by-step guide
+frontend/src/components/local/     Local help and the week calendar
+frontend/src/components/documents/ the document wallet
+frontend/src/components/about/     About you: answers, sources, start over
+frontend/src/components/evidence/  optional document upload, sandbox profile, confirm card
+frontend/src/components/program/   program card, drawer, question form, How we checked this
+frontend/src/components/session/   session, answer and device-plan providers
+frontend/src/components/shell/     sidebar, bottom tabs, toast, gate
+frontend/src/components/od/        shared OpenDoor building blocks
 frontend/src/components/ui/        shadcn components
 frontend/src/hooks/use-session.ts  session lifecycle, answer submission, polling
 frontend/src/lib/api.ts            typed client for the backend API
@@ -235,10 +242,11 @@ Where to make changes:
 - **An upload says "We can only read PDF or plain text".** Only `.pdf` and `.txt` files up to 2 MB are accepted. Scanned PDFs without a text layer contain no readable text; type the numbers instead.
 
 
-## OpenDoor UI notes (Phases 0-3)
+## OpenDoor UI notes
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
-- Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`; the previous UI is at `/legacy`.
+- Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`. The old `/legacy` UI was retired in Phase 6.
+- Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear on the Building screen and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.
 - Regenerate the contract fixture: `.venv/bin/python scripts/make_snapshot.py` in `backend/`, then `npm run sync:fixture` in `frontend/`.

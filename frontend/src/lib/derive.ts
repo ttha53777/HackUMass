@@ -123,6 +123,9 @@ export function stepOf(p: Program): { title: string; detail: string } {
 
 export const cardById = (s: SessionSnapshot, id: string) => s.programs.find((c) => c.program.id === id);
 
+/** The Action Planning agent's item for a program, if it ranked one. */
+export const actionFor = (s: SessionSnapshot, id: string) => s.action_plan.find((a) => a.program_id === id);
+
 // ---------------------------------------------------------------------------
 // Home: the plan and the next step
 // ---------------------------------------------------------------------------

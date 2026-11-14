@@ -13,6 +13,7 @@ import { formatDate } from "@/lib/format";
 import type { ProgramCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { HowWeChecked } from "./how-we-checked";
 import { QuestionForm } from "./question-form";
 import { SourceRules } from "./source-rules";
 
@@ -156,6 +157,10 @@ export function ProgramDetail({ card }: { card: ProgramCard }) {
           <ReasonsList checks={[...notes, ...p.unknowns.slice(0, 3).map((text) => ({ kind: "note" as const, text }))]} />
         </Sec>
       ) : null}
+
+      <Sec>
+        <HowWeChecked snapshot={snapshot} card={card} />
+      </Sec>
 
       <Sec title="The rules, from the source">
         <SourceRules program={p} />

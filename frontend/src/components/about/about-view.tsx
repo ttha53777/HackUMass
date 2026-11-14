@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
+import { ConfirmCard, DocumentCard, SandboxCard } from "@/components/evidence/evidence-cards";
 import { btn, Panel } from "@/components/od/ui";
 import { useDrawer } from "@/components/program/drawer";
 import { useApp } from "@/components/session/session-provider";
@@ -57,6 +58,10 @@ export function AboutView() {
   }, []);
 
   if (!snapshot) return null;
+  const answeredFields = new Set(snapshot.answered.map((a) => a.question.target_field));
+  // Facts that came from a document or the sandbox and have no answered question of their own.
+  const evidence = snapshot.profile_summary.filter((p) => p.provenance !== "user_reported" && !answeredFields.has(p.field));
+  const waiting = snapshot.pending_question?.origin === "conflict";
   const source = (field: string) => snapshot.profile_summary.find((p) => p.field === field)?.provenance;
 
   const saveDraft = () => {
@@ -166,10 +171,23 @@ export function AboutView() {
                 />
               );
             })}
+            {evidence.map((p) => (
+              <Row
+                key={p.field}
+                label={p.label}
+                value={p.display_value}
+                badge={
+                  <Badge className={SOURCE[p.provenance].className}>
+                    {`${SOURCE[p.provenance].label}${waiting ? " · waiting for you" : ""}`}
+                  </Badge>
+                }
+              />
+            ))}
           </ul>
         </Panel>
 
         <div className="flex flex-col gap-4">
+          <ConfirmCard />
           {snapshot.open_questions.length ? (
             <Panel>
               <div className="mb-1 flex items-baseline justify-between gap-2.5">
@@ -196,6 +214,8 @@ export function AboutView() {
               ))}
             </Panel>
           ) : null}
+          <DocumentCard />
+          <SandboxCard />
           <Panel>
             <h2 className="mb-2 text-[15px] font-extrabold">Your privacy</h2>
             <p className="mb-3 text-[12.5px] leading-[1.7] text-muted-foreground">

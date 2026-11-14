@@ -95,6 +95,10 @@ def _reach(program: Program) -> str:
 
 
 def _next_step(program: Program, action: str, assessment: EligibilityAssessment, skipped: set[str]) -> str:
+    # A program's own first step (sourced, written per program) is the clearest instruction
+    # when the person can act now; the generic sentences below are the fallback.
+    if action in ("apply_now", "confirm_eligibility") and program.first_step:
+        return program.first_step.detail
     if action == "apply_now":
         if program.apply_url:
             return "Apply online using the link below."

@@ -12,6 +12,7 @@ import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 import { useToast } from "@/components/shell/toast";
 import {
+  actionFor,
   answerFor,
   benefits,
   dayName,
@@ -32,6 +33,8 @@ import { readName, STAGE_LABEL } from "@/lib/device-state";
 import { plural } from "@/lib/format";
 import type { ProgramCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+import { ConfirmCard } from "@/components/evidence/evidence-cards";
 
 import { SharpenCard } from "./sharpen-card";
 
@@ -114,6 +117,8 @@ export function HomeView() {
   let eyebrow = "All caught up";
   let title = "Every step on your plan is done.";
   let text = "Check back when something changes. You can update any answer on About you.";
+  let soon = false;
+  let caveat: string | null = null;
   let actions: ReactNode = (
     <Link href="/about" className={btn("ghost")}>
       Review your answers
@@ -136,8 +141,12 @@ export function HomeView() {
     const p = ns.card.program;
     const step = stepOf(p);
     eyebrow = `Your next step · ${p.track === "benefit" ? "government benefit" : "local help"}`;
+    const action = actionFor(snapshot, p.id);
     title = step.title;
-    text = step.detail;
+    // The Action Planning agent owns the order and the wording of each step.
+    text = action?.next_step ?? step.detail;
+    soon = action?.urgency === "high";
+    caveat = action?.uncertainty ?? null;
     const href = guideHref(ns.card);
     actions = href ? (
       <Link href={href} className={btn("primary")}>
@@ -184,9 +193,13 @@ export function HomeView() {
             <Sparkles aria-hidden className="size-3.5" />
             {eyebrow}
           </p>
+          {soon ? (
+            <span className="-mt-1 self-start rounded-full bg-amber px-[11px] py-[5px] text-[11.5px] font-extrabold text-amber-ink">Do this soon</span>
+          ) : null}
           <h1 className="mt-0.5 max-w-[560px] text-[clamp(26px,3vw,38px)] font-extrabold leading-[1.12] tracking-[-1.5px]">{title}</h1>
           <p className="max-w-[520px] text-[15px] leading-[1.65] text-plan-muted">{text}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2.5">{actions}</div>
+          {caveat ? <p className="max-w-[560px] text-xs leading-relaxed text-plan-muted">{caveat}</p> : null}
           {items.length ? (
             <div className="mt-2.5 flex items-center gap-3 text-xs font-bold tabular-nums text-plan-muted">
               <ProgressBar value={doneN} total={items.length} className="w-[140px]" track="bg-plan-track" />
@@ -233,9 +246,14 @@ export function HomeView() {
                       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                         <b className="text-sm">{stepOf(c.program).title}</b>
                         <small className="truncate text-xs text-muted-foreground">
-                          {href ? `${stage ? `${STAGE_LABEL[stage]} · ` : ""}Step-by-step guide` : c.program.provider}
+                          {href
+                            ? `${stage ? `${STAGE_LABEL[stage]} · ` : ""}Step-by-step guide`
+                            : (actionFor(snapshot, c.program.id)?.rationale ?? c.program.provider)}
                         </small>
                       </span>
+                      {actionFor(snapshot, c.program.id)?.urgency === "high" ? (
+                        <span className="shrink-0 rounded-full bg-amber px-[9px] py-[3px] text-[10.5px] font-extrabold text-amber-ink">Do this soon</span>
+                      ) : null}
                       <Tag track={c.program.track} />
                       <ArrowRight aria-hidden className="size-4 shrink-0 text-faint" />
                     </>
@@ -307,7 +325,7 @@ export function HomeView() {
           </section>
         </div>
 
-        <SharpenCard />
+        {snapshot.pending_question?.origin === "conflict" ? <ConfirmCard /> : <SharpenCard />}
       </div>
 
       <section aria-label="At a glance" className="mb-2.5 grid gap-3 min-[861px]:grid-cols-3">
