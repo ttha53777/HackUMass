@@ -1,0 +1,78 @@
+{
+  "id": "fbwm-snap-application-assistance",
+  "name": "SNAP Application Assistance",
+  "provider": "The Food Bank of Western Massachusetts",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampden",
+      "Hampshire",
+      "Berkshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "The Food Bank's SNAP outreach team can check whether you may be eligible for SNAP and help you apply by phone, online, or in person. Eligibility for SNAP itself is determined by the Massachusetts Department of Transitional Assistance (DTA).",
+  "info_url": "https://www.foodbankwma.org/get-help/snap/",
+  "apply_url": "https://www.foodbankwma.org/snap-referral/",
+  "contact": "Food Bank SNAP line 413-992-6204; Food Bank 413-247-9738 or 888-792-4523",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "fbwm-snap-residency",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "The Food Bank's SNAP help is free to all Western Massachusetts residents (the Food Bank serves Hampden, Hampshire, Berkshire, and Franklin Counties).",
+      "source_url": "https://www.foodbankwma.org/get-help/snap/",
+      "verified": true
+    },
+    {
+      "id": "fbwm-snap-income",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 2660,
+        "2": 3607,
+        "3": 4553,
+        "4": 5500,
+        "5": 6447,
+        "6": 7393,
+        "7": 8340,
+        "8": 9287
+      },
+      "period": "month",
+      "text": "The Food Bank's page lists SNAP gross monthly income limits by household size (add $947 for each member beyond 8). Meeting these limits does not mean you are definitely eligible; DTA makes the decision.",
+      "source_url": "https://www.foodbankwma.org/get-help/snap/",
+      "verified": true
+    },
+    {
+      "id": "fbwm-snap-dta",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "SNAP eligibility is determined by the Massachusetts Department of Transitional Assistance (DTA) based on household size, composition, income, and expenses.",
+      "source_url": "https://www.foodbankwma.org/get-help/snap/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The page does not state an effective date or program year for the SNAP income table.",
+    "Documents needed for a SNAP application are not listed on the provider page.",
+    "SNAP asset rules are not stated on the provider page.",
+    "The official mass.gov SNAP pages could not be fetched (HTTP 403), so the figures come only from the Food Bank's page.",
+    "The page displays 413-992-6204 but its phone link points to 413-992-6104; the displayed number is used here."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

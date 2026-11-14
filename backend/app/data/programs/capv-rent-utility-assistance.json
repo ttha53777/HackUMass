@@ -1,0 +1,75 @@
+{
+  "id": "capv-rent-utility-assistance",
+  "name": "Rent and Utility Help (Community Resources & Advocacy)",
+  "provider": "Community Action Pioneer Valley",
+  "type": "community",
+  "categories": [
+    "utilities",
+    "housing"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "CAPV's Community Resources & Advocacy program may be able to help with rent and utility bills, including a metered utility in danger of being shut off because of late payment. Complete an application to find out if you are eligible.",
+  "info_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+  "apply_url": null,
+  "contact": "413-475-1570 (Info & Referral; leave name, phone, town, help needed; calls returned Mon-Fri)",
+  "documents_needed": [
+    "Proof of identity for head of household",
+    "Proof of Massachusetts address",
+    "Proof of working income from within the last 90 days that covers 4 weeks in a row",
+    "Proof of non-working income (e.g. Social Security, unemployment, child support, disability)",
+    "Utility shut-off notice in an adult household member's name",
+    "Notices from landlord or court (for rent help)"
+  ],
+  "requirements": [
+    {
+      "id": "ru-area",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Serves Hampshire and Franklin Counties and the North Quabbin Region of Massachusetts.",
+      "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+      "verified": true
+    },
+    {
+      "id": "ru-shutoff",
+      "kind": "categorical",
+      "field": "utility_urgency",
+      "op": "in",
+      "value": [
+        "shutoff"
+      ],
+      "period": null,
+      "text": "Utility help applies when a metered utility is in danger of being shut off because you are late paying; in Hampshire County, less than 4 weeks before shutoff.",
+      "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+      "verified": true
+    },
+    {
+      "id": "ru-fuel-first",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "For fuel delivery during the Fuel Assistance season, you must apply to that program first.",
+      "source_url": "https://www.communityaction.us/program/rent-utility-assistance/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Income limits (an eligibility chart is referenced on another page, not fetched)",
+    "Amount of assistance",
+    "Funding availability"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

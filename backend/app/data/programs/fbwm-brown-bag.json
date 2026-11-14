@@ -1,0 +1,67 @@
+{
+  "id": "fbwm-brown-bag",
+  "name": "Brown Bag: Food for Elders",
+  "provider": "The Food Bank of Western Massachusetts",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Hampden",
+      "Hampshire",
+      "Berkshire",
+      "Franklin"
+    ],
+    "zips": []
+  },
+  "description": "A free monthly bag of groceries for older adults, picked up at senior centers and community organizations. Recipients must apply; each household gets one bag a month.",
+  "info_url": "https://www.foodbankwma.org/get-help/brown-bag-food-for-elders/",
+  "apply_url": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
+  "contact": "413-247-9738 ext. 3005 (applications); 413-419-0079 (Brown Bag)",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "fbwm-bb-age",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Participants must be at least 55 years old. People under 55 qualify on age only if they have a documented disability for which they receive SSDI.",
+      "source_url": "https://www.foodbankwma.org/wp-content/uploads/2026/01/INCOME-ELIGIBILITY-GUIDELINES-02.2026.pdf",
+      "verified": true
+    },
+    {
+      "id": "fbwm-bb-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Gross monthly income limit by household size (add $947 for each member beyond 8). Households in SNAP, AFDC, WIC, Welfare, Medicaid (MassHealth), SSI, Head Start, Fuel Assistance, or Veteran's Aid also meet the income requirement (but must still meet the age requirement). See the income table on the provider's guidelines.",
+      "source_url": "https://www.foodbankwma.org/wp-content/uploads/2026/01/INCOME-ELIGIBILITY-GUIDELINES-02.2026.pdf",
+      "verified": true
+    },
+    {
+      "id": "fbwm-bb-residency",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "All applicants must live in Berkshire, Franklin, Hampden, or Hampshire County in MA.",
+      "source_url": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Documents needed are not listed; the application form says verification may be requested.",
+    "No Brown Bag site in Amherst is listed; the nearest Hampshire County sites listed include Hadley, Belchertown, Granby, South Hadley, and Northampton.",
+    "Because the age rule is 55+ (not 60+), it cannot be expressed with the app's age_60_plus field."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "Eligibility guidelines dated February 2026"
+}

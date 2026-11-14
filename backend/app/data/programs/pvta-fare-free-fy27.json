@@ -1,0 +1,54 @@
+{
+  "id": "pvta-fare-free-fy27",
+  "name": "PVTA Fare-Free Buses and Vans (FY27)",
+  "provider": "Pioneer Valley Transit Authority (PVTA)",
+  "type": "government",
+  "categories": [
+    "transportation"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003"
+    ]
+  },
+  "description": "PVTA is fare-free for FY27: no fares or passes are needed for fixed-route buses or vans. Premium service (B79) is not included. Amherst is one of PVTA's 24 member communities.",
+  "info_url": "https://www.pvta.com/bus_service/fares.php",
+  "apply_url": null,
+  "contact": "PVTA Customer Service: 413-781-7882 (Mon-Fri, 9:00am-4:45pm)",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "pvta-free-open",
+      "kind": "open_access",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "PVTA is Fare-Free for FY27. No fares or passes needed for fixed-route buses. Does not include premium service (B79).",
+      "source_url": "https://www.pvta.com/bus_service/fares.php",
+      "verified": true
+    },
+    {
+      "id": "pvta-member-communities",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Service is in PVTA's 24 member communities, which include Amherst.",
+      "source_url": "https://pvta.com/about___contact_us/about_pvta.php",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Exact start and end dates of FY27 fare-free service",
+    "Fares that apply after FY27 (the page still lists regular and reduced fares)",
+    "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "FY27"
+}

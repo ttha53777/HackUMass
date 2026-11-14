@@ -1,0 +1,72 @@
+{
+  "id": "asc-food-pantry",
+  "name": "Amherst Survival Center Food Pantry",
+  "provider": "Amherst Survival Center",
+  "type": "community",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003",
+      "01007",
+      "01033",
+      "01035",
+      "01075",
+      "01082"
+    ]
+  },
+  "description": "Free groceries for all household members, including produce, frozen meat, milk, eggs, and shelf-stable goods, at 138 Sunderland Rd., North Amherst. Same-day registration and pickup are available, with curbside pickup and limited delivery.",
+  "info_url": "https://amherstsurvival.org/pantry/",
+  "apply_url": "https://amherstsurvival.org/food-pantry-register/",
+  "contact": "413-549-3968 ext. 104; pantry@amherstsurvival.org",
+  "documents_needed": [
+    "Residency verification showing your name and current address (for example a license, a piece of mail, a bank statement, or a lease). It does not need to be a photo ID. People experiencing homelessness are exempt."
+  ],
+  "requirements": [
+    {
+      "id": "asc-pantry-residency",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "The Food Pantry is for residents of Amherst, Belchertown, Deerfield, Granby, Hadley, Leverett, Pelham, Shutesbury, South Deerfield, South Hadley, Sunderland, Ware, and Whately, and for people experiencing homelessness. People from other towns can get two emergency shops of limited non-perishable food plus information on pantries near them.",
+      "source_url": "https://amherstsurvival.org/pantry/",
+      "verified": true
+    },
+    {
+      "id": "asc-pantry-no-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "There is no income cap and no citizenship requirement. Services are not subject to the Public Charge rule.",
+      "source_url": "https://amherstsurvival.org/about/frequently-asked-questions/",
+      "verified": true
+    },
+    {
+      "id": "asc-pantry-delivery",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Delivery is reserved for seniors or people without transportation, and routes are often full.",
+      "source_url": "https://amherstsurvival.org/pantry/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "The provider pages name towns, not ZIP codes or counties; the Hampshire/Franklin county listing is inferred from the town list.",
+    "Visit frequency is stated inconsistently: the pantry page says one full monthly shop plus a monthly Fresh Boost, while the FAQ says access is limited to twice a month.",
+    "Service area limited to ZIP codes whose postal city is a town the pantry lists; residents of other towns can get emergency visits (see requirements)."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

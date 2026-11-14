@@ -1,0 +1,55 @@
+{
+  "id": "pvta-senior-dial-a-ride",
+  "name": "PVTA Senior Dial-A-Ride",
+  "provider": "Pioneer Valley Transit Authority (PVTA)",
+  "type": "government",
+  "categories": [
+    "transportation"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003"
+    ]
+  },
+  "description": "Van service for seniors aged 60 and older throughout PVTA's 24 member communities (Amherst is a member community). There is no application: you register by calling the Van Service Reservation Office when you book your first trip.",
+  "info_url": "https://www.pvta.com/van_service/senior_dial_a_ride.php",
+  "apply_url": null,
+  "contact": "Van Service Reservation Office: 413-739-7436",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "dar-age-60",
+      "kind": "age_min",
+      "field": "age_60_plus",
+      "op": "eq",
+      "value": true,
+      "period": null,
+      "text": "For seniors aged 60 and older.",
+      "source_url": "https://www.pvta.com/van_service/senior_dial_a_ride.php",
+      "verified": true
+    },
+    {
+      "id": "dar-member-community",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Must be in one of PVTA's 24 member communities, which include Amherst.",
+      "source_url": "https://pvta.com/about___contact_us/about_pvta.php",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Service hours for Amherst",
+    "How far ahead trips must be booked",
+    "Whether senior van rides are free during FY27 (the van fares page says no fares or passes are needed for vans)",
+    "Service area set to Amherst ZIP codes: Amherst is the only PVTA member community confirmed from a fetched page."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

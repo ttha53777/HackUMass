@@ -1,0 +1,131 @@
+{
+  "_source": "https://services1.arcgis.com/hGdibHYSPO59RG1h/ArcGIS/rest/services/ZIP_Codes_5_Digit_from_HERE/FeatureServer/0/query?where=COUNTY%3D%27HAMPSHIRE%27&outFields=POSTCODE,PC_NAME,PC_TYPE,PA_NAME,CITY_TOWN,COUNTY&returnGeometry=false&orderByFields=POSTCODE&f=json",
+  "_note": "MassGIS 'ZIP Codes (5-Digit) from HERE' feature service (copyright 'HERE, MassGIS'; HERE data April 2018, Boston edited March 2024), queried for COUNTY='HAMPSHIRE' (27 features). City = USPS postal name (PC_NAME). County is the service's polygon attribute: ZIPs crossing county lines appear only where the Hampshire part is its own feature, e.g. 01011 (Chester) and 01235 (Hinsdale) are tagged Hampshire via Middlefield; 01002 also has a Shutesbury/Franklin part. Amherst PO-box ZIP 01004 is not in this polygon layer and is omitted. Not USPS-official: USPS keeps no ZIP map, and the service says it does not match Census ZCTAs. Curation: 01011 and 01235 removed (only a sliver lies in Hampshire County).",
+  "supported_zips": {
+    "01002": {
+      "city": "Amherst",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01003": {
+      "city": "Amherst",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01007": {
+      "city": "Belchertown",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01012": {
+      "city": "Chesterfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01026": {
+      "city": "Cummington",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01027": {
+      "city": "Easthampton",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01032": {
+      "city": "Goshen",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01033": {
+      "city": "Granby",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01035": {
+      "city": "Hadley",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01038": {
+      "city": "Hatfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01039": {
+      "city": "Haydenville",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01050": {
+      "city": "Huntington",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01053": {
+      "city": "Leeds",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01060": {
+      "city": "Northampton",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01062": {
+      "city": "Florence",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01063": {
+      "city": "Smith College",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01066": {
+      "city": "North Hatfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01070": {
+      "city": "Plainfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01073": {
+      "city": "Southampton",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01075": {
+      "city": "South Hadley",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01082": {
+      "city": "Ware",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01084": {
+      "city": "West Chesterfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01088": {
+      "city": "West Hatfield",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01096": {
+      "city": "Williamsburg",
+      "county": "Hampshire County",
+      "state": "MA"
+    },
+    "01098": {
+      "city": "Worthington",
+      "county": "Hampshire County",
+      "state": "MA"
+    }
+  }
+}

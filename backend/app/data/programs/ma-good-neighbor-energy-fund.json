@@ -1,0 +1,104 @@
+{
+  "id": "ma-good-neighbor-energy-fund",
+  "name": "Massachusetts Good Neighbor Energy Fund",
+  "provider": "The Salvation Army (Massachusetts Good Neighbor Energy Fund)",
+  "type": "community",
+  "categories": [
+    "utilities"
+  ],
+  "service_area": {
+    "statewide": true,
+    "state": "MA",
+    "counties": [],
+    "zips": []
+  },
+  "description": "Energy bill help for Massachusetts residents who, because of temporary financial difficulty, cannot meet a month's energy expense and are not eligible for state or federal energy assistance. Qualifying households may receive up to $400 per household per heating season. Requests go through The Salvation Army.",
+  "info_url": "https://www.magoodneighbor.org/assistance.html",
+  "apply_url": null,
+  "contact": "Contact your local Salvation Army Corps Community Center; if none is listed nearby, 413 area code: 800-262-1320",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "gn-residency",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Must be a Massachusetts resident.",
+      "source_url": "https://www.magoodneighbor.org/assistance.html",
+      "verified": true
+    },
+    {
+      "id": "gn-income-max",
+      "kind": "income_max",
+      "field": "monthly_income",
+      "op": "lte",
+      "value": {
+        "1": 71447,
+        "2": 93431,
+        "3": 115415,
+        "4": 137399,
+        "5": 159382,
+        "6": 181366,
+        "7": 185488,
+        "8": 189610,
+        "9": 193732,
+        "10": 197854,
+        "11": 201976,
+        "12": 206098,
+        "13": 210220,
+        "14": 214342,
+        "15": 218464,
+        "16": 222586,
+        "17": 226708
+      },
+      "period": "year",
+      "text": "Total gross yearly income must be no more than 80% of state median income (2026-2027 guidelines).",
+      "source_url": "https://www.magoodneighbor.org/assistance.html",
+      "verified": true
+    },
+    {
+      "id": "gn-income-floor",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Income must fall between 60 and 80 percent of state median income; 2026-2027 lower bounds: 1: $53,586; 2: $70,074; 3: $86,562; 4: $103,050; 5: $119,537; 6: $136,025; 7: $139,117; 8: $142,208; 9: $145,300; 10: $148,391; 11: $151,483; 12: $154,574; 13: $157,666; 14: $160,757; 15: $163,849; 16: $166,940; 17: $170,032.",
+      "source_url": "https://www.magoodneighbor.org/assistance.html",
+      "verified": true
+    },
+    {
+      "id": "gn-not-eligible-other",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Applicant is not eligible for state or federal energy assistance.",
+      "source_url": "https://www.magoodneighbor.org/assistance.html",
+      "verified": true
+    },
+    {
+      "id": "gn-hardship",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Because of temporary financial difficulty, cannot meet a month's energy expense.",
+      "source_url": "https://www.magoodneighbor.org/assistance.html",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Documents required",
+    "Whether the bill must be past due or facing shutoff",
+    "Whether payment goes directly to the utility or vendor",
+    "Nearest Salvation Army location for Amherst (none listed in Amherst/Northampton; Holyoke and Greenfield are listed)",
+    "Exact season start/end dates (funds disbursed until end of summer or while funds last)"
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": "2026-2027 season"
+}

@@ -1,0 +1,66 @@
+{
+  "id": "capv-wic",
+  "name": "WIC (Women, Infants & Children) Nutrition Program",
+  "provider": "Community Action Pioneer Valley",
+  "type": "government",
+  "categories": [
+    "food"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [
+      "Franklin",
+      "Hampshire"
+    ],
+    "zips": []
+  },
+  "description": "WIC provides free, healthy food, feeding support, and nutrition consultations for pregnant and postpartum people, infants, and children under 5. Community Action Pioneer Valley runs WIC for Franklin County, Hampshire County, and the North Quabbin area.",
+  "info_url": "https://www.communityaction.us/program/wic/",
+  "apply_url": null,
+  "contact": "413-376-1160; wic@communityaction.us",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "capv-wic-category",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must be pregnant, postpartum, chest/breast feeding, an infant, or a child under 5 years old.",
+      "source_url": "https://www.communityaction.us/program/wic/",
+      "verified": true
+    },
+    {
+      "id": "capv-wic-residency",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must live in Franklin County, Hampshire County, or the North Quabbin area.",
+      "source_url": "https://www.communityaction.us/program/wic/",
+      "verified": true
+    },
+    {
+      "id": "capv-wic-income",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "You must make under a certain amount of money each year. The provider page does not list the income limits. People who qualify for SNAP, some MassHealth types, or TAFDC, and all foster children up to age 5, automatically qualify.",
+      "source_url": "https://www.communityaction.us/program/wic/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "WIC income limits are not listed on the provider page; the mass.gov eligibility page it links to could not be fetched (HTTP 403).",
+    "Documents needed are not listed on the provider page.",
+    "The online application on mass.gov could not be fetched, so no apply URL is given; the provider says to call 413-376-1160 to apply.",
+    "The provider page lists sites in Greenfield, Hadley, and Orange; it does not list an Amherst site."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}

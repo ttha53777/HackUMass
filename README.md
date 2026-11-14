@@ -102,7 +102,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value uses the curated records, of which there are none yet, so every ZIP code is reported as outside coverage. `.env.example` sets `fixtures`. |
+| `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value (e.g. `curated`) uses the 23 curated records in `backend/app/data/programs/` and the 25 Hampshire County ZIP codes in `backend/app/data/regions.json`. `.env.example` sets `fixtures`. |
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `ANTHROPIC_API_KEY` | Only when `LLM_MODE=live` | Model access for free-text interpretation and explanations. |
 | `LLM_MODEL` | No | Model ID to use in live mode. |
@@ -139,7 +139,7 @@ Today, with `PROGRAM_SOURCE=fixtures`, the flow can be driven through the API (s
 
 Planned for the real demo:
 
-- **Region:** Amherst / Hampshire County, Massachusetts. The supported ZIP codes will be listed here once the dataset is curated.
+- **Region:** Amherst / Hampshire County, Massachusetts. Supported ZIP codes are listed in `backend/app/data/regions.json` (25 Hampshire County ZIPs from the MassGIS ZIP layer; Amherst is `01002` and `01003`). Use `PROGRAM_SOURCE=curated`.
 - **Persona (fictional):** a retired person living alone on about $1,400 a month, worried about groceries and energy bills.
 - **Script:** choose *Food* and *Utilities* → enter a supported ZIP → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally pick the simulated bank profile.
 
@@ -169,7 +169,9 @@ backend/app/agents/                the four specialists, one file each
                                    (eligibility and action_planning are stubs)
 backend/app/services/              programs repository, in-memory session store
 backend/app/data/fixtures/         fictional development programs and region
-backend/app/data/programs/         curated program records          (empty, planned)
+backend/app/data/programs/         curated program records, one JSON file each
+backend/app/data/regions.json      supported ZIP codes (curated source)
+docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages (placeholder home page)
 frontend/src/components/           UI components; `ui/` holds shadcn components
@@ -201,7 +203,7 @@ Where to make changes:
   ```
 
   Repeat the last two lines after any `npm install` or `npm ci`, because npm replaces the link with a real folder.
-- **Every ZIP code is "outside coverage".** `PROGRAM_SOURCE` is not `fixtures` and no curated records exist yet. With fixtures, only ZIP `00000` is supported.
+- **A ZIP code is "outside coverage".** With `PROGRAM_SOURCE=fixtures` only ZIP `00000` is supported; with `curated`, only the Hampshire County ZIPs in `backend/app/data/regions.json`.
 - **`409 session_busy`.** The previous answer is still being processed. Poll `GET /sessions/{id}` until `busy` is false.
 - **`Cannot find name 'LayoutProps'` from `tsc`.** Run `npm run typecheck`, which generates Next.js route types first, instead of calling `tsc` directly.
 

@@ -1,0 +1,66 @@
+{
+  "id": "hves-information-referral",
+  "name": "Information & Referral",
+  "provider": "Highland Valley Elder Services",
+  "type": "community",
+  "categories": [
+    "transportation"
+  ],
+  "service_area": {
+    "statewide": false,
+    "state": "MA",
+    "counties": [],
+    "zips": [
+      "01002",
+      "01003",
+      "01012",
+      "01026",
+      "01027",
+      "01032",
+      "01035",
+      "01038",
+      "01050",
+      "01060",
+      "01070",
+      "01073",
+      "01096",
+      "01098"
+    ]
+  },
+  "description": "Free, friendly conversation about community resources and services for people age 60 and over, their caregivers and interested individuals, including help with long-term care choices. Transportation Concierge services are accessed through this department.",
+  "info_url": "https://highlandvalley.org/services/information-referral/",
+  "apply_url": null,
+  "contact": "(413) 586-2000; 320 Riverside Drive, Suite B, Florence, MA 01062",
+  "documents_needed": null,
+  "requirements": [
+    {
+      "id": "hves-service-area",
+      "kind": "residency",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Highland Valley Elder Services lists 24 towns it serves, including Amherst: Amherst, Blandford, Chester, Chesterfield, Cummington, Easthampton, Goshen, Granville, Hadley, Hatfield, Huntington, Middlefield, Montgomery, Northampton, Pelham, Plainfield, Russell, Southampton, Southwick, Tolland, Westfield, Westhampton, Williamsburg, Worthington.",
+      "source_url": "https://highlandvalley.org/our-services/the-24-towns-in-our-service-area/",
+      "verified": true
+    },
+    {
+      "id": "hves-ir-audience",
+      "kind": "text_only",
+      "field": null,
+      "op": null,
+      "value": null,
+      "period": null,
+      "text": "Offered to those age 60 and over, to their caregivers, and to interested individuals.",
+      "source_url": "https://highlandvalley.org/services/information-referral/",
+      "verified": true
+    }
+  ],
+  "unknowns": [
+    "Transportation Concierge eligibility, cost, and destinations are not described on the page.",
+    "Not every town in Hampshire County is on the agency's 24-town list (e.g. it is unclear whether Belchertown, Granby, South Hadley or Ware residents are served); residency is a town list, not a whole county.",
+    "Service area limited to ZIP codes whose postal city is a town on the HVES list; village ZIP codes (e.g. Florence, Leeds, Haydenville) may also be served but are not listed. Call to confirm."
+  ],
+  "verified_on": "2026-11-14",
+  "program_period": null
+}
