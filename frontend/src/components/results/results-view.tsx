@@ -25,6 +25,8 @@ const TALLY_WORDS: Record<EligibilityStatus, [string, string]> = {
   possibly_eligible: ["possible fit", "possible fits"],
   insufficient_information: ["needs more information", "need more information"],
   likely_ineligible: ["may not fit", "may not fit"],
+  already_receiving: ["you already get", "you already get"],
+  opens_later: ["opens later", "open later"],
 };
 
 function EmptyState({ icon: Icon, title, children }: { icon: typeof Info; title: string; children: ReactNode }) {

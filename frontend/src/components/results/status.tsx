@@ -45,12 +45,26 @@ export const STATUS: Record<EligibilityStatus, Meta & { group: string }> = {
     icon: CircleMinus,
     tone: "border-border bg-muted text-foreground",
   },
+  already_receiving: {
+    label: "You already get this",
+    group: "You already get",
+    icon: CircleCheck,
+    tone: "border-emerald-700/30 bg-emerald-50 text-emerald-900 dark:border-emerald-400/30 dark:bg-emerald-950 dark:text-emerald-100",
+  },
+  opens_later: {
+    label: "Opens later",
+    group: "Opens later",
+    icon: Clock,
+    tone: "border-violet-700/30 bg-violet-50 text-violet-900 dark:border-violet-400/30 dark:bg-violet-950 dark:text-violet-100",
+  },
 };
 
 export const STATUS_ORDER: EligibilityStatus[] = [
+  "already_receiving",
   "likely_eligible",
   "possibly_eligible",
   "insufficient_information",
+  "opens_later",
   "likely_ineligible",
 ];
 

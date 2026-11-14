@@ -1,44 +1,88 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@source "../";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark follows the system unless the page sets data-theme="light"; data-theme="dark" or .dark forces it. */
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 @theme inline {
+  /* shadcn semantic colors, mapped onto the OpenDoor palette below */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* OpenDoor palette: use these names in components, never raw hex */
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-on-brand: var(--on-brand);
+  --color-brand-text: var(--brand-text);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+  --color-gov: var(--gov);
+  --color-gov-ink: var(--gov-ink);
+  --color-gov-line: var(--gov-line);
+  --color-loc: var(--loc);
+  --color-loc-ink: var(--loc-ink);
+  --color-peach: var(--peach);
+  --color-peach-ink: var(--peach-ink);
+  --color-lav: var(--lav);
+  --color-lav-ink: var(--lav-ink);
+  --color-sky: var(--sky);
+  --color-sky-ink: var(--sky-ink);
+  --color-leaf: var(--leaf);
+  --color-leaf-ink: var(--leaf-ink);
+  --color-amber: var(--amber);
+  --color-amber-ink: var(--amber-ink);
+  --color-plan: var(--plan);
+  --color-plan-ink: var(--plan-ink);
+  --color-plan-muted: var(--plan-muted);
+  --color-plan-track: var(--plan-track);
+  --color-art-bg: var(--art-bg);
+  --color-art-sun: var(--art-sun);
+  --color-art-h1: var(--art-h1);
+  --color-art-h2: var(--art-h2);
+  --color-art-h3: var(--art-h3);
+  --color-art-house: var(--art-house);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-heading: var(--font-display);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -46,75 +90,182 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  --shadow-card: var(--shadow-card);
 }
 
+/*
+ * Palette from the OpenDoor demo (docs/ui-reference/opendoor-demo.html).
+ * One deliberate change: --muted-foreground is darker than the demo's, so body-size
+ * secondary text keeps AA contrast on the paper and surface colors.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --paper: #fcfdfa;
+  --surface: #ffffff;
+  --surface-2: #f6f9f4;
+  --ink: #2d4342;
+  --faint: #7d8c86;
+  --line: #e4e9e0;
+  --brand: #4a7d66;
+  --brand-hover: #3e6d58;
+  --on-brand: #ffffff;
+  --brand-text: #3a6b55;
+  --brand-soft: #f1f8f2;
+  --brand-line: #d2e5d6;
+  --gov: #eef3fa;
+  --gov-ink: #3f5f89;
+  --gov-line: #d6e1f0;
+  --loc: #f0f7ea;
+  --loc-ink: #4f7747;
+  --peach: #fef6f0;
+  --peach-ink: #a86d4b;
+  --lav: #f6f4fb;
+  --lav-ink: #6f629b;
+  --sky: #eef5f8;
+  --sky-ink: #4d7a90;
+  --leaf: #f0f7ea;
+  --leaf-ink: #4f7747;
+  --amber: #fef8e8;
+  --amber-ink: #86601a;
+  --plan: #e8f3ea;
+  --plan-ink: #2d4342;
+  --plan-muted: #4f6a5d;
+  --plan-track: rgb(74 125 102 / 0.16);
+  --art-bg: #f2f7ec;
+  --art-sun: #fbe4bd;
+  --art-h1: #a3bfa4;
+  --art-h2: #729d86;
+  --art-h3: #c7dabd;
+  --art-house: #fffcf6;
+  --shadow-card: 0 14px 42px rgb(32 53 53 / 0.05);
+  --backdrop: rgb(16 42 35 / 0.55);
+
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--brand);
+  --primary-foreground: var(--on-brand);
+  --secondary: var(--surface-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-2);
+  --muted-foreground: #5f716a;
+  --accent: var(--brand-soft);
+  --accent-foreground: var(--brand-text);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--brand-line);
+  --chart-1: var(--brand);
+  --chart-2: var(--gov-ink);
+  --chart-3: var(--amber-ink);
+  --chart-4: var(--lav-ink);
+  --chart-5: var(--sky-ink);
+  --radius: 0.75rem;
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--ink);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--on-brand);
+  --sidebar-accent: var(--brand-soft);
+  --sidebar-accent-foreground: var(--brand-text);
+  --sidebar-border: var(--line);
+  --sidebar-ring: var(--brand-line);
+  color-scheme: light;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111816;
+    --surface: #18211e;
+    --surface-2: #1e2925;
+    --ink: #e3ece7;
+    --faint: #8a9c94;
+    --line: #2a3732;
+    --brand: #8cc5a3;
+    --brand-hover: #a4d6b8;
+    --on-brand: #0e1f18;
+    --brand-text: #9fd2b3;
+    --brand-soft: #1f3229;
+    --brand-line: #3c5a4a;
+    --gov: #1b2433;
+    --gov-ink: #9db9e0;
+    --gov-line: #2f3d55;
+    --loc: #1f2e1c;
+    --loc-ink: #a6cf8e;
+    --peach: #33261e;
+    --peach-ink: #e2a682;
+    --lav: #262338;
+    --lav-ink: #b6aae0;
+    --sky: #1b2a31;
+    --sky-ink: #93bcd2;
+    --leaf: #1f2e1c;
+    --leaf-ink: #a6cf8e;
+    --amber: #33290f;
+    --amber-ink: #e9bf64;
+    --plan: #1d3a2f;
+    --plan-ink: #f1f7f3;
+    --plan-muted: #b4ccbd;
+    --plan-track: rgb(255 255 255 / 0.12);
+    --art-bg: #1c2a22;
+    --art-sun: #b48f55;
+    --art-h1: #4f6c52;
+    --art-h2: #27473a;
+    --art-h3: #6c8466;
+    --art-house: #e9dfcd;
+    --shadow-card: 0 14px 42px rgb(0 0 0 / 0.25);
+    --backdrop: rgb(0 0 0 / 0.6);
+    --muted-foreground: #97a8a0;
+    --destructive: oklch(0.704 0.191 22.216);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"],
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --paper: #111816;
+  --surface: #18211e;
+  --surface-2: #1e2925;
+  --ink: #e3ece7;
+  --faint: #8a9c94;
+  --line: #2a3732;
+  --brand: #8cc5a3;
+  --brand-hover: #a4d6b8;
+  --on-brand: #0e1f18;
+  --brand-text: #9fd2b3;
+  --brand-soft: #1f3229;
+  --brand-line: #3c5a4a;
+  --gov: #1b2433;
+  --gov-ink: #9db9e0;
+  --gov-line: #2f3d55;
+  --loc: #1f2e1c;
+  --loc-ink: #a6cf8e;
+  --peach: #33261e;
+  --peach-ink: #e2a682;
+  --lav: #262338;
+  --lav-ink: #b6aae0;
+  --sky: #1b2a31;
+  --sky-ink: #93bcd2;
+  --leaf: #1f2e1c;
+  --leaf-ink: #a6cf8e;
+  --amber: #33290f;
+  --amber-ink: #e9bf64;
+  --plan: #1d3a2f;
+  --plan-ink: #f1f7f3;
+  --plan-muted: #b4ccbd;
+  --plan-track: rgb(255 255 255 / 0.12);
+  --art-bg: #1c2a22;
+  --art-sun: #b48f55;
+  --art-h1: #4f6c52;
+  --art-h2: #27473a;
+  --art-h3: #6c8466;
+  --art-house: #e9dfcd;
+  --shadow-card: 0 14px 42px rgb(0 0 0 / 0.25);
+  --backdrop: rgb(0 0 0 / 0.6);
+  --muted-foreground: #97a8a0;
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -123,8 +274,128 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-size: 14px;
+    line-height: 1.5;
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display), system-ui, sans-serif;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 3px solid var(--brand-line);
+    outline-offset: 3px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* The little house with a door that opens. Used on Welcome, Home and Building. */
+.od-art {
+  position: relative;
+  overflow: hidden;
+  background: var(--art-bg);
+  border-radius: 26px;
+}
+.od-art .sun {
+  position: absolute;
+  width: 44%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--art-sun);
+  top: 9%;
+  right: 10%;
+}
+.od-art .h1,
+.od-art .h2,
+.od-art .h3 {
+  position: absolute;
+  border-radius: 999px 999px 0 0;
+}
+.od-art .h1 {
+  right: 6%;
+  bottom: -8%;
+  width: 36%;
+  height: 62%;
+  background: var(--art-h1);
+  transform: rotate(21deg);
+}
+.od-art .h2 {
+  right: 32%;
+  bottom: -14%;
+  width: 30%;
+  height: 62%;
+  background: var(--art-h2);
+  transform: rotate(-22deg);
+}
+.od-art .h3 {
+  left: 6%;
+  bottom: -18%;
+  width: 26%;
+  height: 56%;
+  background: var(--art-h3);
+  transform: rotate(18deg);
+}
+.od-art .house {
+  position: absolute;
+  width: 126px;
+  height: 118px;
+  left: 50%;
+  top: 52%;
+  transform: translate(-50%, -36%);
+  background: var(--art-house);
+  border-radius: 12px;
+  box-shadow: 0 16px 27px rgb(37 69 43 / 0.12);
+}
+.od-art .house::before {
+  content: "";
+  position: absolute;
+  width: 102px;
+  height: 102px;
+  background: var(--art-house);
+  transform: rotate(45deg);
+  top: -32px;
+  left: 12px;
+  border-radius: 9px;
+}
+.od-art .door {
+  position: absolute;
+  width: 42px;
+  height: 70px;
+  border-radius: 22px 22px 0 0;
+  background: var(--art-h2);
+  bottom: 0;
+  left: 42px;
+  transform-origin: left center;
+  transition: transform 0.6s ease;
+}
+.od-art .door::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--art-sun);
+  top: 36px;
+  right: 8px;
+}
+.od-art.open .door {
+  transform: perspective(200px) rotateY(-55deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
   }
 }

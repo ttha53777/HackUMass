@@ -13,6 +13,7 @@ const CRITERION: Record<CriterionResult["result"], { label: string; icon: typeof
   met: { label: "Met", icon: Check, tone: "text-emerald-800 dark:text-emerald-300" },
   not_met: { label: "Not met", icon: X, tone: "text-red-800 dark:text-red-300" },
   unknown: { label: "To confirm", icon: CircleQuestionMark, tone: "text-muted-foreground" },
+  later: { label: "Opens later", icon: CircleQuestionMark, tone: "text-muted-foreground" },
 };
 
 const CATEGORY_LABEL: Record<string, string> = {

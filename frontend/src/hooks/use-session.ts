@@ -55,6 +55,8 @@ export type SessionController = {
   submitDocument: (file: File) => Promise<string | null>;
   restart: () => Promise<void>;
   clearAnswerError: () => void;
+  /** Resolves once the backend has finished the current run (or after `timeoutMs`). */
+  whenIdle: (timeoutMs?: number) => Promise<void>;
 };
 
 /**
@@ -200,6 +202,19 @@ export function useSession(): SessionController {
 
   const clearAnswerError = useCallback(() => setAnswerError(null), []);
 
+  // Latest "working" flag, readable from async sequences without re-rendering them.
+  const workingRef = useRef(false);
+  useEffect(() => {
+    workingRef.current = submitting || busy;
+  }, [submitting, busy]);
+
+  const whenIdle = useCallback(async (timeoutMs = 20_000) => {
+    const deadline = Date.now() + timeoutMs;
+    while (workingRef.current && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+  }, []);
+
   return {
     snapshot,
     loadError,
@@ -211,5 +226,6 @@ export function useSession(): SessionController {
     submitDocument,
     restart,
     clearAnswerError,
+    whenIdle,
   };
 }
