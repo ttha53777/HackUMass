@@ -160,6 +160,8 @@ export type AnsweredItem = {
   prompt: string;
   display_value: string;
   skipped: boolean;
+  /** Full definition, so the question can be re-opened for editing. */
+  question: Question;
 };
 
 export type ProfileSummaryItem = {

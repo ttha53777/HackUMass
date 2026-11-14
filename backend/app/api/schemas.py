@@ -71,6 +71,7 @@ class AnsweredItem(BaseModel):
     prompt: str
     display_value: str
     skipped: bool = False
+    question: Question  # full definition, so the client can re-open it for editing
 
 
 class ProfileSummaryItem(BaseModel):

@@ -8,8 +8,14 @@
     "reason": "Some nearby programs are only for people aged 60 and over.",
     "type": "single_select",
     "options": [
-      { "id": "yes", "label": "Yes" },
-      { "id": "no", "label": "No" }
+      {
+        "id": "yes",
+        "label": "Yes"
+      },
+      {
+        "id": "no",
+        "label": "No"
+      }
     ],
     "allow_other": false,
     "skippable": true,
@@ -23,25 +29,102 @@
       "question_id": "needs",
       "prompt": "What are you having the most trouble with right now?",
       "display_value": "Food & groceries, Utilities",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "needs",
+        "prompt": "What are you having the most trouble with right now?",
+        "reason": "Choose everything that applies. This decides which programs we look for.",
+        "type": "multi_select",
+        "options": [
+          {
+            "id": "food",
+            "label": "Food & groceries"
+          },
+          {
+            "id": "utilities",
+            "label": "Utilities & energy bills"
+          },
+          {
+            "id": "housing",
+            "label": "Housing & rent"
+          },
+          {
+            "id": "healthcare",
+            "label": "Healthcare"
+          },
+          {
+            "id": "transportation",
+            "label": "Transportation"
+          },
+          {
+            "id": "employment",
+            "label": "Work & income"
+          }
+        ],
+        "allow_other": true,
+        "skippable": false,
+        "target_field": "needs",
+        "origin": "core",
+        "min": null,
+        "max": null
+      }
     },
     {
       "question_id": "zip",
       "prompt": "What ZIP code do you live in?",
       "display_value": "00000",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "zip",
+        "prompt": "What ZIP code do you live in?",
+        "reason": "We use your ZIP code to find programs that serve your area.",
+        "type": "zip",
+        "options": [],
+        "allow_other": false,
+        "skippable": false,
+        "target_field": "zip",
+        "origin": "core",
+        "min": null,
+        "max": null
+      }
     },
     {
       "question_id": "household_size",
       "prompt": "How many people live in your household, including you?",
       "display_value": "1",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "household_size",
+        "prompt": "How many people live in your household, including you?",
+        "reason": "Some programs set their limits by household size.",
+        "type": "number",
+        "options": [],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "household_size",
+        "origin": "core",
+        "min": 1.0,
+        "max": 20.0
+      }
     },
     {
       "question_id": "monthly_income",
-      "prompt": "About how much income does your household receive in a month?",
+      "prompt": "About how much income does your household receive?",
       "display_value": "$1,400 per month",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "monthly_income",
+        "prompt": "About how much income does your household receive?",
+        "reason": "Some programs have income limits. An estimate is fine.",
+        "type": "currency",
+        "options": [],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "monthly_income",
+        "origin": "core",
+        "min": 0.0,
+        "max": 1000000.0
+      }
     }
   ],
   "profile_summary": [
@@ -72,7 +155,9 @@
         "name": "Fixture Food Benefit (not a real program)",
         "provider": "Fixture State Agency",
         "type": "government",
-        "categories": ["food"],
+        "categories": [
+          "food"
+        ],
         "service_area": {
           "statewide": true,
           "state": "ZZ",
@@ -83,21 +168,28 @@
         "info_url": "https://example.org/fixture-food-benefit",
         "apply_url": "https://example.org/fixture-food-benefit/apply",
         "contact": null,
-        "documents_needed": ["Proof of income"],
+        "documents_needed": [
+          "Proof of income"
+        ],
         "requirements": [
           {
             "id": "income",
             "kind": "income_max",
             "field": "monthly_income",
             "op": "lte",
-            "value": { "1": 2000, "2": 2700 },
+            "value": {
+              "1": 2000,
+              "2": 2700
+            },
             "period": "month",
             "text": "Gross monthly income at or below the fixture limit for household size.",
             "source_url": "https://example.org/fixture-food-benefit/limits",
             "verified": true
           }
         ],
-        "unknowns": ["Asset limits"],
+        "unknowns": [
+          "Asset limits"
+        ],
         "verified_on": "2026-11-14",
         "program_period": "Fixture year 2026"
       },
@@ -112,7 +204,9 @@
         ],
         "missing_fields": [],
         "explanation": "Your reported income is under the listed limit. Other rules could not be verified.",
-        "source_urls": ["https://example.org/fixture-food-benefit/limits"],
+        "source_urls": [
+          "https://example.org/fixture-food-benefit/limits"
+        ],
         "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
       },
       "stale": false
@@ -123,12 +217,16 @@
         "name": "Fixture Senior Pantry (not a real program)",
         "provider": "Fixture Community Center",
         "type": "community",
-        "categories": ["food"],
+        "categories": [
+          "food"
+        ],
         "service_area": {
           "statewide": false,
           "state": "ZZ",
           "counties": [],
-          "zips": ["00000"]
+          "zips": [
+            "00000"
+          ]
         },
         "description": "Fictional weekly grocery pickup used only for contract tests.",
         "info_url": "https://example.org/fixture-senior-pantry",
@@ -155,11 +253,19 @@
       "assessment": {
         "status": "insufficient_information",
         "criteria": [
-          { "requirement_id": "age", "result": "unknown", "evidence": null }
+          {
+            "requirement_id": "age",
+            "result": "unknown",
+            "evidence": null
+          }
         ],
-        "missing_fields": ["age_60_plus"],
+        "missing_fields": [
+          "age_60_plus"
+        ],
         "explanation": "We need to know whether you are 60 or older to check this program.",
-        "source_urls": ["https://example.org/fixture-senior-pantry"],
+        "source_urls": [
+          "https://example.org/fixture-senior-pantry"
+        ],
         "disclaimer": "This is a preliminary, informational assessment. Only the program's provider can determine eligibility."
       },
       "stale": false
@@ -172,7 +278,9 @@
       "action_type": "confirm_eligibility",
       "rationale": "Your reported income is under the listed limit.",
       "next_step": "Review the requirements on the provider's page, then start an application.",
-      "documents": ["Proof of income"],
+      "documents": [
+        "Proof of income"
+      ],
       "link": "https://example.org/fixture-food-benefit/apply",
       "urgency": "unknown",
       "depends_on": [],
@@ -193,10 +301,22 @@
   ],
   "plan_stale": false,
   "agent_statuses": {
-    "user_intelligence": { "status": "completed", "updated_at": "2026-11-14T15:00:01Z" },
-    "program_discovery": { "status": "completed", "updated_at": "2026-11-14T15:00:02Z" },
-    "eligibility": { "status": "completed", "updated_at": "2026-11-14T15:00:03Z" },
-    "action_planning": { "status": "completed", "updated_at": "2026-11-14T15:00:04Z" }
+    "user_intelligence": {
+      "status": "completed",
+      "updated_at": "2026-11-14T15:00:01Z"
+    },
+    "program_discovery": {
+      "status": "completed",
+      "updated_at": "2026-11-14T15:00:02Z"
+    },
+    "eligibility": {
+      "status": "completed",
+      "updated_at": "2026-11-14T15:00:03Z"
+    },
+    "action_planning": {
+      "status": "completed",
+      "updated_at": "2026-11-14T15:00:04Z"
+    }
   },
   "financial_summary": null,
   "notices": []

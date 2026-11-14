@@ -33,25 +33,102 @@ export const snapshotFixture: SessionSnapshot = {
       "question_id": "needs",
       "prompt": "What are you having the most trouble with right now?",
       "display_value": "Food & groceries, Utilities",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "needs",
+        "prompt": "What are you having the most trouble with right now?",
+        "reason": "Choose everything that applies. This decides which programs we look for.",
+        "type": "multi_select",
+        "options": [
+          {
+            "id": "food",
+            "label": "Food & groceries"
+          },
+          {
+            "id": "utilities",
+            "label": "Utilities & energy bills"
+          },
+          {
+            "id": "housing",
+            "label": "Housing & rent"
+          },
+          {
+            "id": "healthcare",
+            "label": "Healthcare"
+          },
+          {
+            "id": "transportation",
+            "label": "Transportation"
+          },
+          {
+            "id": "employment",
+            "label": "Work & income"
+          }
+        ],
+        "allow_other": true,
+        "skippable": false,
+        "target_field": "needs",
+        "origin": "core",
+        "min": null,
+        "max": null
+      }
     },
     {
       "question_id": "zip",
       "prompt": "What ZIP code do you live in?",
       "display_value": "00000",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "zip",
+        "prompt": "What ZIP code do you live in?",
+        "reason": "We use your ZIP code to find programs that serve your area.",
+        "type": "zip",
+        "options": [],
+        "allow_other": false,
+        "skippable": false,
+        "target_field": "zip",
+        "origin": "core",
+        "min": null,
+        "max": null
+      }
     },
     {
       "question_id": "household_size",
       "prompt": "How many people live in your household, including you?",
       "display_value": "1",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "household_size",
+        "prompt": "How many people live in your household, including you?",
+        "reason": "Some programs set their limits by household size.",
+        "type": "number",
+        "options": [],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "household_size",
+        "origin": "core",
+        "min": 1,
+        "max": 20
+      }
     },
     {
       "question_id": "monthly_income",
-      "prompt": "About how much income does your household receive in a month?",
+      "prompt": "About how much income does your household receive?",
       "display_value": "$1,400 per month",
-      "skipped": false
+      "skipped": false,
+      "question": {
+        "id": "monthly_income",
+        "prompt": "About how much income does your household receive?",
+        "reason": "Some programs have income limits. An estimate is fine.",
+        "type": "currency",
+        "options": [],
+        "allow_other": false,
+        "skippable": true,
+        "target_field": "monthly_income",
+        "origin": "core",
+        "min": 0,
+        "max": 1000000
+      }
     }
   ],
   "profile_summary": [

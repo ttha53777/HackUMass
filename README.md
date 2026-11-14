@@ -4,14 +4,16 @@ A guided assistant that helps people find government assistance programs and loc
 
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
-> **Project status: the backend runs the guided intake end to end against fictional test programs; the web UI is still a placeholder.**
-> Built: question registry, Administrator and graph, session API, basic profile building and program filtering. Eligibility and Action Planning are stubs that do not evaluate any rule yet, and there are no real program records. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
+> **Project status: the guided intake works end to end in the browser against fictional test programs.**
+> Built: question registry, Administrator and graph, session API, basic profile building and program filtering, and the question-by-question web UI with a plain results list. Eligibility and Action Planning are stubs that do not evaluate any rule yet, and there are no real program records. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
 
 ## Who it is for
 
 Adults facing financial or logistical hardship who need help finding food, utility, housing, healthcare, transportation, or senior services. The interface is meant to be usable by people of any technical ability.
 
-## How it works for the user (Planned)
+## How it works for the user
+
+Steps 1–3 work today. Steps 4–5 show a plain preview; the full program cards and roadmap are planned.
 
 The app leads; the user answers. It is not an open-ended chatbot.
 
@@ -70,7 +72,7 @@ npm install
 npm run dev
 ```
 
-Open the URL that `npm run dev` prints. It is <http://localhost:3000> unless that port is taken, in which case Next.js picks the next free one. The page shows "Backend connected" when the proxy reaches FastAPI.
+Open the URL that `npm run dev` prints. It is <http://localhost:3000> unless that port is taken, in which case Next.js picks the next free one. The first question appears as soon as the page reaches the backend.
 
 The frontend forwards `/api/*` to `http://127.0.0.1:8000`. Set `BACKEND_URL` when starting the frontend to point it elsewhere.
 
@@ -135,7 +137,7 @@ cd frontend && npm run sync:fixture
 
 ## Reproducing the demo
 
-Today, with `PROGRAM_SOURCE=fixtures`, the flow can be driven through the API (see the curl example above): choose `food` and `utilities`, enter ZIP `00000`, answer the utility, household-size and income questions, and the snapshot returns fictional programs, a stub plan and one follow-up question. `backend/tests/test_api.py` runs the same flow.
+Today, with `PROGRAM_SOURCE=fixtures`, open the app and choose *Food & groceries* and *Utilities & energy bills*, enter ZIP `00000`, then answer the utility, household-size and income questions. The app shows fictional programs, a stub plan and one follow-up question at a time; answers can be edited or skipped. `backend/tests/test_api.py` runs the same flow through the API.
 
 Planned for the real demo:
 
@@ -171,8 +173,12 @@ backend/app/services/              programs repository, in-memory session store
 backend/app/data/fixtures/         fictional development programs and region
 backend/app/data/programs/         curated program records          (empty, planned)
 backend/tests/                     pytest suite and the shared snapshot fixture
-frontend/src/app/                  pages (placeholder home page)
-frontend/src/components/           UI components; `ui/` holds shadcn components
+frontend/src/app/                  pages
+frontend/src/components/intake/    guided intake: question card, answered list,
+                                   progress, plain results preview
+frontend/src/components/ui/        shadcn components
+frontend/src/hooks/use-session.ts  session lifecycle, answer submission, polling
+frontend/src/lib/api.ts            typed client for the backend API
 frontend/src/lib/types.ts          TypeScript mirror of the API     (contract file)
 frontend/src/lib/fixtures/         generated copy of the snapshot fixture
 ```
@@ -188,7 +194,9 @@ Where to make changes:
 
 ## Troubleshooting
 
-- **"Backend not reachable" on the home page.** Start the backend on port 8000, or set `BACKEND_URL` for the frontend.
+- **"We couldn't reach the server" on the home page.** Start the backend on port 8000, or set `BACKEND_URL` for the frontend, then choose *Try again*.
+- **A hydration warning in the browser console that mentions `data-gr-ext-installed` or similar.** A browser extension changed the page before React loaded. It is harmless.
+- **Dozens of "Module not found" warnings from `npm run build` mentioning `node_modules.nosync`.** A side effect of the iCloud workaround below. The build still succeeds.
 - **The frontend opens a different app, or a port other than 3000.** Something else is using port 3000. Use the URL printed by `npm run dev`.
 - **`npm run lint` hangs, or Node fails with odd errors inside `node_modules`, on macOS.** This happens when the checkout is in an iCloud-synced folder such as Desktop or Documents and iCloud offloads dependency files. Either move the checkout outside iCloud, or keep dependencies in a folder iCloud skips:
 

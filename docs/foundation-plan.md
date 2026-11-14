@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T5 (T3 with stub Eligibility and Action Planning). See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T6 (T3 with stub Eligibility and Action Planning; T6 with a plain results preview that T13 replaces). See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 

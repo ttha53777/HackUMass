@@ -60,6 +60,7 @@ def build_snapshot(
                 prompt=spec.question.prompt,
                 display_value=shown,
                 skipped=skipped,
+                question=spec.question,
             )
         )
 
