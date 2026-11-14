@@ -5,7 +5,7 @@ A guided assistant that helps people find government assistance programs and loc
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
 > **Project status: the guided intake works end to end in the browser against fictional test programs.**
-> Built: question registry, Administrator and graph, session API, profile building, program filtering over 23 curated Hampshire County records, deterministic eligibility checks, a ranked plan of next steps, and the question-by-question web UI with a plain results list. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
+> Built: question registry, Administrator and graph, session API, profile building, program filtering over 23 curated Hampshire County records, deterministic eligibility checks, a ranked plan of next steps, and the web UI: one question at a time, then program cards and a printable plan. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
 
 ## Who it is for
 
@@ -13,15 +13,14 @@ Adults facing financial or logistical hardship who need help finding food, utili
 
 ## How it works for the user
 
-Steps 1–3 work today. Steps 4–5 show a plain preview; the full program cards and roadmap are planned.
-
 The app leads; the user answers. It is not an open-ended chatbot.
 
 1. The app opens with a question: "What are you having the most trouble with right now?"
 2. It asks for a ZIP code, then a few short questions chosen from the user's needs and from what nearby programs actually require.
 3. Every question has tap-to-answer options where possible, and non-essential questions can be skipped.
 4. It shows matching government and community programs, each with a source link and a preliminary fit label.
-5. It produces an ordered roadmap of next steps, and revises it when the user adds or corrects information.
+5. It produces an ordered roadmap of next steps, and revises it when the user adds or corrects information. A short summary says what each new answer changed.
+6. The plan can be printed or saved as a PDF from the browser; links are written out in print.
 
 ## Architecture (Planned)
 
@@ -177,7 +176,8 @@ docs/curation/                     per-record evidence: source URL and quote for
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
 frontend/src/components/intake/    guided intake: question card, answered list,
-                                   progress, plain results preview
+                                   progress, follow-up framing, change summary
+frontend/src/components/results/   results: next steps, program cards, status badges
 frontend/src/components/ui/        shadcn components
 frontend/src/hooks/use-session.ts  session lifecycle, answer submission, polling
 frontend/src/lib/api.ts            typed client for the backend API
