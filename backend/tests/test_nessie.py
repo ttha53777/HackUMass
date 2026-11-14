@@ -222,3 +222,12 @@ def test_sandbox_outage_gives_a_notice_and_still_works(repo):
         assert "nessie_unavailable" in [n["code"] for n in snap["notices"]]
         assert status(snap, "fixture-food-benefit") == status(before, "fixture-food-benefit")
         assert KEY not in json.dumps(snap)
+
+
+def test_the_api_key_never_reaches_the_logs(caplog):
+    import logging
+
+    with caplog.at_level(logging.DEBUG):
+        service(seeded_sandbox).summarize("retired-fixed-income")
+        service(lambda r: httpx.Response(503)).summarize("retired-fixed-income")
+    assert KEY not in caplog.text

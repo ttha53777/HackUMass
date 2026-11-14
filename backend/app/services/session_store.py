@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from app.graph import state as state_module
 from app.graph.build import run_config
+from app.services.log_safety import describe_exception
 
 logger = logging.getLogger(__name__)
 
@@ -109,8 +110,8 @@ class SessionManager:
         except TimeoutError:
             logger.error("graph run timed out (session %s)", session_id)
             meta.run_notices.append(("run_timeout", RUN_TIMEOUT_MESSAGE))
-        except Exception:
-            logger.exception("graph run failed (session %s)", session_id)
+        except Exception as exc:
+            logger.error("graph run failed (session %s): %s", session_id, describe_exception(exc))
             meta.run_notices.append(("run_failed", RUN_FAILED_MESSAGE))
         finally:
             meta.busy = False

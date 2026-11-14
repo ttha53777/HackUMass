@@ -1,6 +1,6 @@
 # Community Resource Navigator — Foundation Plan
 
-**Status:** planning output for the 36-hour MVP. Implemented so far: T1–T11, T13, T12, T14 (live mode not yet verified against the real API), T15, T16 and T17. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
+**Status:** planning output for the 36-hour MVP. Implemented: T1–T18. T14 live mode is not yet verified against the real Gemini API. Gemini replaced Anthropic for D10; `income_min` added to `Requirement.kind`. See `README.md` for what runs today.
 **Source spec:** *Community Resource Navigator — Hackathon MVP Product & Technical Specification* (handoff PRD).
 **Date:** 2026-11-14
 
@@ -394,16 +394,18 @@ class FinancialSummary(BaseModel):
 
 ### B.8 Security and privacy checklist
 
-- [ ] `GEMINI_API_KEY` and `NESSIE_API_KEY` exist only in `backend/.env`, which is git-ignored; `backend/.env.example` holds names with empty values.
-- [ ] No `NEXT_PUBLIC_*` variable carries a secret. The browser only calls same-origin `/api/*`.
-- [ ] Snapshot responses are built from an allow-list view model, never by dumping state.
-- [ ] Consent is recorded in `consents` before any Nessie call or document parse; the endpoints reject requests without it.
-- [ ] No SSN, full date of birth, name, or street address is ever requested. Age is collected as a range or a threshold yes/no.
-- [ ] Logs contain session id, node name, timing, and error codes. They never contain answers, profile values, transactions, or document text.
-- [ ] Uploads: type and size checked, parsed from a temp file that is deleted in a `finally` block, extracted text discarded after fact extraction.
-- [ ] Document text and any retrieved text are passed to the model inside a delimited data block with an instruction that the content is data. Extraction output is schema-validated and limited to known profile fields, so injected text cannot add programs, URLs, or statuses.
-- [ ] Session ids are unguessable UUID4s; one session cannot read another's state.
-- [ ] Every results view shows: informational only, the provider decides eligibility, "as of" date per program, and "simulated" on all Nessie-derived values.
+Reviewed at T18 (2026-11-14). Each item was checked against the code, and tests cover most of them.
+
+- [x] `GEMINI_API_KEY` and `NESSIE_API_KEY` exist only in `backend/.env`, which is git-ignored; `backend/.env.example` holds names with empty values.
+- [x] No `NEXT_PUBLIC_*` variable carries a secret. The browser only calls same-origin `/api/*`.
+- [x] Snapshot responses are built from an allow-list view model, never by dumping state.
+- [x] Consent is required before any Nessie call or document parse: both endpoints reject a request without literal consent (`400 consent_required`). It is recorded in `consents` by User Intelligence, before the Nessie call; for documents, after the endpoint has parsed the consented file.
+- [x] No SSN, full date of birth, name, or street address is ever requested. Age is collected as a range or a threshold yes/no.
+- [x] Logs contain session id, node name, timing, and error codes. They never contain answers, profile values, transactions, or document text. Failures log the exception class and code location only (`services/log_safety.py`); `httpx` URL logging is silenced so the Nessie key never appears (both tested).
+- [x] Uploads: type and size checked, parsed from a temp file that is deleted in a `finally` block, extracted text discarded after fact extraction.
+- [x] Document text and any retrieved text are passed to the model inside a delimited data block with an instruction that the content is data. Extraction output is schema-validated and limited to known profile fields, so injected text cannot add programs, URLs, or statuses.
+- [x] Session ids are unguessable UUID4s; one session cannot read another's state.
+- [x] Every results view shows: informational only, the provider decides eligibility, "as of" date per program, and "simulated" on all Nessie-derived values.
 - **Known limitations:** no authentication, no encryption at rest (nothing is at rest), no rate limiting, sessions vanish on restart, coverage limited to the demo region.
 
 ### B.9 Future MongoDB seam

@@ -93,3 +93,18 @@ def test_session_state_persists_across_invocations():
 
     other = graph.get_state({"configurable": {"thread_id": "t2"}}).values
     assert other == {}
+
+
+def test_failure_logs_carry_no_user_values(caplog):
+    """A specialist that fails on a value must not write that value to the log."""
+    from app.graph.build import _guarded
+
+    def boom(state):
+        raise ValueError("household income is 1400 and ZIP is 01002")
+
+    with caplog.at_level("ERROR"):
+        update = _guarded("eligibility", boom)({"session_id": "s1"})
+    assert update["agent_statuses"]["eligibility"].status == "failed"
+    text = caplog.text
+    assert "ValueError" in text and "s1" in text
+    assert "1400" not in text and "01002" not in text

@@ -4,8 +4,7 @@ A guided assistant that helps people find government assistance programs and loc
 
 Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
 
-> **Project status: the guided intake works end to end in the browser against fictional test programs.**
-> Built: question registry, Administrator and graph, session API, profile building, program filtering over 23 curated Hampshire County records, deterministic eligibility checks, a ranked plan of next steps, and the web UI: one question at a time, then program cards and a printable plan. Sections marked **Planned** describe the agreed design in [docs/foundation-plan.md](docs/foundation-plan.md) and are not implemented.
+> **Project status: MVP feature-complete (tickets T1–T18).** The guided intake, 23 curated Hampshire County program records, deterministic eligibility, a ranked plan, the results UI, the optional simulated bank profile and document upload all work end to end. A scripted demo test passes. Gemini live mode is built and tested with a fake client, but **not yet verified against the real API**. The design is in [docs/foundation-plan.md](docs/foundation-plan.md).
 
 ## Who it is for
 
@@ -24,7 +23,7 @@ The app leads; the user answers. It is not an open-ended chatbot.
 7. Optionally, the person can try a fictional simulated bank profile or upload a pay stub or benefit letter. Any number found is shown to them to confirm before it is used.
 8. A collapsed *How we put this together* panel shows each of the four specialist steps, its status and time, and counts drawn from the results. It shows no generated reasoning.
 
-## Architecture (Planned)
+## Architecture
 
 ```text
 Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
@@ -32,7 +31,7 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
                                     Agent Administrator (deterministic router)
                                     ├─ User Intelligence   builds the typed profile
                                     │    ├─ Nessie sandbox service (optional)
-                                    │    └─ document extraction (stretch)
+                                    │    └─ document extraction (optional upload)
                                     ├─ Program Discovery   filters curated, sourced programs
                                     ├─ Eligibility         compares profile to documented criteria
                                     └─ Action Planning     ranks next steps
@@ -107,7 +106,7 @@ curl -s -X POST http://127.0.0.1:8000/api/sessions/<session_id>/answers \
 
 ## Environment variables
 
-Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data. The model and Nessie integrations are planned, so only `PROGRAM_SOURCE` changes behaviour today.
+Set these in `backend/.env`. That file is git-ignored; never commit keys or real personal data. Everything works with only `PROGRAM_SOURCE` set: the model and Nessie are optional, and each has a fallback.
 
 | Variable | Required | Purpose |
 |---|---|---|
@@ -144,19 +143,21 @@ cd frontend && npm run sync:fixture
 
 ## Reproducing the demo
 
-Today, with `PROGRAM_SOURCE=fixtures`, open the app and choose *Food & groceries* and *Utilities & energy bills*, enter ZIP `00000`, then answer the utility, household-size and income questions. The app shows fictional programs, a ranked plan and one follow-up question at a time; answers can be edited or skipped. `backend/tests/test_api.py` runs the same flow through the API.
+Use `PROGRAM_SOURCE=curated` and run the backend without `--reload`. The click-by-click script, what to point at, and recovery steps are in [docs/demo-script.md](docs/demo-script.md).
 
-Planned for the real demo:
+- **Region:** Amherst / Hampshire County, Massachusetts. Supported ZIP codes are in `backend/app/data/regions.json` (25 Hampshire County ZIPs from the MassGIS ZIP layer; Amherst is `01002` and `01003`).
+- **Persona (fictional):** a retired person living alone on about $1,400 a month, behind on an electric bill and worried about groceries.
+- **Script:** *Food* + *Utilities* → `01002` → *I'm behind on a bill* → household of 1 → $1,400 a month → results and plan → follow-up *I own my home* (Heating System Repair moves from "More information needed" to "Possibly a fit") → optionally the simulated bank profile → print the plan.
+- **Check before demoing:** `cd backend && .venv/bin/pytest tests/test_demo_smoke.py` runs the same script through the API five times.
 
-- **Region:** Amherst / Hampshire County, Massachusetts. Supported ZIP codes are listed in `backend/app/data/regions.json` (25 Hampshire County ZIPs from the MassGIS ZIP layer; Amherst is `01002` and `01003`). Use `PROGRAM_SOURCE=curated`.
-- **Persona (fictional):** a retired person living alone on about $1,400 a month, worried about groceries and energy bills.
-- **Script:** choose *Food* and *Utilities* → enter a supported ZIP → household of 1 → $1,400 a month → review programs and roadmap → answer the one follow-up question and watch the results update → optionally accept the simulated bank profile offer, pick a persona, tick consent, and confirm or reject the deposit estimate.
+For development without real data, `PROGRAM_SOURCE=fixtures` serves fictional programs for ZIP `00000`, labelled as test data.
 
 ## Scope and limitations
 
 - **Informational only.** Fit labels are preliminary. Only the program's provider decides eligibility.
 - **Grounded data.** Program details and links come from a hand-curated, dated dataset for one region. The app does not search the live web and says so when a ZIP code is outside coverage.
-- **Simulated banking.** Nessie is a sandbox. No real bank account is ever connected, and deposits are not treated as verified income.
+- **Simulated banking.** Nessie is a sandbox. No real bank account is ever connected, and deposits are not treated as income until the person confirms them.
+- **Documents.** Only household size and income are read from an upload, the file is deleted immediately, and found numbers need the person's confirmation.
 - **No applications.** The app never submits anything on a user's behalf.
 - **Not production-ready.** No authentication, no persistence, no rate limiting.
 
@@ -165,6 +166,7 @@ Planned for the real demo:
 ```text
 CLAUDE.md                          guidance for coding agents
 docs/foundation-plan.md            architecture, contracts, tickets, risks
+docs/demo-script.md                the demo, step by step, with recovery steps
 backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
 backend/app/api/routes.py          HTTP routes
 backend/app/api/views.py           builds the client snapshot from graph state
@@ -175,7 +177,8 @@ backend/app/graph/administrator.py deterministic routing between specialists
 backend/app/graph/questions.py     question registry and selection policy
 backend/app/graph/answers.py       answer validation and normalisation
 backend/app/agents/                the four specialists, one file each
-backend/app/services/              programs repository, in-memory session store
+backend/app/services/              programs repository, session store, Gemini wrapper
+                                   and output guard, Nessie client, document reader
 backend/app/data/fixtures/         fictional development programs and region
 backend/app/data/programs/         curated program records, one JSON file each
 backend/app/data/regions.json      supported ZIP codes (curated source)
@@ -225,7 +228,8 @@ Where to make changes:
 - **A ZIP code is "outside coverage".** With `PROGRAM_SOURCE=fixtures` only ZIP `00000` is supported; with `curated`, only the Hampshire County ZIPs in `backend/app/data/regions.json`.
 - **`409 session_busy`.** The previous answer is still being processed. Poll `GET /sessions/{id}` until `busy` is false.
 - **`Cannot find name 'LayoutProps'` from `tsc`.** Run `npm run typecheck`, which generates Next.js route types first, instead of calling `tsc` directly.
-
 - **`404 session_not_found` after a restart.** Sessions live in memory, so restarting the backend clears them. Start a new session.
 
-Planned topics once the features exist: missing model key in live mode, Nessie unavailable.
+- **`/api/health` says `llm_mode: off` although `LLM_MODE=live`.** `GEMINI_API_KEY` is missing or empty in `backend/.env`. The app uses its template wording, which gives the same statuses, links and order. Restart the backend after setting the key.
+- **"The bank sandbox didn't respond…" or "…has no copy of this simulated profile yet".** Nessie is unreachable, or the sandbox was never seeded for this key. The built-in simulated persona is used instead. To seed it: `cd backend && .venv/bin/python scripts/seed_nessie.py` (this writes fictional records to the shared sandbox).
+- **An upload says "We can only read PDF or plain text".** Only `.pdf` and `.txt` files up to 2 MB are accepted. Scanned PDFs without a text layer contain no readable text; type the numbers instead.

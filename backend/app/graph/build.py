@@ -26,6 +26,7 @@ from app.graph.administrator import (
     administrator,
 )
 from app.graph.state import AgentStatus, SafeError, SessionState
+from app.services.log_safety import describe_exception
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +45,12 @@ def _guarded(name: str, specialist: Specialist) -> Specialist:
         try:
             update = dict(specialist(state) or {})
             status = "completed"
-        except Exception:
-            # Log the node and session only: answers and profile values stay out of logs.
-            logger.exception("specialist %s failed (session %s)", name, state.get("session_id"))
+        except Exception as exc:
+            # Node, session and code location only: answers and profile values stay out of logs.
+            logger.error(
+                "specialist %s failed (session %s): %s",
+                name, state.get("session_id"), describe_exception(exc),
+            )
             update = {
                 "errors": list(state.get("errors") or [])
                 + [

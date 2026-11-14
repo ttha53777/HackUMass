@@ -30,6 +30,9 @@ import httpx
 from app.graph.state import FinancialSummary
 
 logger = logging.getLogger(__name__)
+# httpx logs each request URL at INFO, and Nessie URLs carry the API key.
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 BASE_URL = "https://api.nessieisreal.com"
 FALLBACK_FILE = Path(__file__).resolve().parents[1] / "data" / "nessie_fallback.json"
