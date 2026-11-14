@@ -109,7 +109,7 @@ export function ProfilePanel({
   );
 
   return (
-    <aside aria-label="Your profile" className="min-[900px]:sticky min-[900px]:top-[84px] min-[900px]:self-start">
+    <aside aria-label="Your profile" className="min-[900px]:sticky min-[900px]:top-[84px] min-[900px]:order-2 min-[900px]:self-start">
       {/* Wide screens: the full card. */}
       <div className="hidden rounded-[22px] border border-brand-line bg-brand-soft p-5 min-[900px]:block">
         <div className="mb-1 flex items-baseline justify-between gap-2">

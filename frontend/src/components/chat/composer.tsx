@@ -27,7 +27,7 @@ export const Composer = forwardRef<
     setText("");
   };
   return (
-    <div className="sticky bottom-0 z-10 -mx-4 bg-gradient-to-t from-paper via-paper to-transparent px-4 pb-4 pt-6">
+    <div className="sticky bottom-0 z-10 -mx-4 bg-gradient-to-t from-paper via-paper to-transparent px-4 pb-4 pt-3">
       {hint ? (
         <motion.p
           key={hint}

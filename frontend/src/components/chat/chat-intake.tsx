@@ -347,11 +347,11 @@ export function ChatIntake({ name, sample, onExit }: { name: string; sample: boo
           </div>
         </header>
 
-        <div className="mx-auto grid w-[min(1120px,100%)] flex-1 items-start gap-5 px-4 pt-5 min-[900px]:grid-cols-[290px_minmax(0,1fr)] min-[900px]:gap-12 min-[900px]:pt-10">
+        <div className="mx-auto grid w-[min(1120px,100%)] items-start gap-5 px-4 pb-10 pt-5 min-[900px]:grid-cols-[minmax(0,1fr)_300px] min-[900px]:gap-12 min-[900px]:pt-10">
           <ProfilePanel name={name} snapshot={app.snapshot} canEdit={phase !== "checking" && !typing && !app.working && !autoplay} onEdit={(id) => void edit(id)} />
 
-          <div className="flex min-h-[calc(100vh-140px)] flex-col">
-            <div ref={logRef} role="log" aria-live="polite" aria-label="Conversation with your navigator" className="flex flex-1 flex-col gap-5 pb-4">
+          <div className="flex flex-col min-[900px]:order-1">
+            <div ref={logRef} role="log" aria-live="polite" aria-label="Conversation with your navigator" className="flex flex-col gap-5 pb-2">
               {entries.map((e, i) => {
                 const prev = entries[i - 1];
                 const lead = !prev || prev.kind === "user";
