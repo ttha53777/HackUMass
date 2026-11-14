@@ -131,6 +131,9 @@ class RunView(BaseModel):
 class StartRunIn(BaseModel):
     program_id: str
     consent: Literal[True]
+    # Confirmed identity details from the person's device (fill-sheet keys), for
+    # this run only: never stored in graph state or logged. Used from Phase 5.
+    details: dict[str, str] = Field(default_factory=dict, max_length=12)
 
 
 class ControlIn(BaseModel):

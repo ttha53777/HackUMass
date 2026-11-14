@@ -19,6 +19,7 @@ from langgraph.graph import END, START, StateGraph
 
 from app.graph.administrator import (
     DISCOVERY,
+    DOCUMENT_ANALYSIS,
     ELIGIBILITY,
     PLANNING,
     SPECIALISTS,
@@ -35,6 +36,11 @@ Specialist = Callable[[SessionState], dict[str, Any]]
 # Upper bound on node executions per run; the Administrator's own budget
 # (two runs per specialist) keeps real runs far below this.
 RECURSION_LIMIT = 25
+
+
+def _document_analysis_not_wired(state: SessionState) -> dict[str, Any]:
+    """Placeholder until the Document Agent lands (Phase 3). Never routed to yet."""
+    return {}
 
 
 def _guarded(name: str, specialist: Specialist) -> Specialist:
@@ -66,6 +72,8 @@ def _guarded(name: str, specialist: Specialist) -> Specialist:
             if name == USER_INTELLIGENCE:
                 # Consume the input even on failure so the run cannot loop on it.
                 update.update(user_answer=None, pending_evidence=None, changed_fields=[])
+            elif name == DOCUMENT_ANALYSIS:
+                update.update(pending_evidence=None)
         update["agent_statuses"] = {name: AgentStatus(status=status, updated_at=now)}
         return update
 
@@ -79,16 +87,18 @@ def build_graph(
     discovery: Specialist,
     eligibility: Specialist,
     action_planning: Specialist,
+    document_analysis: Specialist = _document_analysis_not_wired,
 ):
     builder = StateGraph(SessionState)
-    builder.add_node("administrator", administrator, destinations=(*SPECIALISTS, END))
+    builder.add_node("administrator", administrator, destinations=(*SPECIALISTS, DOCUMENT_ANALYSIS, END))
     builder.add_node(USER_INTELLIGENCE, _guarded(USER_INTELLIGENCE, user_intelligence))
     builder.add_node(DISCOVERY, _guarded(DISCOVERY, discovery))
     builder.add_node(ELIGIBILITY, _guarded(ELIGIBILITY, eligibility))
     builder.add_node(PLANNING, _guarded(PLANNING, action_planning))
+    builder.add_node(DOCUMENT_ANALYSIS, _guarded(DOCUMENT_ANALYSIS, document_analysis))
 
     builder.add_edge(START, "administrator")
-    for name in SPECIALISTS:
+    for name in (*SPECIALISTS, DOCUMENT_ANALYSIS):
         builder.add_edge(name, "administrator")
     return builder.compile(checkpointer=checkpointer)
 

@@ -50,6 +50,9 @@ DISCOVERY = "program_discovery"
 ELIGIBILITY = "eligibility"
 PLANNING = "action_planning"
 SPECIALISTS = (USER_INTELLIGENCE, DISCOVERY, ELIGIBILITY, PLANNING)
+# The Document Agent reads papers into `documents` for User Intelligence (the
+# Profile Agent) to apply. Registered in the graph; decide() routes to it from Phase 3.
+DOCUMENT_ANALYSIS = "document_analysis"
 
 # Fields whose change means the set of candidate programs may be different.
 DISCOVERY_FIELDS = {"needs", "zip", "needs_matched"}

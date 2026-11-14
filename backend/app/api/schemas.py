@@ -53,6 +53,13 @@ __all__ = [
     "RegionView",
     "ProgramCard",
     "SessionSnapshot",
+    "DocumentReadOut",
+    "IdentityReading",
+    "PendingReview",
+    "ReadinessOut",
+    "ReviewIn",
+    "ReviewRow",
+    "TraceEventView",
 ]
 
 ErrorCode = Literal[
@@ -70,6 +77,8 @@ ErrorCode = Literal[
     "not_automatable",
     "browser_unavailable",
     "too_many_runs",
+    # A field the form needs is disputed; settle it before starting.
+    "facts_in_conflict",
 ]
 
 
@@ -187,6 +196,35 @@ class RegionView(BaseModel):
     state: str
 
 
+class ReviewRow(BaseModel):
+    """One fact read from a paper, shown for the person to confirm or edit."""
+
+    field: str
+    label: str
+    value: float | str | int | list[str] | None
+    display: str  # human wording, e.g. "$1,240 a month"
+    in_conflict: bool = False
+
+
+class PendingReview(BaseModel):
+    document_id: str
+    kind: str | None = None
+    title: str  # e.g. "your pay stub": from the kind, never the file name
+    rows: list[ReviewRow] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+
+
+class TraceEventView(BaseModel):
+    seq: int
+    invoke: int
+    step: Literal["routed", "completed", "failed", "asked", "skipped"]
+    node: str
+    reason: str | None = None
+    fields: list[str] = Field(default_factory=list)
+    count: int | None = None
+    question_id: str | None = None
+
+
 class SessionSnapshot(BaseModel):
     session_id: str
     phase: WorkflowPhase
@@ -218,6 +256,10 @@ class SessionSnapshot(BaseModel):
     # For each of those: "practice" (our practice copy; a submit is harmless) or
     # "stop_before_submit" (a real provider form; the run ends before sending).
     automation_modes: dict[str, Literal["practice", "stop_before_submit"]] = Field(default_factory=dict)
+    # One card per read paper with facts still to confirm (Phase 3 fills it).
+    pending_reviews: list[PendingReview] = Field(default_factory=list)
+    # The last steps of the agent loop, oldest first (codes and field names only).
+    trace: list[TraceEventView] = Field(default_factory=list)
 
 
 class NessieEvidenceIn(BaseModel):
@@ -299,3 +341,43 @@ class WebResourcesOut(BaseModel):
     # False when web search is off (LLM_MODE=off, no key, or not allowed for the key).
     available: bool
     groups: list[WebResourceGroup] = Field(default_factory=list)
+
+
+class ReviewIn(BaseModel):
+    """POST /sessions/{id}/evidence/review: the person's answer to one review card."""
+
+    document_id: str = Field(max_length=64)
+    accept: list[str] = Field(default_factory=list, max_length=20)
+    edits: dict[str, float | str | int] = Field(default_factory=dict, max_length=20)
+
+
+IdentityKey = Literal[
+    "first_name", "last_name", "full_name", "date_of_birth",
+    "street_address", "city", "state", "zip", "phone", "email",
+]
+
+
+class IdentityReading(BaseModel):
+    """An identity detail read from a paper. Returned once, kept only on the device."""
+
+    key: IdentityKey
+    value: str = Field(max_length=200)
+    source: str  # "doc:<document id>"
+
+
+class DocumentReadOut(BaseModel):
+    """POST /sessions/{id}/evidence/document (Phase 3): the snapshot plus device-only details."""
+
+    snapshot: SessionSnapshot
+    identity: list[IdentityReading] = Field(default_factory=list)
+
+
+class ReadinessOut(BaseModel):
+    """GET /sessions/{id}/applications/readiness: fill-sheet keys only, never values."""
+
+    program_id: str
+    from_profile: list[str] = Field(default_factory=list)
+    from_device_needed: list[str] = Field(default_factory=list)
+    will_ask: list[str] = Field(default_factory=list)
+    unconfirmed: list[str] = Field(default_factory=list)
+    blocked_by: list[str] = Field(default_factory=list)  # fields in conflict

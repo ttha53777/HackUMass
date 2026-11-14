@@ -33,7 +33,7 @@ export function HowWeChecked({ snapshot, card }: { snapshot: SessionSnapshot; ca
   const rank = actionFor(snapshot, card.program.id)?.rank;
   const zip = snapshot.region?.zip;
 
-  const detail: Record<AgentName, string> = {
+  const detail: Partial<Record<AgentName, string>> = {
     user_intelligence: `${plural(answers, "answer")}${fromEvidence ? `, ${fromEvidence} from a document or sandbox profile` : ", all from you"}`,
     program_discovery: `${plural(snapshot.programs.length, "program")} serve${snapshot.programs.length === 1 ? "s" : ""} ${zip ? `ZIP ${zip}` : "your area"} and your needs`,
     eligibility: asks
