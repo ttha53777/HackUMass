@@ -21,6 +21,7 @@ The app leads; the user answers. It is not an open-ended chatbot.
 4. It shows matching government and community programs, each with a source link and a preliminary fit label.
 5. It produces an ordered roadmap of next steps, and revises it when the user adds or corrects information. A short summary says what each new answer changed.
 6. The plan can be printed or saved as a PDF from the browser; links are written out in print.
+7. A collapsed *How we put this together* panel shows each of the four specialist steps, its status and time, and counts drawn from the results. It shows no generated reasoning.
 
 ## Architecture (Planned)
 
@@ -177,7 +178,8 @@ backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
 frontend/src/components/intake/    guided intake: question card, answered list,
                                    progress, follow-up framing, change summary
-frontend/src/components/results/   results: next steps, program cards, status badges
+frontend/src/components/results/   results: next steps, program cards, status badges,
+                                   activity panel
 frontend/src/components/ui/        shadcn components
 frontend/src/hooks/use-session.ts  session lifecycle, answer submission, polling
 frontend/src/lib/api.ts            typed client for the backend API

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ActivityPanel } from "@/components/results/activity-panel";
 import { hasResults, ResultsView } from "@/components/results/results-view";
 import { STATUS } from "@/components/results/status";
 import { Button } from "@/components/ui/button";
@@ -259,6 +260,8 @@ export function GuidedIntake() {
           onEditQuestion={startEdit}
         />
       ) : null}
+
+      {(results || snapshot.coverage !== "unknown") && <ActivityPanel snapshot={snapshot} />}
 
       <div className="flex flex-col gap-4 print:hidden">
         <AnsweredList
