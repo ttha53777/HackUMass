@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, Flame, HandHeart, Lock, ShieldCheck, Utensils } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -30,6 +30,11 @@ export function Welcome({
   onSample: () => void;
 }) {
   const [name, setName] = useState(initialName);
+  // The saved name loads after the first render; fill it in unless the person already typed.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing a value that arrives after mount
+    setName((current) => current || initialName);
+  }, [initialName]);
   return (
     <section className="mx-auto grid min-h-screen max-w-[1160px] items-center gap-6 px-4 py-6 min-[861px]:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] min-[861px]:gap-12 min-[861px]:py-10">
       <div className="flex max-w-[520px] flex-col gap-[26px]">
@@ -45,7 +50,7 @@ export function Welcome({
           Find the help that&apos;s <em className="not-italic text-brand">already waiting</em> for you.
         </h1>
         <p className="text-base leading-[1.75] text-muted-foreground">
-          Three quick questions. We check government benefits and local help near you, then show you
+          A few quick questions. We check government benefits and local help near you, then show you
           what to do first.
         </p>
 

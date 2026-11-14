@@ -43,6 +43,7 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 - Specialists never message each other. Each returns a typed update to shared state.
 - Discovery supplies sourced criteria before Eligibility assesses; Action Planning consumes the assessments.
 - Structured eligibility rules are evaluated in code. The language model (Google Gemini, live mode only) is used only to interpret free-text answers and to word explanations.
+- Typed chat messages are read by `services/conversation.py`. The model can only choose real question options; every value is validated like any other answer; facts for later questions are confirmed by the person before they are used; replies must pass `is_safe_reply` (no program, benefit or place names the person didn't use, no links, amounts, dates or questions, no promises); instruction-like messages yield nothing. Danger or crisis words show a fixed message (911, and 988 by call or text) in both modes. With `LLM_MODE=off` the same endpoint uses keyword matching and the chat uses template replies.
 - An "Other" answer is kept word for word. Options it clearly names are matched by keyword, or by the model in live mode, which can only choose existing options. The match is shown next to the answer.
 - Model wording is checked before use: it may not add a link, amount, phone number or date missing from the program record, or claim someone is eligible. Otherwise the template text is kept.
 - Each program gets one of four preliminary labels. A rule the provider states but the app cannot check (most rules) can never yield more than *possibly a fit*. Facts from simulated bank data or a document count only once the user confirms them.
@@ -88,6 +89,7 @@ All routes are under `/api`. Errors have the shape `{"error": {"code", "message"
 | `POST /sessions` | Start a session. Returns `201` and a snapshot that already contains the first question. |
 | `GET /sessions/{id}` | Current snapshot: pending question, answered questions, programs, plan, agent statuses, notices. |
 | `POST /sessions/{id}/answers` | Answer the pending question, or change or skip an earlier one. `200` means the snapshot is current; `202` means work continues (`busy: true`), so poll the `GET` route. |
+| `POST /sessions/{id}/interpret` | Body `{"question_id", "text"}` (up to 500 characters). Reads a message typed into the chat and returns a proposal: a short guarded reply, an answer to the pending question, facts to confirm later, needs the app can't search for, and a `safety` flag. It never changes the session. At most 40 per session (`429 too_many_messages`). |
 | `GET /nessie/personas` | The fictional demo bank profiles, each labelled *Simulated*. |
 | `POST /sessions/{id}/evidence/nessie` | Body `{"persona_id", "consent": true}`. Uses a simulated bank profile; `200` or `202` like answers. Deposits become an **unconfirmed** income estimate, and the app asks the person to confirm it before relying on it. |
 | `POST /sessions/{id}/evidence/document` | Multipart: `file` (PDF or `.txt`, 2 MB max) and `consent=true`. Reads only household size and income from labelled lines such as "Gross monthly pay: $1,400". The file is deleted right after reading, and its text is never stored. Found numbers wait for the person to confirm them. |
@@ -128,7 +130,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 |---|---|---|
 | `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value (e.g. `curated`) uses the 23 curated records in `backend/app/data/programs/` and the 25 Hampshire County ZIP codes in `backend/app/data/regions.json`. `.env.example` sets `fixtures`. |
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
-| `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for matching "Other" answers and for plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
+| `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for reading typed chat messages, matching "Other" answers, and plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
 | `BROWSER_PROVIDER` | No | `off` (default) hides the browser assistant and imports nothing for it. `local` drives Chrome on this machine (development; needs `pip install -e ".[browser]"`). `steel` uses a Steel cloud browser with an embeddable live view (needs `STEEL_API_KEY`). Also needs `GEMINI_API_KEY`, or the assistant stays off. |
 | `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
@@ -216,7 +218,8 @@ docs/nessie-spike.md               what was verified about the Nessie API
 docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
-frontend/src/components/front-door/ Welcome, the 3 core questions, Building
+frontend/src/components/front-door/ Welcome, then hands off to the chat intake
+frontend/src/components/chat/       the intake as a conversation: typing, quick replies, safety card
 frontend/src/components/home/      Home: next step, plan, sharpen card, glance strip
 frontend/src/components/benefits/  Government benefits and the step-by-step guide
 frontend/src/components/local/     Local help and the week calendar
@@ -274,7 +277,7 @@ Where to make changes:
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
 - Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`. The old `/legacy` UI was retired in Phase 6.
-- Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear on the Building screen and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
+- Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../interpret` reads what people type in the chat intake; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear in the chat intake's "checking programs" message and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.
 - Regenerate the contract fixture: `.venv/bin/python scripts/make_snapshot.py` in `backend/`, then `npm run sync:fixture` in `frontend/`.

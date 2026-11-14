@@ -1,4 +1,4 @@
-import type { AnswerIn, ErrorBody, ErrorCode, PersonaOut, RunView, SessionSnapshot } from "./types";
+import type { AnswerIn, ErrorBody, ErrorCode, InterpretIn, InterpretOut, PersonaOut, RunView, SessionSnapshot } from "./types";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -80,6 +80,14 @@ export function uploadDocument(sessionId: string, file: File): Promise<SessionSn
   return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/document`, {
     method: "POST",
     body: form,
+  });
+}
+
+/** Read a message typed into the chat. Returns a proposal; the session is not changed. */
+export function interpretMessage(sessionId: string, body: InterpretIn): Promise<InterpretOut> {
+  return request<InterpretOut>(`/sessions/${encodeURIComponent(sessionId)}/interpret`, {
+    method: "POST",
+    body: JSON.stringify(body),
   });
 }
 

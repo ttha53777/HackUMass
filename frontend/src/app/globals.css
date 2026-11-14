@@ -98,14 +98,15 @@
  * Palette from the OpenDoor demo (docs/ui-reference/opendoor-demo.html).
  * Deliberate changes for AA contrast (4.5:1 for small text) on the paper and surface
  * colors: --muted-foreground, --faint, --sky-ink and --peach-ink are darker than the demo's.
+ * Paper, surfaces and lines are warm beige instead of white.
  */
 :root {
-  --paper: #fcfdfa;
-  --surface: #ffffff;
-  --surface-2: #f6f9f4;
+  --paper: #f6f2e9;
+  --surface: #fbf9f3;
+  --surface-2: #f0ebdf;
   --ink: #2d4342;
-  --faint: #66756f;
-  --line: #e4e9e0;
+  --faint: #5f6e68;
+  --line: #e5dece;
   --brand: #4a7d66;
   --brand-hover: #3e6d58;
   --on-brand: #ffffff;
@@ -137,7 +138,7 @@
   --art-h2: #729d86;
   --art-h3: #c7dabd;
   --art-house: #fffcf6;
-  --shadow-card: 0 14px 42px rgb(32 53 53 / 0.05);
+  --shadow-card: 0 14px 42px rgb(74 58 30 / 0.06);
   --backdrop: rgb(16 42 35 / 0.55);
 
   --background: var(--paper);
@@ -151,7 +152,7 @@
   --secondary: var(--surface-2);
   --secondary-foreground: var(--ink);
   --muted: var(--surface-2);
-  --muted-foreground: #5f716a;
+  --muted-foreground: #586a63;
   --accent: var(--brand-soft);
   --accent-foreground: var(--brand-text);
   --destructive: oklch(0.577 0.245 27.325);

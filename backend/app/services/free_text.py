@@ -30,13 +30,22 @@ KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
         "transportation": (r"rides?\b", r"bus(es)?\b", "transport", "transit", r"get to\b", "car repair"),
         "employment": (r"jobs?\b", "unemploy", "laid off", "hiring", "paycheck"),
     },
+    "housing_status": {
+        "renting": (r"rent(ing|er)?\b", "lease", "landlord", "apartment"),
+        "own": (r"own (my|our|the) (home|house|place)", r"i own\b", r"we own\b", "mortgage", "homeowner"),
+        "staying_with_others": ("staying with", "living with (my|a) (friend|family|parents|mom|dad|sister|brother)",
+                                "couch", "crash(ing)? (at|with)"),
+        "no_stable_housing": ("homeless", "shelter", r"(sleeping|living) in (my|a|the) car", "on the street",
+                              "nowhere to (stay|live|sleep)", "no stable", "evicted"),
+    },
     "situation": {
         "retired": ("retire", "pension"),
         "student": ("student", "school", "college", "university"),
         "unable_to_work": ("disab", "injur", "can't work", "cannot work", "unable to work"),
         "looking_for_work": ("unemploy", "laid off", "looking for work", "looking for a job",
                              "between jobs", "lost my job"),
-        "working": ("part-time", "part time", "full-time", "full time", "employed"),
+        "working": ("part-time", "part time", "full-time", "full time", "employed",
+                    r"work(ing)? (two|2|three|3|multiple|several) jobs", r"(two|2|three|3) jobs"),
     },
 }
 

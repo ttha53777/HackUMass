@@ -38,6 +38,9 @@ __all__ = [
     "ErrorDetail",
     "FinancialSummaryView",
     "HealthOut",
+    "InterpretIn",
+    "InterpretOut",
+    "NotedFacts",
     "NessieEvidenceIn",
     "Notice",
     "PersonaOut",
@@ -54,6 +57,7 @@ ErrorCode = Literal[
     "validation_error",
     "consent_required",
     "unsupported_file",
+    "too_many_messages",
     # Browser execution agent (app/api/execution_routes.py).
     "run_not_found",
     "run_active",
@@ -201,3 +205,40 @@ class PersonaOut(BaseModel):
     id: str
     label: str
     description: str
+
+
+# --- Chat intake: understanding a typed message -----------------------------
+
+UnsupportedNeed = Literal["childcare", "mental_health", "legal", "job", "other"]
+
+
+class InterpretIn(BaseModel):
+    """Something the person typed in the chat, in answer to `question_id`."""
+
+    question_id: str
+    text: str = Field(min_length=1, max_length=500)
+
+
+class NotedFacts(BaseModel):
+    """Facts the person stated for questions not asked yet. Never applied
+    unconfirmed: the chat asks the person to confirm each one when its question comes up."""
+
+    household_size: int | None = None
+    household_who: list[str] = Field(default_factory=list)
+    zip: str | None = None
+
+
+class InterpretOut(BaseModel):
+    """A proposal only: interpreting a message never changes the session."""
+
+    # One or two warm sentences that passed the output guard; null means use a template.
+    reply: str | None = None
+    # A valid answer to the pending question, if the message gives one.
+    answer: AnswerIn | None = None
+    noted: NotedFacts = Field(default_factory=NotedFacts)
+    # Needs the person mentioned that this app cannot search for yet.
+    unsupported_needs: list[UnsupportedNeed] = Field(default_factory=list)
+    # "urgent": show the fixed safety message before anything else.
+    safety: Literal["none", "urgent"] = "none"
+    # The message was not about getting help (or tried to give the app instructions).
+    off_topic: bool = False

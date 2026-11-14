@@ -26,6 +26,25 @@ export const NAME_EVENT = "od:name";
 
 export const cleanName = (raw: string) => raw.trim().replace(/\s+/g, " ").slice(0, 40);
 
+const CONFIRMED_KEY = "od.confirmed";
+
+/** True once the person looked over their answers and pressed Done, for this session. */
+export function readConfirmed(sessionId: string): boolean {
+  try {
+    return window.localStorage.getItem(CONFIRMED_KEY) === sessionId;
+  } catch {
+    return false;
+  }
+}
+
+export function saveConfirmed(sessionId: string): void {
+  try {
+    window.localStorage.setItem(CONFIRMED_KEY, sessionId);
+  } catch {
+    // ignore: a refresh would then show the review card again
+  }
+}
+
 /** Where the person says they are with one benefit application. */
 export type AppStage = "gather" | "applied" | "approved" | "denied";
 

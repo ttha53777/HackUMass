@@ -104,6 +104,11 @@ class ProgramsRepository:
     def region(self, zip_code: str) -> dict[str, str] | None:
         return self._regions.get(zip_code)
 
+    def place_names(self) -> list[str]:
+        """Every city and county named in the supported regions."""
+        names = {r.get(k, "") for r in self._regions.values() for k in ("city", "county")}
+        return sorted(n for n in names if n)
+
     def get(self, program_id: str) -> Program | None:
         return next((p for p in self._programs if p.id == program_id), None)
 

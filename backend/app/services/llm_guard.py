@@ -62,3 +62,48 @@ def is_safe_wording(text: str, sources: list[str]) -> bool:
             if _norm(found) not in source:
                 return False
     return True
+
+
+# --- Chat replies -------------------------------------------------------------
+
+REPLY_MAX_LENGTH = 280
+
+# Benefit names the model might know from training. Program facts come only from
+# the curated records, so a chat reply may never name a program at all.
+_BENEFIT_NAMES = re.compile(
+    r"\b(?:snap|wic|ebt|tanf|liheap|ssi|ssdi|medicaid|medicare|masshealth|section\s*8|food\s*stamps"
+    r"|fuel\s*assistance|head\s*start|raft|dta)\b",
+    re.I,
+)
+# A reply acknowledges; it never promises an outcome.
+_PROMISE = re.compile(
+    r"\b(?:you(?:'ll| will) (?:get|receive|be able to get)|we(?:'ll| will) get you|i(?:'ll| will) get you"
+    r"|you(?:'re| are) (?:eligible|covered|approved)|you qualify|make sure you get)\b",
+    re.I,
+)
+
+
+def is_safe_reply(text: str, user_text: str, program_names: list[str]) -> bool:
+    """True if a model-written chat reply may be shown.
+
+    On top of `is_safe_wording` (no new links, amounts, phone numbers or dates,
+    nothing that reads as a decision), a reply must be short, ask nothing (the app
+    asks the next question itself), name no program, benefit or place the person did
+    not name, and promise nothing.
+    """
+    text = (text or "").strip()
+    if not text or len(text) > REPLY_MAX_LENGTH or "?" in text or "\n" in text:
+        return False
+    if len(re.findall(r"[.!]+(?:\s|$)", text)) > 2:
+        return False
+    if not is_safe_wording(text, [user_text]):
+        return False
+    if _PROMISE.search(text) or _BENEFIT_NAMES.search(text):
+        return False
+    lowered, said = _norm(text), _norm(user_text)
+    for name in program_names:
+        name = _norm(name).strip()
+        # A name the person used themselves may be echoed back; any other is a new fact.
+        if len(name) >= 4 and name in lowered and name not in said:
+            return False
+    return True
