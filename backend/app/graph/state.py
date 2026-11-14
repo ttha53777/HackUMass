@@ -150,7 +150,7 @@ class FinancialSummary(BaseModel):
     income_sources: list[IncomeSource] = Field(default_factory=list)
     bills: list[BillLine] = Field(default_factory=list)
     spending: list[SpendLine] = Field(default_factory=list)
-    # benefits_held option ids the deposits point to (e.g. "snap"); suggestions only.
+    # Kinds of benefit deposits seen ("social_security", "unemployment"); suggestions only.
     benefit_signals: list[str] = Field(default_factory=list)
 
 

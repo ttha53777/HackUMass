@@ -267,7 +267,7 @@ export type FinancialSummaryView = {
   caveats: string[];  income_sources: IncomeSource[];
   bills: BillLine[];
   spending: SpendLine[];
-  /** benefits_held option ids the deposits point to; suggestions only. */
+  /** Kinds of benefit deposits seen ("social_security", "unemployment"); suggestions only. */
   benefit_signals: string[];
 };
 
