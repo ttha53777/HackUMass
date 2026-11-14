@@ -141,7 +141,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
 | `BROWSER_PROVIDER` | No | `off` (default) hides the browser assistant and imports nothing for it. `local` drives Chrome on this machine (development; needs `pip install -e ".[browser]"`). `steel` uses a Steel cloud browser with an embeddable live view (needs `STEEL_API_KEY`). Also needs `GEMINI_API_KEY`, or the assistant stays off. |
 | `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
-| `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-4-hydrogen`. |
+| `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-3.5-flash` (`gemini-4-hydrogen` was too slow to finish a run). |
 | `PRACTICE_BASE_URL` | No | Where the browser reaches the backend's practice form. Default `http://127.0.0.1:8000`; a cloud browser needs a public URL (for example a tunnel). |
 | `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome; empty uses Playwright's Chromium (`.venv/bin/playwright install chromium`). |
 | `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. |

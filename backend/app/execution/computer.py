@@ -96,14 +96,14 @@ _DESCRIBE = r"""
 _SELECT = r"""
 (wanted) => {
   const el = document.activeElement;
-  if (!el || el.tagName !== "SELECT") return false;
+  if (!el || el.tagName !== "SELECT") return "not_select";
   const norm = (s) => (s || "").trim().toLowerCase();
   const opt = Array.from(el.options).find((o) => norm(o.label) === norm(wanted) || norm(o.value) === norm(wanted));
-  if (!opt) return false;
+  if (!opt) return "no_match";
   el.value = opt.value;
   el.dispatchEvent(new Event("input", { bubbles: true }));
   el.dispatchEvent(new Event("change", { bubbles: true }));
-  return true;
+  return "selected";
 }
 """
 
@@ -165,7 +165,11 @@ class PlaywrightComputer:
             elif name == "type":
                 if value is None:
                     return {"error": "no value"}
-                if not await page.evaluate(_SELECT, value):
+                picked = await page.evaluate(_SELECT, value)
+                if picked == "no_match":
+                    # Never report a dropdown as filled when nothing changed.
+                    return {"error": "No option in this dropdown matches that detail. Leave it, or call request_handoff if it is required."}
+                if picked != "selected":
                     # Replace the field's content. Enter is never pressed: it could send the form.
                     await page.keyboard.press("ControlOrMeta+A")
                     await page.keyboard.press("Backspace")

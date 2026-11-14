@@ -27,12 +27,23 @@ from app.execution.models import HandoffReason
 
 logger = logging.getLogger(__name__)
 
-MODEL_TIMEOUT_SECONDS = 60.0
+# A screenshot turn often takes 30-135 s (measured 2026-11-14). A shorter timeout
+# cancels calls that would have succeeded and starts them over from scratch.
+MODEL_TIMEOUT_SECONDS = 150.0
 MODEL_RETRIES = 1  # one retry for a transient failure (network, 5xx, rate limit)
 MODEL_RETRY_DELAY = 2.0
 
 # Handoffs that, on a real site in fill-and-stop mode, end the run instead.
 STOP_REASONS = {"submit", "attestation"}
+
+# Computer-use models often reply with text alone mid-task ("I've filled in the
+# first page..."). That is not a finish: nudge it to carry on, a few times in a row
+# at most, before treating silence as done.
+MAX_NUDGES = 2
+NUDGE = (
+    "Carry on filling in the form on this page. If the page confirms the application was received, "
+    "or nothing is left for you to do, call finish."
+)
 
 
 class ModelUnavailable(Exception):
@@ -92,7 +103,8 @@ Fill sheet (placeholders; you never see the values):
 Rules:
 - To fill a text field: click it, then use `type` with exactly one placeholder from the fill sheet, e.g. {{{{phone}}}}. Never type any other text.
 - If a field needs a detail marked "not known yet", call ask_user with its key, then type the placeholder.
-- If a field needs something that is not on the fill sheet, leave it and call request_handoff.
+- If a field needs something that is not on the fill sheet: leave it empty when it is optional (marked "Optional", or not marked required). Call request_handoff only when a required field needs it.
+- If the person skipped a detail, leave that field empty and move on.
 - Use the page's "Next" or "Continue" buttons to move between steps. Never press Enter.
 - Never click a final Submit, Send, Sign, Agree, Certify or Pay control yourself. Click it only to reach it; the system stops you and hands the browser to the person.
 - Never fill in passwords, Social Security numbers, signatures or file uploads.
@@ -295,13 +307,20 @@ class Agent:
         ]
         previous: str | None = None
         steps = 0
+        nudges = 0
         while True:
             if self.clock.active() > self.agent_seconds:
                 return AgentEnd("time_limit", steps)
             turn = await self.model.turn(parts, previous)
             previous = turn.interaction_id
             if not turn.calls:
-                return AgentEnd("finished", steps)  # the model is done talking
+                nudges += 1
+                if nudges > MAX_NUDGES:
+                    return AgentEnd("finished", steps)  # the model is done talking
+                observation = await self.computer.observe()
+                parts = [{"type": "text", "text": f"{NUDGE} Current URL: {observation.url}"}, _image_part(observation)]
+                continue
+            nudges = 0
             results: list[dict[str, Any]] = []
             observation = None
             for call in turn.calls:

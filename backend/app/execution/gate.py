@@ -37,6 +37,8 @@ _ATTEST = re.compile(
     r"\b(agree|agreement|certify|certification|attest|i accept|accept (the )?terms|consent|"
     r"sign|signature|signed|e ?sign|initials?|under penalty)\b"
 )
+# "Middle initial" is a name field, not "initial here to sign".
+_MIDDLE_INITIAL = re.compile(r"\bmiddle (name )?initial\b|\bm i\b")
 _SIGN_IN = re.compile(r"\b(sign ?in|log ?in|sign ?up|create (an |your )?account|password)\b")
 _SSN = re.compile(r"\b(ssn|social security|soc ?sec|tax ?id|itin|ss ?#|ss ?number)\b")
 
@@ -228,7 +230,7 @@ def decide(action: Action, facts: PageFacts, policy: GatePolicy) -> Verdict:
             return _handoff(reason)
         if not focused.is_text_field:
             return _block("The focused element is not a text field.")
-        if _ATTEST.search(focused.words):
+        if _ATTEST.search(_MIDDLE_INITIAL.sub(" ", focused.words)):
             return _handoff("attestation")  # "Type your name to sign", initials
         if key not in policy.known_keys:
             return Verdict("ask", field_key=key)
