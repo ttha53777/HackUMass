@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Home Energy Assistance 2026-2027 Renewal (practice copy)</title>
+<style>
+  :root { --ink:#1b2a22; --muted:#55645b; --line:#cdd8d0; --bg:#eef3ef; --card:#fff; --accent:#1f6b47; --band:#173f2c; --warn:#fff4d6; --warn-ink:#6b4d00; --err:#a3261b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.5 Georgia, "Times New Roman", serif; color:var(--ink); background:var(--bg); }
+  .banner { background:var(--warn); color:var(--warn-ink); font:700 14px/1.4 system-ui, sans-serif; text-align:center; padding:9px 16px; border-bottom:1px solid #ecd9a0; }
+  header { background:var(--band); color:#fff; padding:14px 24px; font-family:system-ui, sans-serif; }
+  header b { font-size:17px; letter-spacing:.02em; }
+  header span { display:block; font-size:13px; opacity:.8; }
+  main { max-width:760px; margin:22px auto; padding:0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:4px; padding:22px 26px; }
+  h1 { font-size:23px; margin:0 0 2px; }
+  h2 { font-size:18px; margin:0 0 12px; border-bottom:2px solid var(--accent); padding-bottom:4px; }
+  h3 { font:700 14px/1.4 system-ui, sans-serif; margin:18px 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .steps { display:flex; gap:6px; margin:14px 0 18px; padding:0; list-style:none; font:13px/1.4 system-ui, sans-serif; color:var(--muted); }
+  .steps li { flex:1; background:var(--bg); padding:6px 10px; border-radius:3px; }
+  .steps li.on { background:var(--accent); color:#fff; font-weight:700; }
+  .row { display:grid; grid-template-columns:240px 1fr; gap:6px 14px; align-items:center; margin:8px 0; }
+  label, legend { font:600 14px/1.4 system-ui, sans-serif; }
+  input[type=text], input[type=tel] { width:100%; padding:8px 10px; border:1px solid #9fb2a6; border-radius:3px; font:15px system-ui, sans-serif; background:#fbfdfb; }
+  .hint { color:var(--muted); font:12px/1.4 system-ui, sans-serif; }
+  table { width:100%; border-collapse:collapse; font:14px system-ui, sans-serif; }
+  th { text-align:left; font-weight:600; color:var(--muted); padding:4px 6px; }
+  td { padding:4px 6px; }
+  td input { width:100%; }
+  fieldset { border:1px solid var(--line); border-radius:4px; padding:12px 16px; margin:18px 0 0; }
+  .radios { display:flex; flex-wrap:wrap; gap:8px 18px; font:14px system-ui, sans-serif; margin-top:6px; }
+  .check { display:flex; gap:10px; align-items:flex-start; margin:14px 0 10px; font:14px system-ui, sans-serif; }
+  .check input { margin-top:3px; width:18px; height:18px; }
+  .error { color:var(--err); font:13px system-ui, sans-serif; min-height:18px; }
+  .actions { display:flex; justify-content:space-between; margin-top:18px; }
+  button { font:700 15px system-ui, sans-serif; padding:10px 20px; border-radius:3px; border:1px solid var(--accent); cursor:pointer; }
+  .primary { background:var(--accent); color:#fff; }
+  .secondary { background:#fff; color:var(--accent); }
+  [hidden] { display:none !important; }
+  @media (max-width:600px) { .row { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<div class="banner" role="note">Practice copy. Nothing is sent to any agency.</div>
+<header><b>Sample Valley Energy Assistance Office</b><span>A fictional agency, for practice only</span></header>
+<main>
+  <div class="card">
+    <h1>Home Energy Assistance 2026-2027 Renewal</h1>
+    <p class="hint">For households that received help last season. Two steps.</p>
+    <ol class="steps" aria-label="Progress">
+      <li data-step="1">Step 1: You and your household</li><li data-step="2">Step 2: Home, heat and income</li>
+    </ol>
+
+    <form id="form" novalidate autocomplete="off">
+      <section data-panel="1" aria-labelledby="h1">
+        <h2 id="h1">You and your household</h2>
+        <div class="row"><label for="prev_app">Last season's application number</label><input type="text" id="prev_app" name="prev_app" data-key="liheap_number" required></div>
+        <div class="row"><label for="applicant_name">Full name</label><input type="text" id="applicant_name" name="applicant_name" data-key="full_name" required></div>
+        <div class="row"><label for="applicant_dob">Date of birth (MM/DD/YYYY)</label><input type="text" id="applicant_dob" name="applicant_dob" data-key="date_of_birth" required></div>
+        <div class="row"><label for="home_street">Home street address</label><input type="text" id="home_street" name="home_street" data-key="street_address" required></div>
+        <div class="row"><label for="home_city">City or town</label><input type="text" id="home_city" name="home_city" data-key="city" required></div>
+        <div class="row"><label for="home_state">State</label><input type="text" id="home_state" name="home_state" data-key="state" required></div>
+        <div class="row"><label for="home_zip">ZIP code</label><input type="text" id="home_zip" name="home_zip" data-key="zip" inputmode="numeric" required></div>
+        <div class="row"><label for="home_phone">Phone number</label><input type="tel" id="home_phone" name="home_phone" data-key="phone" required></div>
+        <div class="row"><label for="best_time">Best time to reach you</label><div><input type="text" id="best_time" name="best_time" data-key="best_time_to_call"><div class="hint">Optional</div></div></div>
+        <div class="row"><label for="hh_size">How many people live in your home?</label><input type="text" id="hh_size" name="hh_size" data-key="household_size" inputmode="numeric" required></div>
+        <h3>Everyone else who lives with you</h3>
+        <table>
+          <thead><tr><th></th><th>Name</th><th>Relationship to you</th><th>Date of birth</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Person 2</th>
+              <td><input type="text" id="p2_name" name="p2_name" data-key="member_2_name" aria-label="Person 2 name"></td>
+              <td><input type="text" id="p2_rel" name="p2_rel" data-key="member_2_relation" aria-label="Person 2 relationship to you"></td>
+              <td><input type="text" id="p2_dob" name="p2_dob" data-key="member_2_dob" aria-label="Person 2 date of birth" placeholder="MM/DD/YYYY"></td></tr>
+            <tr><th scope="row">Person 3</th>
+              <td><input type="text" id="p3_name" name="p3_name" data-key="member_3_name" aria-label="Person 3 name"></td>
+              <td><input type="text" id="p3_rel" name="p3_rel" data-key="member_3_relation" aria-label="Person 3 relationship to you"></td>
+              <td><input type="text" id="p3_dob" name="p3_dob" data-key="member_3_dob" aria-label="Person 3 date of birth" placeholder="MM/DD/YYYY"></td></tr>
+            <tr><th scope="row">Person 4</th>
+              <td><input type="text" id="p4_name" name="p4_name" aria-label="Person 4 name"></td>
+              <td><input type="text" id="p4_rel" name="p4_rel" aria-label="Person 4 relationship to you"></td>
+              <td><input type="text" id="p4_dob" name="p4_dob" aria-label="Person 4 date of birth" placeholder="MM/DD/YYYY"></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section data-panel="2" aria-labelledby="h2" hidden>
+        <h2 id="h2">Home, heat and income</h2>
+        <div class="row"><label for="util_co">Electric or heating company</label><input type="text" id="util_co" name="util_co" data-key="utility_company" required></div>
+        <div class="row"><label for="util_acct">Account number</label><input type="text" id="util_acct" name="util_acct" data-key="utility_account_number" required></div>
+        <div class="row"><label for="rent">Monthly rent ($)</label><input type="text" id="rent" name="rent" data-key="monthly_rent" inputmode="decimal" required></div>
+        <div class="row"><label for="heat_in_rent">Is heat included in your rent? (Yes or No)</label><input type="text" id="heat_in_rent" name="heat_in_rent" data-key="heat_included" required></div>
+        <div class="row"><label for="hh_income">Total monthly household income ($)</label><input type="text" id="hh_income" name="hh_income" data-key="monthly_income" inputmode="decimal" required></div>
+
+        <fieldset>
+          <legend>Before you sign</legend>
+          <div role="radiogroup" aria-labelledby="fuel_q" data-key="heating_fuel">
+            <span id="fuel_q" style="font:600 14px system-ui, sans-serif">Main heating fuel</span>
+            <div class="radios">
+              <label><input type="radio" name="heating_fuel" value="Oil" required> Oil</label>
+              <label><input type="radio" name="heating_fuel" value="Natural gas"> Natural gas</label>
+              <label><input type="radio" name="heating_fuel" value="Electric"> Electric</label>
+              <label><input type="radio" name="heating_fuel" value="Propane"> Propane</label>
+              <label><input type="radio" name="heating_fuel" value="Wood"> Wood</label>
+              <label><input type="radio" name="heating_fuel" value="Other"> Other</label>
+            </div>
+          </div>
+          <div class="check">
+            <input type="checkbox" id="certify" name="certify" required>
+            <label for="certify">I certify that the information on this renewal is true to the best of my knowledge.</label>
+          </div>
+          <div class="row"><label for="signature">Signature: type your full name</label><input type="text" id="signature" name="signature" required></div>
+        </fieldset>
+      </section>
+
+      <p class="error" id="error" role="alert"></p>
+      <div class="actions">
+        <button type="button" class="secondary" id="back">Back</button>
+        <button type="button" class="primary" id="next">Next</button>
+        <button type="submit" class="primary" id="submit" hidden>Submit renewal</button>
+      </div>
+    </form>
+
+    <section id="done" hidden aria-live="polite">
+      <h2>Practice application received</h2>
+      <p id="ref"></p>
+      <p class="hint">This was a practice copy. Nothing was sent to any agency, and nothing was saved.</p>
+    </section>
+  </div>
+</main>
+<script>
+(() => {
+  const STEPS = 2, CODE = "FUEL";
+  const form = document.getElementById("form");
+  const err = document.getElementById("error");
+  const back = document.getElementById("back"), next = document.getElementById("next"), submit = document.getElementById("submit");
+  let step = 1;
+  const panel = (n) => form.querySelector(`[data-panel="${n}"]`);
+  const labelOf = (el) => (el.labels && el.labels[0] ? el.labels[0].textContent : el.getAttribute("aria-label") || el.name).replace(/:.*/, "").replace(/\s*\(.*\)$/, "").trim();
+
+  function show(n) {
+    step = n;
+    for (let i = 1; i <= STEPS; i++) panel(i).hidden = i !== n;
+    document.querySelectorAll(".steps li").forEach((li) => li.classList.toggle("on", Number(li.dataset.step) === n));
+    back.hidden = n === 1; next.hidden = n === STEPS; submit.hidden = n !== STEPS; err.textContent = "";
+    window.scrollTo(0, 0);
+  }
+
+  function valid(n) {
+    const missing = [];
+    const seenRadio = new Set();
+    for (const el of panel(n).querySelectorAll("[required]")) {
+      if (el.type === "radio") {
+        if (seenRadio.has(el.name)) continue;
+        seenRadio.add(el.name);
+        if (!form.querySelector(`input[name="${el.name}"]:checked`)) missing.push({ el, label: "Main heating fuel" });
+      } else if (el.type === "checkbox" ? !el.checked : !el.value.trim()) {
+        missing.push({ el, label: el.type === "checkbox" ? "the certify box" : labelOf(el) });
+      }
+    }
+    if (missing.length) {
+      err.textContent = "Please fill in: " + missing.map((m) => m.label).join(", ");
+      missing[0].el.focus();
+      return false;
+    }
+    return true;
+  }
+
+  next.addEventListener("click", () => { if (valid(step)) show(step + 1); });
+  back.addEventListener("click", () => show(step - 1));
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (step !== STEPS || !valid(STEPS)) return;
+    const digits = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b % 10).join("");
+    form.reset();
+    form.hidden = true;
+    document.querySelector(".steps").hidden = true;
+    document.getElementById("ref").textContent = `Confirmation number: PRACTICE-${CODE}-${digits}`;
+    document.getElementById("done").hidden = false;
+  });
+  // Enter in a text field must never send the form.
+  form.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") e.preventDefault(); });
+  show(1);
+})();
+</script>
+</body>
+</html>

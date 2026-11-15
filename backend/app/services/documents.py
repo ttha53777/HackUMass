@@ -250,6 +250,13 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
             allowed = frozenset()
             notes.append("kind_mismatch")
         numbers = _in_range(pattern_extract(text))
+        reading = read_kind(known_kind, text) if known_kind and fits else None
+        if reading is not None:
+            # A kind-specific income line (a benefit letter) fills a gap the shared patterns left,
+            # before any model is asked: a clean labelled paper never needs one.
+            kind_income = reading.facts.get("monthly_income")
+            if kind_income is not None and numbers.monthly_income is None and "monthly_income" in allowed:
+                numbers = _in_range(numbers.model_copy(update={"monthly_income": kind_income}))
         wanted = allowed & LEGACY_FIELDS
         missing = [name for name in wanted if getattr(numbers, name) is None]
         if missing:
@@ -264,13 +271,8 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
                     monthly_income=numbers.monthly_income if numbers.monthly_income is not None else found.monthly_income,
                     household_size=numbers.household_size if numbers.household_size is not None else found.household_size,
                 )
-        if known_kind and fits:
-            reading = read_kind(known_kind, text)
-            other = {k: v for k, v in reading.facts.items() if k in allowed or k.startswith("_")}
-            # A kind-specific income line (a benefit letter) fills a gap the shared patterns left.
-            kind_income = other.pop("monthly_income", None)
-            if kind_income is not None and numbers.monthly_income is None:
-                numbers = _in_range(numbers.model_copy(update={"monthly_income": kind_income}))
+        if reading is not None:
+            other = {k: v for k, v in reading.facts.items() if (k in allowed or k.startswith("_")) and k != "monthly_income"}
             identity = reading.identity
             notes += [n for n in reading.notes if n not in notes]
     finally:

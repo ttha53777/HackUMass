@@ -1,6 +1,7 @@
 SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
-Fuel Assistance application received (fictional)
+Fuel Assistance benefit notice, 2025-2026 season (fictional)
 Applicant: Maya Rivera
 Fuel Assistance number: SAMPLE-LIHEAP-0001
-Status: Application received, not yet decided
-Date: November 3, 2026
+Status: Approved for the 2025-2026 season
+Date: December 2, 2025
+To continue next season, renew your application.

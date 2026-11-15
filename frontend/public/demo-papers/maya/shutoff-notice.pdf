@@ -15,15 +15,17 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 6 0 obj
-<< /Length 511 >>
+<< /Length 675 >>
 stream
 BT /F2 9 Tf 72 760 Td (SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY) Tj ET
-BT /F1 18 Tf 72 726 Td (Notice of service disconnection \(fictional\)) Tj ET
+BT /F1 18 Tf 72 726 Td (Past-due notice - Sample Electric Co. \(fictional\)) Tj ET
 BT /F2 11 Tf 72 690 Td (Account holder: Maya Rivera) Tj ET
-BT /F2 11 Tf 72 672 Td (Service address: 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
-BT /F2 11 Tf 72 654 Td (Amount past due: $156.80) Tj ET
-BT /F2 11 Tf 72 636 Td (Disconnection scheduled: December 1, 2026) Tj ET
-BT /F2 11 Tf 72 618 Td (Call to set up a payment plan before that date.) Tj ET
+BT /F2 11 Tf 72 672 Td (Account number: SAMPLE-5512-0093) Tj ET
+BT /F2 11 Tf 72 654 Td (Service address: 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
+BT /F2 11 Tf 72 636 Td (Date of notice: November 9, 2026) Tj ET
+BT /F2 11 Tf 72 618 Td (Amount past due: $142.60) Tj ET
+BT /F2 11 Tf 72 600 Td (Pay by: December 1, 2026) Tj ET
+BT /F2 11 Tf 72 582 Td (Call us to set up a payment plan. Massachusetts winter protection may apply to your household.) Tj ET
 endstream
 endobj
 xref
@@ -38,5 +40,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-958
+1122
 %%EOF

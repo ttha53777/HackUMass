@@ -13,16 +13,18 @@ import { ACCEPT, isReadable, sizeLabel } from "./paper-store";
 import { STATUS_LABEL, useObjectUrl, type Row } from "./paper-views";
 
 /** Kinds the Document Agent reads (backend services/document_patterns.KIND_FIELDS). */
-export const READABLE_KINDS = new Set(["income", "member_income", "dob", "lease", "heat", "shutoff", "address", "id"]);
+export const READABLE_KINDS = new Set(["income", "member_income", "dob", "lease", "heat", "shutoff", "address", "id", "liheap", "notices"]);
 
 /** What each kind gives us, in the person's words. */
 const READS: Record<string, string> = {
-  income: "monthly income and whether you're working",
+  income: "monthly income and whether you're working, plus your employer and hours",
   member_income: "a household member's monthly income, added to yours",
-  dob: "how many people live with you and their age groups",
-  lease: "that you rent and whether heat is included, plus your name and address",
-  heat: "whether a bill is past due, plus your name, address, phone and email",
-  shutoff: "that you have a shut-off notice",
+  dob: "how many people live with you, their age groups and who they are",
+  lease: "that you rent and whether heat is included, plus your rent, heating, landlord, name and address",
+  heat: "whether a bill is past due, plus the utility, account number, your name, address, phone and email",
+  shutoff: "a past-due amount or a shut-off date, and the account number",
+  liheap: "last season's Fuel Assistance number",
+  notices: "rent owed and the date of the notice",
   address: "your name and address",
   id: "your name, date of birth and address",
 };

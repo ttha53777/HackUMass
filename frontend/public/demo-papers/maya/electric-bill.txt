@@ -1,9 +1,13 @@
 SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
 Electric bill - Sample Electric Co. (fictional)
+Utility: Sample Electric Co.
 Account holder: Maya Rivera
+Account number: SAMPLE-5512-0093
 Service address: 12 Example Street, Apt 3, Amherst, MA 01002
 Phone: 413-555-0142
 Email: maya.rivera@example.com
-Billing period: October 2026
-Amount due: $78.40
+Billing period: October 8 - November 6, 2026
+Previous balance: $142.60
+Current charges: $171.25
+Total due: $313.85
 Status: Past due

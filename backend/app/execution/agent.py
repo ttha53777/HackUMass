@@ -254,10 +254,10 @@ def screenshot_step(observation: Observation) -> dict[str, Any]:
     return {"type": "user_input", "content": [_image_part(observation)]}
 
 
-def describe(action: Action, target: Element | None, key: str | None) -> str:
-    """A step-log line. Never contains a typed value."""
+def describe(action: Action, target: Element | None, key: str | None, origin: str | None = None) -> str:
+    """A step-log line. Never contains a typed value; `origin` is a paper title or fixed phrase."""
     if action.name == "type" and key:
-        return f"Typed your {CATALOGUE[key].phrase}"
+        return f"Typed your {CATALOGUE[key].phrase}" + (f" ({origin})" if origin else "")
     if action.name in ("click", "double_click", "triple_click"):
         if target and target.is_check:
             return "Ticked a choice"
@@ -369,7 +369,8 @@ class Agent:
             value = self.store.value(verdict.field_key) if verdict.field_key else None
             outcome = await self.computer.execute(action, value)
             if not outcome:
-                self.hooks.log("action", describe(action, facts.target, verdict.field_key))
+                origin = self.store.origin(verdict.field_key) if verdict.field_key else None
+                self.hooks.log("action", describe(action, facts.target, verdict.field_key, origin))
             return outcome
 
         if verdict.kind == "handoff" and verdict.reason in STOP_REASONS and self.stop_before_submit:

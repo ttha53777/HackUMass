@@ -5,7 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useDetails, type Detail } from "@/components/documents/details-store";
 import { READABLE_KINDS } from "@/components/documents/info-panel";
 import { DEMO_BASE, demoName, isReadable, loadDemoManifest, MAX_BYTES, usePapers, type DemoPaper, type Paper } from "@/components/documents/paper-store";
-import { docLabel } from "@/components/od/doc-kinds";
+import { docLabel, sourceNoun } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 
@@ -164,7 +164,7 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       const review = (latest.current.snapshot?.pending_reviews ?? []).find((r) => !before.has(r.document_id) && !r.simulated);
       let otherPerson: string | null = null;
       if (identity.length) {
-        const saved = await details.saveReadings(identity, title ?? `your ${docLabel(kind, []).toLowerCase()}`);
+        const saved = await details.saveReadings(identity, title ?? sourceNoun(kind));
         otherPerson = saved.otherPerson;
       }
       return { error: null, reviewId: review?.document_id ?? null, identity: otherPerson ? 0 : identity.length, otherPerson };

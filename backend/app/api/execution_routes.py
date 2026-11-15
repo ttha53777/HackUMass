@@ -14,7 +14,7 @@ from fastapi.responses import JSONResponse, Response
 
 from app.api.routes import ApiError
 from app.api.schemas import ReadinessOut
-from app.execution.config import resolve_target
+from app.execution.config import engine_for, resolve_target
 from app.execution.fields import InvalidAnswer, add_device_details, readiness, store_from_profile
 from app.execution.manager import ExecutionError, ExecutionManager, Run
 from app.execution.models import ControlIn, RunView, StartRunIn
@@ -70,7 +70,7 @@ async def start_run(request: Request, session_id: str, body: dict = Body(...)) -
                        "Two answers this form needs don't match yet. Settle them first, then start again.")
     try:
         # Confirmed details from the person's device: this run only, never logged.
-        add_device_details(store, start.details)
+        add_device_details(store, start.details, start.detail_sources)
     except InvalidAnswer as exc:
         store.clear()
         raise ApiError(422, "validation_error", str(exc)) from None
@@ -94,6 +94,7 @@ def read_readiness(request: Request, session_id: str, program_id: str) -> Readin
     return ReadinessOut(
         program_id=program_id, from_profile=ready.from_profile, from_device_needed=ready.from_device_needed,
         will_ask=ready.will_ask, unconfirmed=ready.unconfirmed, blocked_by=ready.blocked_by,
+        engine=engine_for(record.form_id, request.app.state.agent_settings),  # type: ignore[arg-type]
     )
 
 

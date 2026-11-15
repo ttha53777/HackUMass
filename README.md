@@ -97,7 +97,7 @@ All routes are under `/api`. Errors have the shape `{"error": {"code", "message"
 | `GET /nessie/personas` | The fictional demo bank profiles, each labelled *Simulated*. |
 | `POST /sessions/{id}/evidence/nessie/disconnect` | Disconnects the simulated bank: drops its summary and any income read from it that the person never confirmed. A confirmed figure stays as their own answer. `200` or `202` like answers. |
 | `POST /sessions/{id}/evidence/nessie` | Body `{"persona_id", "consent": true}`. Uses a simulated bank profile; `200` or `202` like answers. Deposits become an **unconfirmed** income estimate, and the app asks the person to confirm it before relying on it. |
-| `POST /sessions/{id}/evidence/document` | Multipart: `file` (PDF or `.txt`, 2 MB max), `consent=true`, and optional `kind` (the paper's kind from the wallet: `income`, `dob`, `lease`, `heat`, `shutoff`, `address`, `id`). The Document Agent reads only that kind's fields from labelled lines that start a line (e.g. a pay stub: monthly income and working; a household paper: household size and age groups; a lease: renting and heat included). Without `kind`, only household size and income. SSN-looking lines are skipped. The file is deleted right after reading and its text is never stored. Found facts wait for the person to confirm them, and a disagreement with an answer or another paper becomes one question that names both sources. The response is the snapshot plus `identity` (name, birth date, address, phone, email found on the paper) for the person's device only: sent once with `Cache-Control: no-store`, never kept on the server. |
+| `POST /sessions/{id}/evidence/document` | Multipart: `file` (PDF or `.txt`, 2 MB max), `consent=true`, and optional `kind` (the paper's kind from the wallet: `income`, `member_income`, `dob`, `lease`, `heat`, `shutoff`, `address`, `id`, `liheap`, `notices`). The Document Agent reads only that kind's fields from labelled lines that start a line (e.g. a pay stub: monthly income and working; a household paper: household size and age groups; a lease: renting and heat included). Without `kind`, only household size and income. SSN-looking lines are skipped. The file is deleted right after reading and its text is never stored. Found facts wait for the person to confirm them, and a disagreement with an answer or another paper becomes one question that names both sources. The response is the snapshot plus `identity` (name, birth date, address, phone, email, and form details such as employer, rent, landlord, utility account, household members and last season's Fuel Assistance number; see `document_patterns.KIND_DETAILS`) for the person's device only. Each is checked like a typed answer: sent once with `Cache-Control: no-store`, never kept on the server. |
 | `POST /sessions/{id}/evidence/review` | Body `{"document_id", "accept": [field], "edits": {field: value}}`. Answers one paper's review card (`pending_reviews` in the snapshot): ticked fields are confirmed, edited ones become the person's own answer (option ids for choices), and the rest are dropped. `422` for a field not on that card or a value its question doesn't allow. `200` or `202` like answers. |
 | `GET /health` | Liveness and configuration flags (`browser_agent` is true when the browser assistant is mounted). No secrets. |
 
@@ -105,20 +105,21 @@ Error codes: `session_not_found` (404), `stale_question` (409), `session_busy` (
 
 ### Browser assistant (optional)
 
-Only mounted when `BROWSER_PROVIDER` is `steel` or `local` and `GEMINI_API_KEY` is set. It fills an application form from the person's answers, asks for anything missing, and hands the browser to the person for every step that must be theirs (signing, signing in, CAPTCHA, the final submit). Design: [docs/browser-agent-plan.md](docs/browser-agent-plan.md).
+Only mounted when `BROWSER_PROVIDER` is `steel` or `local`. Without `GEMINI_API_KEY` it offers only practice forms that have a field map, filled by the offline manifest engine. It fills an application form from the person's answers, asks for anything missing, and hands the browser to the person for every step that must be theirs (signing, signing in, CAPTCHA, the final submit). Design: [docs/browser-agent-plan.md](docs/browser-agent-plan.md).
 
 | Route | Purpose |
 |---|---|
-| `POST /sessions/{id}/applications` | Body `{"program_id", "consent": true, "details"?}`. Starts a run for a program listed in `automatable_program_ids`. `details` holds the person's confirmed device details (fill-sheet keys such as `first_name`, `date_of_birth`) for this run only; they never replace a profile value and are never stored or logged. `201`; `409 run_active` if one is running; `409 facts_in_conflict` while an answer the form needs is disputed. |
+| `POST /sessions/{id}/applications` | Body `{"program_id", "consent": true, "details"?, "detail_sources"?}`. `detail_sources` maps a detail key to the paper title it came from ("your lease"), used only for the step log: "Typed your account number (from your electric bill)". Starts a run for a program listed in `automatable_program_ids`. `details` holds the person's confirmed device details (fill-sheet keys such as `first_name`, `date_of_birth`) for this run only; they never replace a profile value and are never stored or logged. `201`; `409 run_active` if one is running; `409 facts_in_conflict` while an answer the form needs is disputed. |
 | `GET /sessions/{id}/applications/readiness?program_id=` | "Before we start": the form's fill-sheet keys sorted into `from_profile`, `from_device_needed`, `will_ask`, `unconfirmed` and `blocked_by`. Keys only, never values. |
 | `GET /sessions/{id}/applications/{run_id}` | Run status, step log, pending question, handoff reason, live-view URL, seconds left. Poll about once a second. When the run ends, its outcome goes into the main graph (`applications` and the plan's next step); `result_recorded` turns true once it has. |
 | `POST /sessions/{id}/applications/{run_id}/answer` | Answer the assistant's question (`AnswerIn` shape, `text` or `skipped`). |
 | `POST /sessions/{id}/applications/{run_id}/control` | `{"action": "take"}` gives the person the browser; `"return"` hands it back. |
 | `POST /sessions/{id}/applications/{run_id}/stop` | Ends the run and releases the browser. |
 | `GET /sessions/{id}/applications/{run_id}/frame` | Latest screenshot (PNG), the fallback view when there is no embeddable live view. |
-| `GET /practice/` | Our own practice application form (not under `/api`). Practice copy, never sent anywhere. |
+| `GET /practice/` | Our own generic practice application form (not under `/api`). Practice copy, never sent anywhere. |
+| `GET /practice/<form_id>/` | A per-program practice form: `fuel-renewal` (Fuel Assistance renewal, 2 steps) and `food-application` (food assistance, 4 steps). Pages live in `backend/app/execution/forms/`; field maps in `backend/app/data/automation/forms/`. |
 
-Programs the assistant can fill are listed in `backend/app/data/automation/`. A `practice` record opens our practice form; a `stop_before_submit` record opens a real provider form and the run always ends before sending. Records with `"enabled": false` are validated but never offered. Rehearse with real keys: `cd backend && .venv/bin/python scripts/spikes/rehearse.py --runs 5`.
+Programs the assistant can fill are listed in `backend/app/data/automation/`. A `practice` record opens our practice form, or, with a `form_id`, that program's own practice form, whose readiness lists come from its field map; a `stop_before_submit` record opens a real provider form and the run always ends before sending. Records with `"enabled": false` are validated but never offered. Rehearse with real keys: `cd backend && .venv/bin/python scripts/spikes/rehearse.py --runs 5`.
 
 Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
@@ -141,12 +142,14 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for reading typed chat messages, matching "Other" answers, and plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
-| `BROWSER_PROVIDER` | No | `off` (default) hides the browser assistant and imports nothing for it. `local` drives Chrome on this machine (development; needs `pip install -e ".[browser]"`). `steel` uses a Steel cloud browser with an embeddable live view (needs `STEEL_API_KEY`). Also needs `GEMINI_API_KEY`, or the assistant stays off. |
+| `BROWSER_PROVIDER` | No | `off` (default) hides the browser assistant and imports nothing for it. `local` drives Chrome on this machine (development; needs `pip install -e ".[browser]"`). `steel` uses a Steel cloud browser with an embeddable live view (needs `STEEL_API_KEY`). Without `GEMINI_API_KEY` only forms with a field map are offered. |
+| `FORM_AGENT_ENGINE` | No | How a practice form with a field map is filled. `manifest` (default): the curated map, no model, works offline. `gemini_map`: one Gemini call per step maps the page's labels to fill-sheet keys (never values) and falls back to the map after 8 s or an error. `computer_use`: the screenshot loop. Anything but `manifest` needs `GEMINI_API_KEY`, or it falls back to `manifest`. Every engine's actions pass the same gate. |
+| `FORM_TYPE_DELAY_MS` | No | Visible typing speed for `local`, in ms per key (default 30; 0 types instantly). |
 | `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
 | `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-3.5-flash` (`gemini-4-hydrogen` was too slow to finish a run). |
 | `PRACTICE_BASE_URL` | No | Where the browser reaches the backend's practice form. Default `http://127.0.0.1:8000`; a cloud browser needs a public URL (for example a tunnel). |
-| `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome; empty uses Playwright's Chromium (`.venv/bin/playwright install chromium`). |
-| `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. |
+| `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome, and falls back to Playwright's Chromium (`.venv/bin/playwright install chromium`) when Chrome isn't installed; empty always uses Playwright's Chromium. |
+| `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. Keep it shown for a demo: the person signs and presses Submit in that window. |
 | `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
 
 The frontend needs no secrets. The browser only calls same-origin `/api/*`, which Next.js forwards to the backend.
@@ -209,7 +212,7 @@ docs/demo-script.md                the demo, step by step, with recovery steps
 backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
 backend/app/api/routes.py          HTTP routes
 backend/app/api/execution_routes.py  browser assistant routes (mounted only when enabled)
-backend/app/api/practice_routes.py serves the practice application form at /practice/
+backend/app/api/practice_routes.py serves the practice forms at /practice/ and /practice/<form_id>/
 backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
                                    run manager, fill sheet, outcome check, practice form
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)

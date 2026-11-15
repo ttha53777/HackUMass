@@ -2,6 +2,8 @@
 
 Status: plan, written 2026-11-15 against `main` at `e3e2b9f`. Nothing in here is built yet.
 
+Built on `claude/papers-to-forms` (2026-11-15), with these changes from the plan: the main demo form is the Fuel Assistance renewal (`/practice/fuel-renewal/`, Form C's fields) plus the food form (`/practice/food-application/`); the electric discount and rental forms are deferred; the default engine is `manifest` (offline), with `gemini_map` optional; the shut-off notice became a past-due notice (pay by 12/01/2026) because of Massachusetts winter shut-off protection; the heating-fuel radio is the person's choice, on the signing step (no confirmed-choice rule). See docs/demo-script.md, "Papers to forms".
+
 Goal for the judges: one fictional household drops its papers in, the agents read them, settle a conflict, re-plan, and then a form agent fills a realistic application from what the papers said, asks for the one thing no paper covers, and hands the signature and the Send button back to the person. Every value on the form can be traced to the paper it came from.
 
 The bar is "visibly works, every time, in under four minutes", not "handles any form on the internet".

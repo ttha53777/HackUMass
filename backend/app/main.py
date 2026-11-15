@@ -42,9 +42,11 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
     app.state.automation = {}
     app.state.automation_modes = {}
     app.state.execution = None
-    if execution is None and settings.provider != "off" and not settings.gemini_api_key:
-        logger.warning("BROWSER_PROVIDER is set but GEMINI_API_KEY is not; the browser agent is off")
-    elif execution is None and settings.provider != "off":
+    injected = execution is not None  # a test's manager brings its own model
+    if execution is None and settings.provider != "off":
+        if not settings.gemini_api_key:
+            # The manifest engine needs no model: only forms with a field map are offered.
+            logger.warning("GEMINI_API_KEY is not set; the browser agent fills only practice forms with a field map")
         from app.execution.manager import ExecutionManager
         from app.execution.provider import ProviderError, make_provider
 
@@ -67,6 +69,8 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
         execution.set_result_callback(make_recorder(app.state.sessions))
 
     records = automation_records()
+    if not settings.gemini_api_key and not injected:
+        records = {pid: r for pid, r in records.items() if r.form_id}
     app.state.automation = records
     app.state.automation_modes = {pid: record.mode for pid, record in records.items()}
     app.state.execution = execution

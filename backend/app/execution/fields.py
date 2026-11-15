@@ -24,6 +24,14 @@ from typing import Callable
 from app.graph.state import Profile, Question
 
 
+_DATE_OK = r"^(0?[1-9]|1[0-2])/(0?[1-9]|[12]\d|3[01])/(19|20)\d\d$"
+_PHONE_OK = r"^[\d\s().+-]{10,20}$"
+_MONEY_OK = r"^\$?(\d{1,3}(,\d{3})+|\d+)(\.\d\d)?$"
+_NAME_OK = r"^[A-Za-z][A-Za-z .'-]{1,80}$"
+_RELATION_OK = r"^[A-Za-z][A-Za-z -]{1,30}$"
+_TEXT_OK = r"^[\w][\w .,'&#/():-]{0,119}$"
+
+
 @dataclass(frozen=True)
 class FieldSpec:
     key: str
@@ -51,6 +59,35 @@ CATALOGUE: dict[str, FieldSpec] = {
         FieldSpec("email", "Email address", "email address", pattern=r"^[^@\s]{1,64}@[^@\s]{1,190}\.[A-Za-z]{2,}$"),
         FieldSpec("household_size", "People in your household", "household size", pattern=r"^\d{1,2}$"),
         FieldSpec("monthly_income", "Monthly household income", "monthly income", pattern=r"^\$?[\d,]{1,9}(\.\d\d)?$"),
+        # Form details read from papers (docs/document-to-form-demo-plan.md, 3.5).
+        FieldSpec("member_2_name", "Person 2 name", "second household member's name", pattern=_NAME_OK),
+        FieldSpec("member_2_relation", "Person 2 relationship to you", "second household member's relationship", pattern=_RELATION_OK),
+        FieldSpec("member_2_dob", "Person 2 date of birth", "second household member's birth date", pattern=_DATE_OK, hint="MM/DD/YYYY"),
+        FieldSpec("member_3_name", "Person 3 name", "third household member's name", pattern=_NAME_OK),
+        FieldSpec("member_3_relation", "Person 3 relationship to you", "third household member's relationship", pattern=_RELATION_OK),
+        FieldSpec("member_3_dob", "Person 3 date of birth", "third household member's birth date", pattern=_DATE_OK, hint="MM/DD/YYYY"),
+        FieldSpec("employer_name", "Employer name", "employer", pattern=_TEXT_OK),
+        FieldSpec("employer_address", "Employer address", "employer's address", pattern=_TEXT_OK),
+        FieldSpec("employer_phone", "Employer phone", "employer's phone", pattern=_PHONE_OK),
+        FieldSpec("earned_income_monthly", "Your monthly pay before taxes ($)", "monthly pay", pattern=_MONEY_OK),
+        FieldSpec("hours_per_week", "Hours worked per week", "hours per week", pattern=r"^\d{1,2}(\.\d{1,2})?$"),
+        FieldSpec("other_income_source", "Other income: kind", "other income source", pattern=_TEXT_OK),
+        FieldSpec("other_income_amount", "Other income: amount each month ($)", "other income amount", pattern=_MONEY_OK),
+        FieldSpec("other_income_person", "Other income: who gets it", "other income's recipient", pattern=_NAME_OK),
+        FieldSpec("monthly_rent", "Monthly rent ($)", "monthly rent", pattern=_MONEY_OK),
+        FieldSpec("heat_included", "Is heat included in your rent?", "answer on heat in rent", pattern=r"^(?i:yes|no)$", hint="Yes or No"),
+        FieldSpec("heating_fuel", "Main heating fuel", "heating fuel", pattern=r"^(?i:oil|natural gas|electric|propane|wood|other)$"),
+        FieldSpec("landlord_name", "Landlord name", "landlord's name", pattern=_TEXT_OK),
+        FieldSpec("landlord_address", "Landlord address", "landlord's address", pattern=_TEXT_OK),
+        FieldSpec("landlord_phone", "Landlord phone", "landlord's phone", pattern=_PHONE_OK),
+        FieldSpec("utility_company", "Utility company", "utility company", pattern=_TEXT_OK),
+        FieldSpec("utility_account_number", "Utility account number", "account number", pattern=r"^[A-Za-z0-9-]{3,30}$"),
+        FieldSpec("amount_past_due", "Amount past due ($)", "amount past due", pattern=_MONEY_OK),
+        FieldSpec("rent_owed", "Rent owed ($)", "rent owed", pattern=_MONEY_OK),
+        FieldSpec("notice_date", "Date of the landlord's notice", "notice date", pattern=_DATE_OK, hint="MM/DD/YYYY"),
+        FieldSpec("liheap_number", "Last season's Fuel Assistance number", "Fuel Assistance number", pattern=r"^[A-Za-z0-9-]{3,30}$"),
+        # No paper holds this: the helper always asks.
+        FieldSpec("best_time_to_call", "Best time to reach you", "best time to reach you", pattern=_TEXT_OK),
     )
 }
 
@@ -59,10 +96,19 @@ FROM_PROFILE = ("zip", "household_size", "monthly_income", "city", "state")
 # Keys the person's device may supply (confirmed on its "My details" card). The
 # profile owns household size and income: a device value never replaces those,
 # and never replaces a key the profile already filled.
-DEVICE_KEYS = frozenset({
+IDENTITY_KEYS = (
     "first_name", "last_name", "full_name", "date_of_birth", "street_address",
     "city", "state", "zip", "phone", "email",
-})
+)
+# Form details a paper may give the device (document_patterns.KIND_DETAILS).
+PAPER_DETAIL_KEYS = (
+    "member_2_name", "member_2_relation", "member_2_dob", "member_3_name", "member_3_relation", "member_3_dob",
+    "employer_name", "employer_address", "employer_phone", "earned_income_monthly", "hours_per_week",
+    "other_income_source", "other_income_amount", "other_income_person",
+    "monthly_rent", "heat_included", "heating_fuel", "landlord_name", "landlord_address", "landlord_phone",
+    "utility_company", "utility_account_number", "amount_past_due", "rent_owed", "notice_date", "liheap_number",
+)
+DEVICE_KEYS = frozenset(IDENTITY_KEYS + PAPER_DETAIL_KEYS)
 # Fill-sheet key -> the profile field it comes from (city and state follow the ZIP).
 PROFILE_FIELD = {"zip": "zip", "city": "zip", "state": "zip",
                  "household_size": "household_size", "monthly_income": "monthly_income"}
@@ -70,7 +116,7 @@ PROFILE_FIELD = {"zip": "zip", "city": "zip", "state": "zip",
 ASK_REASON = "The form asks for this. We use it only to fill in this application and forget it when you're done."
 MAX_ANSWER_LENGTH = 120
 
-PLACEHOLDER = re.compile(r"^\{\{([a-z_]{1,40})\}\}$")
+PLACEHOLDER = re.compile(r"^\{\{([a-z][a-z0-9_]{0,39})\}\}$")
 
 
 def question_for(key: str) -> Question:
@@ -83,13 +129,24 @@ def question_for(key: str) -> Question:
     )
 
 
-class FieldStore:
-    """Private values for one run. Never logged, never serialized."""
+# Where a value came from, for the step log ("Typed your phone number (from your electric bill)").
+FROM_ANSWERS = "from your answers"
+FROM_DETAILS = "from your details"
+TOLD_US = "you told us"
 
-    __slots__ = ("_values",)
+
+class FieldStore:
+    """Private values for one run. Never logged, never serialized.
+
+    Each value may carry an origin ("from your lease"): a paper title or a fixed
+    phrase, never a value, so it is safe in the step log.
+    """
+
+    __slots__ = ("_values", "_origins")
 
     def __init__(self) -> None:
         self._values: dict[str, str] = {}
+        self._origins: dict[str, str] = {}
 
     def __repr__(self) -> str:  # never print values, even in a traceback or debugger
         return f"FieldStore(keys={sorted(self._values)})"
@@ -100,18 +157,28 @@ class FieldStore:
     def value(self, key: str) -> str | None:
         return self._values.get(key)
 
-    def put(self, key: str, value: str) -> None:
+    def origin(self, key: str) -> str | None:
+        return self._origins.get(key)
+
+    def put(self, key: str, value: str, origin: str | None = None) -> None:
         if key not in CATALOGUE:
             raise KeyError(key)
         self._values[key] = value
+        if origin:
+            self._origins[key] = origin
+        else:
+            self._origins.pop(key, None)
         # Forms that ask for one name field get it from the two the person gave.
         if key in ("first_name", "last_name") and "full_name" not in self._values:
             first, last = self._values.get("first_name"), self._values.get("last_name")
             if first and last:
                 self._values["full_name"] = f"{first} {last}"
+                if origin:
+                    self._origins["full_name"] = origin
 
     def clear(self) -> None:
         self._values.clear()
+        self._origins.clear()
 
 
 class InvalidAnswer(ValueError):
@@ -145,19 +212,19 @@ def store_from_profile(
 
     zip_fact = usable("zip")
     if zip_fact is not None and re.fullmatch(r"\d{5}", str(zip_fact.value)):
-        store.put("zip", str(zip_fact.value))
+        store.put("zip", str(zip_fact.value), FROM_ANSWERS)
         region = region_for(str(zip_fact.value))
         if region:
             if region.get("city"):
-                store.put("city", region["city"])
+                store.put("city", region["city"], FROM_ANSWERS)
             if region.get("state"):
-                store.put("state", region["state"])
+                store.put("state", region["state"], FROM_ANSWERS)
     size = usable("household_size")
     if size is not None and isinstance(size.value, (int, float)) and not isinstance(size.value, bool) and size.value > 0:
-        store.put("household_size", str(int(size.value)))
+        store.put("household_size", str(int(size.value)), FROM_ANSWERS)
     income = usable("monthly_income")
     if income is not None and isinstance(income.value, (int, float)) and not isinstance(income.value, bool):
-        store.put("monthly_income", f"{round(income.value):,}")
+        store.put("monthly_income", f"{round(income.value):,}", FROM_ANSWERS)
     return store
 
 
@@ -170,13 +237,15 @@ def sheet_lines(store: FieldStore) -> list[str]:
     ]
 
 
-def add_device_details(store: FieldStore, details: dict[str, str]) -> list[str]:
+def add_device_details(store: FieldStore, details: dict[str, str], sources: dict[str, str] | None = None) -> list[str]:
     """Put the person's confirmed device details into one run's store.
 
     Only DEVICE_KEYS, only where the profile hasn't filled the key, each checked
     like a typed answer. Raises InvalidAnswer (naming the field, never the value).
-    Returns the keys added.
+    `sources` names the paper each detail came from, for the step log. Returns the
+    keys added.
     """
+    sources = sources or {}
     added: list[str] = []
     for key, raw in details.items():
         if key not in DEVICE_KEYS:
@@ -187,7 +256,8 @@ def add_device_details(store: FieldStore, details: dict[str, str]) -> list[str]:
             value = clean_answer(key, raw)
         except InvalidAnswer as exc:
             raise InvalidAnswer(f"{CATALOGUE[key].label}: {exc}") from None
-        store.put(key, value)
+        title = sources.get(key)
+        store.put(key, value, f"from {title}" if title else FROM_DETAILS)
         added.append(key)
     return added
 

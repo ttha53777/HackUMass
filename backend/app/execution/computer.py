@@ -108,6 +108,20 @@ _SELECT = r"""
 """
 
 
+# Outlines the focused field for a moment before visible typing. Reads no value.
+_HIGHLIGHT = r"""
+() => {
+  const el = document.activeElement;
+  if (!el || !el.style) return;
+  const before = [el.style.outline, el.style.backgroundColor];
+  el.style.outline = "3px solid #e0a100";
+  el.style.backgroundColor = "#fff8dc";
+  setTimeout(() => { el.style.outline = before[0]; el.style.backgroundColor = before[1]; }, 1200);
+}
+"""
+HIGHLIGHT_SECONDS = 0.3
+
+
 def _element(raw: dict[str, Any] | None) -> Element | None:
     if not raw:
         return None
@@ -121,10 +135,12 @@ def _clamp(value: float, upper: int) -> int:
 
 class PlaywrightComputer:
     def __init__(self, page: Any, width: int = SCREEN_WIDTH, height: int = SCREEN_HEIGHT, grid: int = GRID,
-                 settle_seconds: float = SETTLE_SECONDS) -> None:
+                 settle_seconds: float = SETTLE_SECONDS, type_delay_ms: int = 0) -> None:
         self._page = page
         self._width, self._height, self._grid = width, height, grid
         self._settle_seconds = settle_seconds
+        # Above 0: highlight the field, then type key by key so a watcher sees it happen.
+        self._type_delay_ms = type_delay_ms
 
     def to_pixels(self, x: Any, y: Any) -> tuple[int, int]:
         return (
@@ -173,7 +189,12 @@ class PlaywrightComputer:
                     # Replace the field's content. Enter is never pressed: it could send the form.
                     await page.keyboard.press("ControlOrMeta+A")
                     await page.keyboard.press("Backspace")
-                    await page.keyboard.insert_text(value)
+                    if self._type_delay_ms > 0:
+                        await page.evaluate(_HIGHLIGHT)
+                        await asyncio.sleep(HIGHLIGHT_SECONDS)
+                        await page.keyboard.type(value, delay=self._type_delay_ms)
+                    else:
+                        await page.keyboard.insert_text(value)
             elif name == "scroll":
                 x, y = point or (self._width // 2, self._height // 2)
                 amount = int(args.get("magnitude_in_pixels") or 300)

@@ -37,10 +37,45 @@ export const DETAIL_LABEL: Record<IdentityKey, string> = {
   zip: "ZIP code",
   phone: "Phone",
   email: "Email",
+  member_2_name: "Person 2 name",
+  member_2_relation: "Person 2 relationship",
+  member_2_dob: "Person 2 date of birth",
+  member_3_name: "Person 3 name",
+  member_3_relation: "Person 3 relationship",
+  member_3_dob: "Person 3 date of birth",
+  employer_name: "Employer",
+  employer_address: "Employer address",
+  employer_phone: "Employer phone",
+  earned_income_monthly: "Your monthly pay",
+  hours_per_week: "Hours per week",
+  other_income_source: "Other income",
+  other_income_amount: "Other income each month",
+  other_income_person: "Other income goes to",
+  monthly_rent: "Monthly rent",
+  heat_included: "Heat included in rent",
+  heating_fuel: "Heating fuel",
+  landlord_name: "Landlord",
+  landlord_address: "Landlord address",
+  landlord_phone: "Landlord phone",
+  utility_company: "Utility company",
+  utility_account_number: "Utility account number",
+  amount_past_due: "Amount past due",
+  rent_owed: "Rent owed",
+  notice_date: "Landlord notice date",
+  liheap_number: "Fuel Assistance number",
 };
 
-/** Shown in this order. First and last name follow from the full name, so they are not listed. */
-export const DETAIL_ORDER: IdentityKey[] = ["full_name", "date_of_birth", "street_address", "city", "state", "zip", "phone", "email"];
+/** Details grouped for the "Your details" card. First and last name follow from the full name, so they are not listed. */
+export const DETAIL_GROUPS: { title: string; keys: IdentityKey[] }[] = [
+  { title: "You", keys: ["full_name", "date_of_birth", "street_address", "city", "state", "zip", "phone", "email"] },
+  { title: "Household", keys: ["member_2_name", "member_2_relation", "member_2_dob", "member_3_name", "member_3_relation", "member_3_dob"] },
+  { title: "Work and income", keys: ["employer_name", "employer_address", "employer_phone", "earned_income_monthly", "hours_per_week", "other_income_source", "other_income_amount", "other_income_person"] },
+  { title: "Home", keys: ["monthly_rent", "heat_included", "heating_fuel", "landlord_name", "landlord_address", "landlord_phone", "rent_owed", "notice_date"] },
+  { title: "Bills and benefits", keys: ["utility_company", "utility_account_number", "amount_past_due", "liheap_number"] },
+];
+
+/** Shown in this order. */
+export const DETAIL_ORDER: IdentityKey[] = DETAIL_GROUPS.flatMap((g) => g.keys);
 
 const DB = "opendoor-details";
 const STORE = "details";

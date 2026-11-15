@@ -97,12 +97,13 @@ class _PlaywrightSession:
         if self._playwright is not None:
             await self._playwright.stop()
 
-    async def _start_page(self, context: Any, target: RunTarget, settle_seconds: float = SETTLE_SECONDS) -> None:
+    async def _start_page(self, context: Any, target: RunTarget, settle_seconds: float = SETTLE_SECONDS,
+                          type_delay_ms: int = 0) -> None:
         await install_allowlist(context, target.allowed_hosts, strict=target.mode == "practice")
         page = context.pages[0] if context.pages else await context.new_page()
         await page.goto(target.start_url, wait_until="domcontentloaded", timeout=OPEN_TIMEOUT_MS)
         self.page = page  # for spikes and tests; the agent uses self.computer
-        self.computer = PlaywrightComputer(page, settle_seconds=settle_seconds)
+        self.computer = PlaywrightComputer(page, settle_seconds=settle_seconds, type_delay_ms=type_delay_ms)
 
 
 class LocalSession(_PlaywrightSession):
@@ -112,8 +113,13 @@ class LocalSession(_PlaywrightSession):
 class LocalProvider:
     name = "local"
 
-    def __init__(self, channel: str | None, headless: bool, *, settle_seconds: float = SETTLE_SECONDS) -> None:
+    def __init__(self, channel: str | None, headless: bool, *, settle_seconds: float = SETTLE_SECONDS,
+                 type_delay_ms: int = 0, debug_port: int | None = None) -> None:
         self._channel, self._headless, self._settle = channel, headless, settle_seconds
+        self._type_delay_ms = type_delay_ms
+        # Rehearsal only: lets scripts/rehearse_person.py act as the person in this
+        # window over CDP. Chrome binds it to 127.0.0.1. Off unless set.
+        self._args = [f"--remote-debugging-port={debug_port}"] if debug_port else []
         self.sessions: list[LocalSession] = []
 
     async def open(self, target: RunTarget) -> BrowserSession:
@@ -122,13 +128,20 @@ class LocalProvider:
         session = LocalSession()
         try:
             session._playwright = await async_playwright().start()
-            session._browser = await session._playwright.chromium.launch(
-                channel=self._channel, headless=self._headless
-            )
+            try:
+                session._browser = await session._playwright.chromium.launch(
+                    channel=self._channel, headless=self._headless, args=self._args
+                )
+            except Exception:
+                if self._channel is None:
+                    raise
+                # No Google Chrome on this machine: use Playwright's own Chromium.
+                logger.warning("browser channel %s not available; using Playwright Chromium", self._channel)
+                session._browser = await session._playwright.chromium.launch(headless=self._headless, args=self._args)
             context = await session._browser.new_context(
                 viewport={"width": SCREEN_WIDTH, "height": SCREEN_HEIGHT}, accept_downloads=False
             )
-            await session._start_page(context, target, self._settle)
+            await session._start_page(context, target, self._settle, self._type_delay_ms)
             self.sessions.append(session)
             return session
         except Exception as exc:
@@ -242,5 +255,6 @@ def make_provider(settings: AgentSettings) -> BrowserProvider | None:
     if settings.provider == "steel":
         return SteelProvider(settings.steel_api_key)
     if settings.provider == "local":
-        return LocalProvider(settings.local_channel, settings.local_headless)
+        return LocalProvider(settings.local_channel, settings.local_headless, type_delay_ms=settings.type_delay_ms,
+                             debug_port=settings.local_debug_port)
     return None

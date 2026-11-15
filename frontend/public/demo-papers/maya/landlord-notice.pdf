@@ -15,14 +15,16 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 6 0 obj
-<< /Length 443 >>
+<< /Length 580 >>
 stream
 BT /F2 9 Tf 72 760 Td (SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY) Tj ET
 BT /F1 18 Tf 72 726 Td (Notice from landlord \(fictional\)) Tj ET
 BT /F2 11 Tf 72 690 Td (To: Maya Rivera, 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
-BT /F2 11 Tf 72 672 Td (Rent owed: $1,800) Tj ET
-BT /F2 11 Tf 72 654 Td (Please contact the office by December 5, 2026 to arrange payment.) Tj ET
-BT /F2 11 Tf 72 636 Td (From: Sample Property Management) Tj ET
+BT /F2 11 Tf 72 672 Td (Date of notice: November 10, 2026) Tj ET
+BT /F2 11 Tf 72 654 Td (Rent owed: $1,800) Tj ET
+BT /F2 11 Tf 72 636 Td (Months owed: October 2026, November 2026) Tj ET
+BT /F2 11 Tf 72 618 Td (Please contact the office by December 5, 2026 to arrange payment.) Tj ET
+BT /F2 11 Tf 72 600 Td (From: Sample Property Management) Tj ET
 endstream
 endobj
 xref
@@ -37,5 +39,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-890
+1027
 %%EOF

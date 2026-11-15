@@ -15,17 +15,21 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 6 0 obj
-<< /Length 578 >>
+<< /Length 831 >>
 stream
 BT /F2 9 Tf 72 760 Td (SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY) Tj ET
 BT /F1 18 Tf 72 726 Td (Electric bill - Sample Electric Co. \(fictional\)) Tj ET
-BT /F2 11 Tf 72 690 Td (Account holder: Maya Rivera) Tj ET
-BT /F2 11 Tf 72 672 Td (Service address: 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
-BT /F2 11 Tf 72 654 Td (Phone: 413-555-0142) Tj ET
-BT /F2 11 Tf 72 636 Td (Email: maya.rivera@example.com) Tj ET
-BT /F2 11 Tf 72 618 Td (Billing period: October 2026) Tj ET
-BT /F2 11 Tf 72 600 Td (Amount due: $78.40) Tj ET
-BT /F2 11 Tf 72 582 Td (Status: Past due) Tj ET
+BT /F2 11 Tf 72 690 Td (Utility: Sample Electric Co.) Tj ET
+BT /F2 11 Tf 72 672 Td (Account holder: Maya Rivera) Tj ET
+BT /F2 11 Tf 72 654 Td (Account number: SAMPLE-5512-0093) Tj ET
+BT /F2 11 Tf 72 636 Td (Service address: 12 Example Street, Apt 3, Amherst, MA 01002) Tj ET
+BT /F2 11 Tf 72 618 Td (Phone: 413-555-0142) Tj ET
+BT /F2 11 Tf 72 600 Td (Email: maya.rivera@example.com) Tj ET
+BT /F2 11 Tf 72 582 Td (Billing period: October 8 - November 6, 2026) Tj ET
+BT /F2 11 Tf 72 564 Td (Previous balance: $142.60) Tj ET
+BT /F2 11 Tf 72 546 Td (Current charges: $171.25) Tj ET
+BT /F2 11 Tf 72 528 Td (Total due: $313.85) Tj ET
+BT /F2 11 Tf 72 510 Td (Status: Past due) Tj ET
 endstream
 endobj
 xref
@@ -40,5 +44,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-1025
+1278
 %%EOF

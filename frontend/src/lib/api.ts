@@ -138,10 +138,18 @@ const runs = (sessionId: string) => `/sessions/${encodeURIComponent(sessionId)}/
  * Start the assistant on one program's form. Consent is sent as literally `true`.
  * `details`: the person's confirmed "My details" (fill-sheet keys), for this run only.
  */
-export function startRun(sessionId: string, programId: string, details?: Record<string, string>): Promise<RunView> {
+/** `sources` names the paper each detail came from ("your lease"), for the step log. Titles only. */
+export function startRun(
+  sessionId: string,
+  programId: string,
+  details?: Record<string, string>,
+  sources?: Record<string, string>,
+): Promise<RunView> {
+  const withDetails = details && Object.keys(details).length ? { details } : {};
+  const withSources = sources && Object.keys(sources).length ? { detail_sources: sources } : {};
   return request<RunView>(runs(sessionId), {
     method: "POST",
-    body: JSON.stringify({ program_id: programId, consent: true, ...(details && Object.keys(details).length ? { details } : {}) }),
+    body: JSON.stringify({ program_id: programId, consent: true, ...withDetails, ...withSources }),
   });
 }
 

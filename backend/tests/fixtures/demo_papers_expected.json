@@ -15,5 +15,91 @@
     "landlord-notice": {},
     "fuel-assistance-letter": {},
     "benefit-letter": {}
+  },
+  "details": {
+    "pay-stub": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "employer_name": "Valley Grocers",
+      "employer_address": "1 Sample Way, Amherst, MA 01002",
+      "employer_phone": "413-555-0110",
+      "earned_income_monthly": "1,240",
+      "hours_per_week": "18.5"
+    },
+    "household-members": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "date_of_birth": "03/14/1994",
+      "member_2_name": "Leo Rivera",
+      "member_2_relation": "son",
+      "member_2_dob": "06/02/2023",
+      "member_3_name": "Rosa Rivera",
+      "member_3_relation": "mother",
+      "member_3_dob": "09/21/1962"
+    },
+    "lease": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "street_address": "12 Example Street, Apt 3",
+      "city": "Amherst",
+      "state": "MA",
+      "zip": "01002",
+      "monthly_rent": "900",
+      "heat_included": "No",
+      "heating_fuel": "Electric",
+      "landlord_name": "Sample Property Management",
+      "landlord_address": "40 Sample Road, Amherst, MA 01002",
+      "landlord_phone": "413-555-0177"
+    },
+    "electric-bill": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "street_address": "12 Example Street, Apt 3",
+      "city": "Amherst",
+      "state": "MA",
+      "zip": "01002",
+      "phone": "413-555-0142",
+      "email": "maya.rivera@example.com",
+      "utility_company": "Sample Electric Co.",
+      "utility_account_number": "SAMPLE-5512-0093"
+    },
+    "shutoff-notice": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "utility_account_number": "SAMPLE-5512-0093",
+      "amount_past_due": "142.60"
+    },
+    "proof-of-address": {},
+    "photo-id": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "date_of_birth": "03/14/1994",
+      "street_address": "12 Example Street, Apt 3",
+      "city": "Amherst",
+      "state": "MA",
+      "zip": "01002"
+    },
+    "landlord-notice": {
+      "rent_owed": "1,800",
+      "notice_date": "11/10/2026",
+      "landlord_name": "Sample Property Management"
+    },
+    "fuel-assistance-letter": {
+      "full_name": "Maya Rivera",
+      "first_name": "Maya",
+      "last_name": "Rivera",
+      "liheap_number": "SAMPLE-LIHEAP-0001"
+    },
+    "benefit-letter": {
+      "other_income_source": "Social Security",
+      "other_income_amount": "1,050",
+      "other_income_person": "Rosa Rivera"
+    }
   }
 }
