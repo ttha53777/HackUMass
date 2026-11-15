@@ -11,6 +11,7 @@ import { coreDone } from "@/lib/derive";
 import { cleanName, readConfirmed, readName, saveName } from "@/lib/device-state";
 
 import { Welcome } from "./welcome";
+import { ThemeToggle } from "@/components/shell/theme-toggle";
 
 type Stage = "welcome" | "chat" | "building";
 
@@ -69,6 +70,7 @@ export function FrontDoor() {
 
   return (
     <>
+      <ThemeToggle className="fixed right-4 top-4 z-40" />
       {expired && stage === "welcome" ? (
         <p role="status" className="bg-amber px-4 py-3 text-center text-[13px] text-amber-ink">
           Your last visit timed out, so we started fresh.

@@ -20,6 +20,7 @@ from app.graph.build import build_graph
 from app.services.documents import DocumentInbox
 from app.services.nessie import NessieService
 from app.services.programs_repo import ProgramsRepository, repository_from_env
+from app.services import dev_sessions
 from app.services.session_store import SessionManager, get_checkpointer
 
 if TYPE_CHECKING:
@@ -108,7 +109,7 @@ def create_app(
     app.state.programs = programs
     app.state.nessie = nessie
     app.state.documents = inbox
-    app.state.sessions = SessionManager(graph, checkpointer)
+    app.state.sessions = SessionManager(graph, checkpointer, session_file=dev_sessions.session_file())
 
     @app.exception_handler(ApiError)
     async def _api_error(_: Request, exc: ApiError):

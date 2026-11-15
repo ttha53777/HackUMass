@@ -143,6 +143,43 @@ export function trigger(events: TraceEventView[]): string {
 /** A run that ended by asking the person again: the loop goes back to them. */
 export const loopsBack = (events: TraceEventView[]) => events[events.length - 1]?.step === "asked";
 
+// ---------------------------------------------------------------------------
+// Live agent-flow panel (demo only): API calls, by method and route template.
+// Routes never carry an id ("/sessions/…/answers"), a query string or a body.
+// ---------------------------------------------------------------------------
+
+const API_CAPTION: Record<string, string> = {
+  "POST /sessions": "Starts a new session",
+  "GET /sessions/…": "Checks how far the agents got",
+  "POST /sessions/…/answers": "Sends your answer to the Administrator",
+  "POST /sessions/…/evidence/nessie": "Sends the simulated bank profile",
+  "POST /sessions/…/evidence/nessie/disconnect": "Disconnects the simulated bank",
+  "POST /sessions/…/evidence/document": "Sends a paper for the Document Agent",
+  "POST /sessions/…/evidence/review": "Sends what you checked on a paper",
+  "POST /sessions/…/interpret": "Reads what you typed, without changing anything",
+  "GET /sessions/…/web-resources": "Looks up more places online",
+  "GET /nessie/personas": "Loads the simulated bank profiles",
+  "POST /sessions/…/applications": "Starts the form assistant",
+  "GET /sessions/…/applications/readiness": "Checks what a form needs",
+  "GET /sessions/…/applications/…": "Checks on the form assistant",
+  "POST /sessions/…/applications/…/answer": "Answers the form assistant",
+  "POST /sessions/…/applications/…/control": "Hands the browser over",
+  "POST /sessions/…/applications/…/stop": "Stops the form assistant",
+};
+
+/** One API call in plain words, from its method, route template and status. */
+export function apiCaption(method: string, route: string, status: number): string {
+  if (status === 0) return "Couldn't reach the server";
+  const base = API_CAPTION[`${method} ${route}`] ?? (method === "GET" ? "Reads from the server" : "Sends a change to the server");
+  if (status === 202) return `${base}: accepted, the agents are working`;
+  if (status >= 400) return `${base}: the server said no`;
+  return base;
+}
+
+/** The live panel's one-line status. */
+export const flowCaption = (live: boolean) =>
+  live ? "Each step plays as the backend reports it." : "Waiting for the next step. No answers are shown here.";
+
 /** The trace grouped into runs (one per graph invoke), newest last. */
 export function runs(trace: TraceEventView[]): { invoke: number; events: TraceEventView[] }[] {
   const out: { invoke: number; events: TraceEventView[] }[] = [];

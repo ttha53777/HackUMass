@@ -24,11 +24,18 @@ const WORDING_POLL_MS = 1500;
 
 const OFFLINE_MESSAGE = "We couldn't reach the server. Check your connection and try again.";
 
-// sessionStorage can be unavailable (private mode, blocked storage). The app
-// still works without it; a page reload then simply starts a new session.
+// The session id lives in localStorage, so new tabs and a closed browser pick
+// up the same session (the name and plan are already kept there). Storage can
+// be unavailable (private mode, blocked storage); the app still works, and a
+// reload then simply starts a new session.
 function readStoredId(): string | null {
   try {
-    return window.sessionStorage.getItem(STORAGE_KEY);
+    const id = window.localStorage.getItem(STORAGE_KEY);
+    if (id) return id;
+    // Carry over a session from when the id was kept per tab.
+    const legacy = window.sessionStorage.getItem(STORAGE_KEY);
+    if (legacy) window.localStorage.setItem(STORAGE_KEY, legacy);
+    return legacy;
   } catch {
     return null;
   }
@@ -36,8 +43,9 @@ function readStoredId(): string | null {
 
 function storeId(sessionId: string | null) {
   try {
-    if (sessionId) window.sessionStorage.setItem(STORAGE_KEY, sessionId);
-    else window.sessionStorage.removeItem(STORAGE_KEY);
+    if (sessionId) window.localStorage.setItem(STORAGE_KEY, sessionId);
+    else window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {
     // ignore
   }

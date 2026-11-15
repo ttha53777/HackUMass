@@ -3,3 +3,6 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .env
+
+# Dev-only saved sessions (contain answers): services/dev_sessions.py
+.dev-sessions.json*

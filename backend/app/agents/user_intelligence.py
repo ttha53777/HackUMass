@@ -29,7 +29,9 @@ from typing import Any, Iterable
 
 from app.graph.answers import normalize_answer
 from app.graph.questions import (
+    BANK_SOURCE_PREFIX,
     CONFIRMATION_FOR,
+    bank_review_fields,
     OTHER_OPTION_ID,
     QuestionSpec,
     evidence_from_source,
@@ -41,14 +43,13 @@ from app.graph.state import (
     Conflict,
     DocumentExtraction,
     Fact,
-    FinancialSummary,
     Profile,
     ReviewDecision,
     SafeError,
     SessionState,
 )
 from app.services.free_text import match_other
-from app.services.nessie import NessieService
+from app.services.nessie import NessieService, bank_facts
 
 # Two money amounts within this fraction of each other are treated as the same
 # fact (bank deposits rarely match a reported monthly income to the dollar).
@@ -332,13 +333,21 @@ def apply_review(
     profile: Profile, decision: ReviewDecision, documents: list[DocumentExtraction], now: datetime
 ) -> list[str]:
     """One review card: ticked rows are confirmed, edited rows become the person's
-    answer, and rows left unticked are dropped. Values were validated by the API."""
-    document = next((d for d in documents if d.document_id == decision.document_id), None)
-    if document is None:
-        return []
-    source = f"doc:{document.document_id}"
+    answer, and rows left unticked are dropped. Values were validated by the API.
+
+    `document_id` "bank:<persona>" is the simulated bank profile's card: its rows
+    are every bank reading still waiting for the person."""
+    if decision.document_id.startswith(BANK_SOURCE_PREFIX):
+        source = decision.document_id
+        fields = bank_review_fields(profile, source)
+    else:
+        document = next((d for d in documents if d.document_id == decision.document_id), None)
+        if document is None:
+            return []
+        source = f"doc:{document.document_id}"
+        fields = list(document.extracted_facts)
     changed: list[str] = []
-    for field in document.extracted_facts:
+    for field in fields:
         evidence = evidence_from_source(profile, field, source)
         if evidence is None:
             continue
@@ -440,15 +449,9 @@ def forget_bank_evidence(profile: Profile) -> list[str]:
 # --------------------------------------------------------------------------
 
 
-def _income_fact(summary: FinancialSummary, now: datetime) -> Fact:
-    return Fact(
-        value=summary.avg_monthly_deposits,
-        provenance="nessie_sandbox",
-        updated_at=now,
-        period="month",
-        confirmed=False,
-        source=f"bank:{summary.persona_id}",
-    )
+def _needs(profile: Profile) -> list[str]:
+    fact = profile.facts.get("needs")
+    return list(fact.value) if fact is not None and isinstance(fact.value, list) else []
 
 
 def make_user_intelligence(nessie: NessieService | None = None, inbox: Any = None):
@@ -481,7 +484,7 @@ def make_user_intelligence(nessie: NessieService | None = None, inbox: Any = Non
                 service = NessieService(None)
             result = service.summarize(evidence.persona_id)
             update["financial_summary"] = result.summary
-            changed += apply_evidence_facts(profile, {"monthly_income": _income_fact(result.summary, now)})
+            changed += apply_evidence_facts(profile, bank_facts(result.summary, _needs(profile), now))
             if result.notice:
                 code, message = result.notice
                 update["errors"] = list(state.get("errors") or []) + [

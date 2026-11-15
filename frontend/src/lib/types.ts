@@ -358,6 +358,8 @@ export type PendingReview = {
   title: string;
   rows: ReviewRow[];
   notes: string[];
+  /** The simulated bank profile's card (document_id "bank:<persona>", kind "bank"). */
+  simulated: boolean;
 };
 
 export type TraceStep = "routed" | "completed" | "failed" | "asked" | "skipped";

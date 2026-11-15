@@ -37,6 +37,7 @@ from app.graph.questions import (
     next_awaiting_question,
     next_core_question,
     paper_title,
+    priority_question_ids,
     referenced_fields,
 )
 from app.graph.state import (
@@ -298,6 +299,7 @@ def decide(state: SessionState) -> Decision:
         # Already given a bank profile or a document: don't offer another source.
         has_summary=state.get("financial_summary") is not None or bool(state.get("documents")),
         source_labels=source_labels(state),
+        priority=priority_question_ids(state.get("financial_summary")),
     )
     if question is not None:
         return finish("awaiting_user", question)

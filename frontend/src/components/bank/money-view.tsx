@@ -74,9 +74,14 @@ export function MoneyView() {
     toast(ok ? "Free tax help added to your plan." : "That didn't go through. Try again?");
   };
 
+  // First in both layouts below, so it stays mounted when the summary arrives
+  // and the "Linking your bank" steps can finish.
+  const connectModal = <ConnectBankModal open={connectOpen} onClose={() => setConnectOpen(false)} />;
+
   if (!summary) {
     return (
       <>
+        {connectModal}
         <PageHead title="Your money">Connect a bank to see it in one place.</PageHead>
         <Panel className="flex flex-col items-start gap-4 p-6">
           <span className="grid size-12 place-items-center rounded-[15px] bg-brand-soft text-brand-text">
@@ -112,7 +117,6 @@ export function MoneyView() {
             <Landmark aria-hidden className="size-4" /> Connect a bank account
           </button>
         </Panel>
-        <ConnectBankModal open={connectOpen} onClose={() => setConnectOpen(false)} />
       </>
     );
   }
@@ -128,6 +132,7 @@ export function MoneyView() {
 
   return (
     <>
+      {connectModal}
       <PageHead title="Your money">Monthly averages from your connected demo bank.</PageHead>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p className="inline-flex items-center gap-2 rounded-full bg-lav px-3 py-1.5 text-[12px] font-bold text-lav-ink">

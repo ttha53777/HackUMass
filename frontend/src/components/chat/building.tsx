@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AgentFlowMini } from "@/components/loop/agent-flow-mini";
 import { HouseArt } from "@/components/front-door/house-art";
 import { useWebResources } from "@/components/home/web-resources";
 import { useApp } from "@/components/session/session-provider";
@@ -50,6 +51,7 @@ export function Building({ name }: { name: string }) {
             <p className="mb-5 leading-[1.7] text-muted-foreground">Matching what you shared with what each program asks for.</p>
 
             <Checklist snapshot={app.snapshot} reduced={reduced} onMinimumTime={() => setMinTimeDone(true)} />
+            <AgentFlowMini className="mt-5" />
 
             <AnimatePresence>
               {result ? (
