@@ -243,7 +243,8 @@ def decide(state: SessionState) -> Decision:
             if spec is not None:
                 fields = [spec.question.target_field]
         elif evidence is not None:
-            reason, fields = "evidence_bank", []
+            reason = "evidence_bank_disconnect" if evidence.kind == "nessie_disconnect" else "evidence_bank"
+            fields = []
         elif reviews:
             reason, fields = "review", []
         else:

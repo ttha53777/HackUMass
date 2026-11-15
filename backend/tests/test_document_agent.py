@@ -223,3 +223,47 @@ def test_identity_lines_are_hidden_from_the_model(monkeypatch):
     monkeypatch.setattr("app.services.documents.get_llm", lambda: FakeLLM())
     read_document("stub.txt", b"Employee: Maya Rivera\nPhone: 413-555-0142\nPay: $40 per hour", "income")
     assert seen and "Maya" not in seen[0] and "413-555" not in seen[0]
+
+
+# --- disconnecting the bank when papers are in (main's nessie_disconnect) -------
+
+
+def connect_bank(client, sid):
+    r = client.post(f"/api/sessions/{sid}/evidence/nessie",
+                    json={"persona_id": "part-time-irregular", "consent": True})
+    assert r.status_code in (200, 202)
+
+
+def disconnect_bank(client, sid):
+    assert client.post(f"/api/sessions/{sid}/evidence/nessie/disconnect").status_code in (200, 202)
+    return client.get(f"/api/sessions/{sid}").json()
+
+
+def test_disconnect_leaves_the_paper_when_bank_and_paper_disagreed(client):
+    sid = start(client, income=False)
+    upload(client, sid, "stub.txt", b"Employer: Sample Co\nGross monthly pay: $4,000", "income")
+    connect_bank(client, sid)
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert any(c.field == "monthly_income" for c in profile.conflicts)
+
+    snap = disconnect_bank(client, sid)
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert not any(c.field == "monthly_income" for c in profile.conflicts)  # no one-sided "conflict"
+    income = profile.facts["monthly_income"]
+    assert income.value == 4000 and not income.confirmed and income.source.startswith("doc:")
+    assert review_for(snap, "income")  # still waiting on its review card
+    steps = [(e["node"], e["reason"]) for e in snap["trace"]]
+    assert ("user_intelligence", "evidence_bank_disconnect") in steps
+
+
+def test_disconnect_keeps_a_paper_that_agreed_with_the_bank(client):
+    sid = start(client, income=False)
+    connect_bank(client, sid)
+    bank = client.app.state.sessions.values(sid)["profile"].facts["monthly_income"]
+    assert bank.source == "bank:part-time-irregular" and bank.provenance == "nessie_sandbox"
+    amount = f"${bank.value:,.0f}".encode()
+    upload(client, sid, "stub.txt", b"Gross monthly pay: " + amount, "income")
+
+    disconnect_bank(client, sid)
+    income = client.app.state.sessions.values(sid)["profile"].facts["monthly_income"]
+    assert income.source.startswith("doc:") and not income.confirmed
