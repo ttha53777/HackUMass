@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { DoorOpen } from "lucide-react";
 
+import { AgentFlowPill } from "@/components/loop/agent-flow-mini";
 import { useApp } from "@/components/session/session-provider";
 import { usePlan } from "@/components/session/plan-state";
 import { benefits, liveCount, localHelp, walletKinds } from "@/lib/derive";
@@ -147,6 +148,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
       </div>
+      <AgentFlowPill />
     </div>
   );
 }
