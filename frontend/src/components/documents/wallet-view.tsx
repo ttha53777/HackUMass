@@ -52,7 +52,13 @@ export function WalletView() {
   const [sort, setSort] = useState<Sort>("needed");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
-  const [pending, setPending] = useState<File | null>(null);
+  // Files picked or dropped, waiting to be told what they are (first one is asked now).
+  const [queued, setQueued] = useState<File[]>([]);
+  const pending = queued[0] ?? null;
+  const enqueue = (files: FileList | null | undefined) => {
+    const list = Array.from(files ?? []).slice(0, 8);
+    if (list.length) setQueued((q) => [...q, ...list]);
+  };
   const [pageDrag, setPageDrag] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
@@ -224,10 +230,9 @@ export function WalletView() {
 
   const onPageDrop = (e: DragEvent) => {
     setPageDrag(false);
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
+    if (!e.dataTransfer.files?.length) return;
     e.preventDefault();
-    setPending(file);
+    enqueue(e.dataTransfer.files);
   };
 
   if (!snapshot) return null;
@@ -277,10 +282,10 @@ export function WalletView() {
           ref={picker}
           type="file"
           accept={ACCEPT}
+          multiple
           className="hidden"
           onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) setPending(f);
+            enqueue(e.target.files);
             e.target.value = "";
           }}
         />
@@ -479,7 +484,7 @@ export function WalletView() {
             <div className="rounded-[20px] border-2 border-dashed border-brand bg-surface px-8 py-6 text-center shadow-card">
               <Upload aria-hidden className="mx-auto mb-2 size-7 text-brand-text" />
               <p className="text-[15px] font-extrabold">Drop to add a paper</p>
-              <p className="text-[12.5px] text-muted-foreground">You&apos;ll pick what it is next.</p>
+              <p className="text-[12.5px] text-muted-foreground">You&apos;ll pick what each one is next.</p>
             </div>
           </motion.div>
         ) : null}
@@ -502,17 +507,27 @@ export function WalletView() {
         ) : null}
       </AnimatePresence>
 
+      {/* A closing dialog stays answered (see WhatIsThis), so the next one can open on top at once. */}
       <AnimatePresence>
         {pending ? (
           <WhatIsThis
+            key={`${pending.name}-${queued.length}`}
             file={pending}
-            options={rows.map((r) => ({ kind: r.kind, label: r.label, status: r.status }))}
-            onCancel={() => setPending(null)}
+            position={queued.length > 1 ? `1 of ${queued.length}` : null}
+            options={[
+              ...rows.map((r) => ({ kind: r.kind, label: r.label, status: r.status })),
+              // Not on any application's list, but it counts toward household income.
+              ...(rows.some((r) => r.kind === "member_income")
+                ? []
+                : [{ kind: "member_income", label: "Income of someone else at home (like a benefit letter)", status: "needed" as const }]),
+            ]}
+            onCancel={() => setQueued((q) => q.slice(1))}
             onPick={(kind) => {
               const f = pending;
-              setPending(null);
+              const last = queued.length === 1;
+              setQueued((q) => q.slice(1));
               void attach(kind, f);
-              setSelected(kind);
+              if (last && rows.some((r) => r.kind === kind)) setSelected(kind);
             }}
           />
         ) : null}
@@ -541,30 +556,42 @@ function SideItem({ active, onClick, label, count }: { active: boolean; onClick:
 /** After a file is picked or dropped on the page: which paper is it? A guess from its name comes first. */
 function WhatIsThis({
   file,
+  position,
   options,
   onCancel,
   onPick,
 }: {
   file: File;
+  /** "1 of 3" when several files were added at once. */
+  position: string | null;
   options: { kind: string; label: string; status: Row["status"] }[];
   onCancel: () => void;
   onPick: (kind: string) => void;
 }) {
   const guess = guessKind(file.name, options.map((o) => o.kind));
+  // Answer once: a double click (or a click while closing) must not add the file twice.
+  const answered = useRef(false);
+  const once = <T,>(fn: (arg: T) => void) => (arg: T) => {
+    if (answered.current) return;
+    answered.current = true;
+    fn(arg);
+  };
+  const cancel = once<void>(() => onCancel());
+  const choose = once<string>((kind) => onPick(kind));
   const [pick, setPick] = useState(guess ?? options.find((o) => o.status === "needed")?.kind ?? options[0]?.kind ?? "");
   const ordered = [...options].sort((a, b) => Number(b.kind === guess) - Number(a.kind === guess) || Number(a.status !== "needed") - Number(b.status !== "needed"));
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancel();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, [cancel]);
   return (
     <motion.div
       className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      onMouseDown={(e) => e.target === e.currentTarget && onCancel()}
+      onMouseDown={(e) => e.target === e.currentTarget && cancel()}
     >
       <motion.div
         role="dialog"
@@ -575,10 +602,12 @@ function WhatIsThis({
         exit={{ y: 10, opacity: 0 }}
         className="relative max-h-[86vh] w-[min(460px,100%)] overflow-y-auto rounded-[22px] border border-line bg-surface p-5 shadow-card"
       >
-        <button type="button" onClick={onCancel} aria-label="Cancel" className="absolute right-3.5 top-3.5 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-surface-2">
+        <button type="button" onClick={() => cancel()} aria-label="Cancel" className="absolute right-3.5 top-3.5 grid size-8 place-items-center rounded-full text-muted-foreground hover:bg-surface-2">
           <X aria-hidden className="size-4" />
         </button>
-        <h2 className="text-[17px] font-extrabold">What is this paper?</h2>
+        <h2 className="text-[17px] font-extrabold">
+          What is this paper?{position ? <span className="ml-2 text-[12px] font-bold text-faint">{position}</span> : null}
+        </h2>
         <p className="mb-3 mt-1 truncate text-[12.5px] text-muted-foreground">{file.name}</p>
         <fieldset className="flex flex-col gap-1.5">
           <legend className="sr-only">Kind of paper</legend>
@@ -598,10 +627,10 @@ function WhatIsThis({
           ))}
         </fieldset>
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" className={btn("ghost", "sm")} onClick={onCancel}>
-            Cancel
+          <button type="button" className={btn("ghost", "sm")} onClick={() => cancel()}>
+            {position ? "Skip this one" : "Cancel"}
           </button>
-          <button type="button" className={btn("primary", "sm")} disabled={!pick} onClick={() => onPick(pick)}>
+          <button type="button" className={btn("primary", "sm")} disabled={!pick} onClick={() => choose(pick)}>
             Add it
           </button>
         </div>
