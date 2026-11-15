@@ -76,6 +76,46 @@ _AGE_EVIDENCE: dict[str, re.Pattern[str]] = {
 }
 
 
+# Facts one sentence can carry for later questions, read only while reading needs.
+# (question id, option id, words for it). Single-choice questions take the first match.
+_FOLLOWUPS: list[tuple[str, str, re.Pattern[str]]] = [
+    ("utility_issues", "shutoff", re.compile(
+        r"\b(?:shut[- ]?off|disconnect(?:ion|ed)?|(?:turn(?:ed|ing)?|cut(?:ting)?) off (?:my |the |our )?(?:power|heat|gas|electric\w*|lights?))", re.I)),
+    ("utility_issues", "broken", re.compile(
+        r"\b(?:heat(?:er|ing)?(?: system)?|furnace|boiler)\b[^.]{0,30}\b(?:broke|broken|stopped|not working|died|dead)\b|\bno heat\b", re.I)),
+    ("housing_need", "tonight", re.compile(
+        r"\b(?:nowhere to (?:sleep|stay|go)|(?:place|somewhere) to (?:stay|sleep) tonight|sleeping (?:outside|in (?:my|a|the) car|on the street)|kicked out)\b", re.I)),
+    ("housing_need", "behind", re.compile(
+        r"\b(?:evict\w*|notice to quit|behind on (?:my |the )?rent|can'?t (?:pay|afford) (?:my |the )?rent|late on (?:my |the )?rent|owe (?:back )?rent)\b", re.I)),
+]
+# Stricter than _AGE_EVIDENCE["60"], which also matches any number from 60 up ("$90").
+_SENIOR_WORDS = re.compile(r"\b(?:senior|elderly|over (?:60|sixty)|(?:6\d|[7-9]\d)[- ]years?[- ]old)\b", re.I)
+
+
+def _proposed(text: str) -> list[AnswerIn]:
+    """Validated answers to follow-up questions that the message gives words for."""
+    picks: dict[str, list[str]] = {}
+    for question_id, option_id, pattern in _FOLLOWUPS:
+        if pattern.search(text):
+            picks.setdefault(question_id, []).append(option_id)
+    who = []
+    if _AGE_EVIDENCE["child"].search(text):
+        who.append("child")
+    if _SENIOR_WORDS.search(text):
+        who.append("60")
+    if who:
+        picks["household_who"] = who
+    out = []
+    for question_id, ids in picks.items():
+        spec = get_spec(question_id)
+        if spec is None:
+            continue
+        answer = _select_answer(question_id, ids[:1] if spec.question.type == "single_select" else ids)
+        if answer is not None:
+            out.append(answer)
+    return out
+
+
 def _evidenced_who(ids: list[str], text: str, answering: bool) -> list[str]:
     """Keep only age groups the text gives words for. "None" only as a direct answer."""
     kept = [i for i in ids if i in _AGE_EVIDENCE and _AGE_EVIDENCE[i].search(text)]
@@ -224,6 +264,8 @@ def interpret(question_id: str, raw_text: str, program_names: list[str]) -> Inte
 
     if result.off_topic:
         result.answer = None
+    elif question_id == "needs":
+        result.proposed = _proposed(text)
     llm = get_llm()
     if llm is None:
         return result
@@ -245,6 +287,7 @@ def interpret(question_id: str, raw_text: str, program_names: list[str]) -> Inte
     injected = base["off_topic"]
     if injected:
         result.answer = None
+        result.proposed = []
     if not injected and question_id in found and found[question_id] is not None:
         result.answer = found[question_id]
         # Needs the keywords also saw are kept, so one the model skipped isn't lost.
@@ -265,6 +308,8 @@ def interpret(question_id: str, raw_text: str, program_names: list[str]) -> Inte
     if model.urgent:  # type: ignore[attr-defined]
         result.safety = "urgent"
     result.off_topic = injected or bool(model.off_topic)  # type: ignore[attr-defined]
+    if result.off_topic:
+        result.proposed = []
     reply = " ".join(str(model.reply).split())  # type: ignore[attr-defined]
     result.reply = reply if (not injected and is_safe_reply(reply, text, program_names)) else None
     return result

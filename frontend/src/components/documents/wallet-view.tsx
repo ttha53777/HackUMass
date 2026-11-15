@@ -1,5 +1,6 @@
 "use client";
 
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUpDown, ClipboardCopy, FileSearch, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";

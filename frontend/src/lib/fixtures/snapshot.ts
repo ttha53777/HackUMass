@@ -218,6 +218,46 @@ export const snapshotFixture: SessionSnapshot = {
           {
             "id": "transportation",
             "label": "Getting around"
+          },
+          {
+            "id": "mental_health",
+            "label": "Stress or someone to talk to"
+          },
+          {
+            "id": "legal",
+            "label": "Legal help"
+          },
+          {
+            "id": "childcare",
+            "label": "Childcare"
+          },
+          {
+            "id": "employment",
+            "label": "Work or job training"
+          },
+          {
+            "id": "safety",
+            "label": "Feeling unsafe at home"
+          },
+          {
+            "id": "taxes",
+            "label": "Free tax help"
+          },
+          {
+            "id": "phone_internet",
+            "label": "Phone or internet bills"
+          },
+          {
+            "id": "seniors",
+            "label": "Caring for an older adult"
+          },
+          {
+            "id": "pregnancy_baby",
+            "label": "Pregnancy or a baby"
+          },
+          {
+            "id": "disability",
+            "label": "Living with a disability"
           }
         ],
         "allow_other": true,
@@ -287,7 +327,7 @@ export const snapshotFixture: SessionSnapshot = {
           },
           {
             "id": "child",
-            "label": "A child under 5, or someone pregnant"
+            "label": "A child under 5 or someone pregnant"
           },
           {
             "id": "none",
@@ -534,7 +574,8 @@ export const snapshotFixture: SessionSnapshot = {
         "categories": [
           "food",
           "healthcare",
-          "utilities"
+          "utilities",
+          "seniors"
         ],
         "service_area": {
           "statewide": false,
@@ -778,7 +819,8 @@ export const snapshotFixture: SessionSnapshot = {
         "provider": "Highland Valley Elder Services",
         "type": "community",
         "categories": [
-          "food"
+          "food",
+          "seniors"
         ],
         "service_area": {
           "statewide": false,
@@ -1475,7 +1517,8 @@ export const snapshotFixture: SessionSnapshot = {
         "provider": "Community Action Pioneer Valley",
         "type": "government",
         "categories": [
-          "food"
+          "food",
+          "pregnancy_baby"
         ],
         "service_area": {
           "statewide": false,
@@ -3088,6 +3131,8 @@ export const snapshotFixture: SessionSnapshot = {
       ],
       "link": "https://www.communityaction.us/program/rent-utility-assistance/",
       "urgency": "high",
+      "horizon": "today",
+      "deadline": true,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3100,6 +3145,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://www.wayfinders.org/housing-help/housinghelpforrenters/",
       "urgency": "high",
+      "horizon": "today",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Up to $7,000 per household in a 12-month period. No application deadline is listed; confirm timing with the provider."
     },
@@ -3112,6 +3159,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": [],
       "link": "https://amherstsurvival.org/community-meals/",
       "urgency": "unknown",
+      "horizon": "today",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3124,6 +3173,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": [],
       "link": "https://www.foodbankwma.org/get-help/mobile-food-bank/",
       "urgency": "unknown",
+      "horizon": "today",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3138,6 +3189,8 @@ export const snapshotFixture: SessionSnapshot = {
       ],
       "link": "https://amherstsurvival.org/food-pantry-register/",
       "urgency": "unknown",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3150,6 +3203,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://highlandvalley.org/services/benefits-support-program/",
       "urgency": "high",
+      "horizon": "today",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
     },
@@ -3162,6 +3217,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
       "urgency": "unknown",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
     },
@@ -3174,6 +3231,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://www.eversource.com/cg/customer/discount-rate-application#/form",
       "urgency": "high",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Discount percentages as of Nov. 1, 2026. No application deadline is listed; confirm timing with the provider."
     },
@@ -3195,6 +3254,8 @@ export const snapshotFixture: SessionSnapshot = {
       ],
       "link": "https://www.toapply.org/CA",
       "urgency": "high",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "Provider note: 2026-2027 heating season (applications October 1 - April 30). No application deadline is listed; confirm timing with the provider."
     },
@@ -3207,6 +3268,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://www.magoodneighbor.org/assistance.html",
       "urgency": "high",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: 2026-2027 season. No application deadline is listed; confirm timing with the provider."
     },
@@ -3222,6 +3285,8 @@ export const snapshotFixture: SessionSnapshot = {
       ],
       "link": "https://forms.monday.com/forms/0172eaed3ccf243cfac7464cba1fc6b9?r=use1",
       "urgency": "high",
+      "horizon": "week",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3234,6 +3299,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf",
       "urgency": "unknown",
+      "horizon": "later",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. Provider note: Eligibility guidelines dated February 2026. No application deadline is listed; confirm timing with the provider."
     },
@@ -3248,6 +3315,8 @@ export const snapshotFixture: SessionSnapshot = {
       ],
       "link": "https://amherstsurvival.org/campus-pantry/",
       "urgency": "unknown",
+      "horizon": "later",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "No application deadline is listed; confirm timing with the provider."
     },
@@ -3260,6 +3329,8 @@ export const snapshotFixture: SessionSnapshot = {
       "documents": null,
       "link": "https://www.foodbankwma.org/snap-referral/",
       "urgency": "unknown",
+      "horizon": "later",
+      "deadline": false,
       "depends_on": [],
       "uncertainty": "The provider doesn't list required documents; ask when you contact them. No application deadline is listed; confirm timing with the provider."
     }
@@ -3303,50 +3374,127 @@ export const snapshotFixture: SessionSnapshot = {
     "eversource-ma-discount-rate": "practice",
     "capv-fuel-assistance": "practice"
   },
-  "pending_reviews": [
-    {
-      "document_id": "doc_household",
-      "kind": "dob",
-      "title": "your household paper",
-      "rows": [
-        {
-          "field": "household_size",
-          "label": "People in your household",
-          "value": 3,
-          "display": "3 people",
-          "in_conflict": true
-        }
-      ],
-      "notes": [],
-      "simulated": false
-    }
-  ],
+  "pending_reviews": [],
   "trace": [
     {
       "seq": 1,
       "invoke": 1,
-      "step": "routed",
+      "step": "asked",
       "node": "administrator",
-      "reason": "evidence_document",
-      "fields": [],
+      "reason": "core",
+      "fields": [
+        "needs"
+      ],
+      "count": null,
+      "question_id": "needs"
+    },
+    {
+      "seq": 2,
+      "invoke": 2,
+      "step": "routed",
+      "node": "user_intelligence",
+      "reason": "answer",
+      "fields": [
+        "needs"
+      ],
       "count": null,
       "question_id": null
     },
     {
-      "seq": 2,
-      "invoke": 1,
+      "seq": 3,
+      "invoke": 2,
       "step": "completed",
-      "node": "document_analysis",
+      "node": "user_intelligence",
       "reason": null,
       "fields": [
-        "household_size"
+        "needs"
       ],
       "count": 1,
       "question_id": null
     },
     {
-      "seq": 3,
-      "invoke": 1,
+      "seq": 4,
+      "invoke": 2,
+      "step": "asked",
+      "node": "administrator",
+      "reason": "core",
+      "fields": [
+        "zip"
+      ],
+      "count": null,
+      "question_id": "zip"
+    },
+    {
+      "seq": 5,
+      "invoke": 3,
+      "step": "routed",
+      "node": "user_intelligence",
+      "reason": "answer",
+      "fields": [
+        "zip"
+      ],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 6,
+      "invoke": 3,
+      "step": "completed",
+      "node": "user_intelligence",
+      "reason": null,
+      "fields": [
+        "zip"
+      ],
+      "count": 1,
+      "question_id": null
+    },
+    {
+      "seq": 7,
+      "invoke": 3,
+      "step": "routed",
+      "node": "program_discovery",
+      "reason": "needs_or_zip_changed",
+      "fields": [],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 8,
+      "invoke": 3,
+      "step": "completed",
+      "node": "program_discovery",
+      "reason": null,
+      "fields": [],
+      "count": 16,
+      "question_id": null
+    },
+    {
+      "seq": 9,
+      "invoke": 3,
+      "step": "asked",
+      "node": "administrator",
+      "reason": "core",
+      "fields": [
+        "household_size"
+      ],
+      "count": null,
+      "question_id": "household_size"
+    },
+    {
+      "seq": 10,
+      "invoke": 4,
+      "step": "routed",
+      "node": "user_intelligence",
+      "reason": "answer",
+      "fields": [
+        "household_size"
+      ],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 11,
+      "invoke": 4,
       "step": "completed",
       "node": "user_intelligence",
       "reason": null,
@@ -3357,16 +3505,168 @@ export const snapshotFixture: SessionSnapshot = {
       "question_id": null
     },
     {
-      "seq": 4,
-      "invoke": 1,
+      "seq": 12,
+      "invoke": 4,
       "step": "asked",
       "node": "administrator",
-      "reason": "conflict",
+      "reason": "core",
       "fields": [
-        "household_size"
+        "household_who"
       ],
       "count": null,
-      "question_id": "confirm_household_size"
+      "question_id": "household_who"
+    },
+    {
+      "seq": 13,
+      "invoke": 5,
+      "step": "routed",
+      "node": "user_intelligence",
+      "reason": "answer",
+      "fields": [
+        "household_who"
+      ],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 14,
+      "invoke": 5,
+      "step": "completed",
+      "node": "user_intelligence",
+      "reason": null,
+      "fields": [
+        "household_who"
+      ],
+      "count": 1,
+      "question_id": null
+    },
+    {
+      "seq": 15,
+      "invoke": 5,
+      "step": "routed",
+      "node": "eligibility",
+      "reason": "facts_changed",
+      "fields": [],
+      "count": 16,
+      "question_id": null
+    },
+    {
+      "seq": 16,
+      "invoke": 5,
+      "step": "completed",
+      "node": "eligibility",
+      "reason": null,
+      "fields": [],
+      "count": 16,
+      "question_id": null
+    },
+    {
+      "seq": 17,
+      "invoke": 5,
+      "step": "routed",
+      "node": "action_planning",
+      "reason": "results_changed",
+      "fields": [],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 18,
+      "invoke": 5,
+      "step": "completed",
+      "node": "action_planning",
+      "reason": null,
+      "fields": [],
+      "count": 15,
+      "question_id": null
+    },
+    {
+      "seq": 19,
+      "invoke": 5,
+      "step": "asked",
+      "node": "administrator",
+      "reason": "eligibility_followup",
+      "fields": [
+        "benefits_held"
+      ],
+      "count": null,
+      "question_id": "benefits_held"
+    },
+    {
+      "seq": 20,
+      "invoke": 6,
+      "step": "routed",
+      "node": "user_intelligence",
+      "reason": "answer",
+      "fields": [
+        "utility_issues"
+      ],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 21,
+      "invoke": 6,
+      "step": "completed",
+      "node": "user_intelligence",
+      "reason": null,
+      "fields": [
+        "utility_issues"
+      ],
+      "count": 1,
+      "question_id": null
+    },
+    {
+      "seq": 22,
+      "invoke": 6,
+      "step": "routed",
+      "node": "eligibility",
+      "reason": "facts_changed",
+      "fields": [],
+      "count": 3,
+      "question_id": null
+    },
+    {
+      "seq": 23,
+      "invoke": 6,
+      "step": "completed",
+      "node": "eligibility",
+      "reason": null,
+      "fields": [],
+      "count": 16,
+      "question_id": null
+    },
+    {
+      "seq": 24,
+      "invoke": 6,
+      "step": "routed",
+      "node": "action_planning",
+      "reason": "results_changed",
+      "fields": [],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 25,
+      "invoke": 6,
+      "step": "completed",
+      "node": "action_planning",
+      "reason": null,
+      "fields": [],
+      "count": 14,
+      "question_id": null
+    },
+    {
+      "seq": 26,
+      "invoke": 6,
+      "step": "asked",
+      "node": "administrator",
+      "reason": "eligibility_followup",
+      "fields": [
+        "benefits_held"
+      ],
+      "count": null,
+      "question_id": "benefits_held"
     }
   ]
 };

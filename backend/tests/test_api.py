@@ -137,6 +137,22 @@ def test_editing_needs_asks_only_the_newly_relevant_question(client):
     assert [card["program"]["id"] for card in snapshot["programs"]] == ["fixture-rent-help"]
 
 
+def test_editing_needs_after_intake_adds_and_removes_programs(client):
+    """The plan hub adds and removes needs by editing the needs answer."""
+    session_id, snapshot = run_food_intake(client)
+    def categories(snap):
+        return {c for card in snap["programs"] for c in card["program"]["categories"]}
+    assert "food" in categories(snapshot) and "utilities" not in categories(snapshot)
+
+    added = answer(client, session_id, question_id="needs", selected_option_ids=["food", "utilities"])
+    assert "utilities" in categories(added)
+    assert {i["program_id"] for i in added["action_plan"]} <= {c["program"]["id"] for c in added["programs"]}
+
+    removed = answer(client, session_id, question_id="needs", selected_option_ids=["utilities"])
+    food_only = {c["program"]["id"] for c in snapshot["programs"]} - {c["program"]["id"] for c in added["programs"] if "utilities" in c["program"]["categories"]}
+    assert not food_only & {c["program"]["id"] for c in removed["programs"]}
+
+
 def test_no_matches_is_reported_not_invented(client):
     session_id = start(client)["session_id"]
     answer(client, session_id, question_id="needs", selected_option_ids=["healthcare"])

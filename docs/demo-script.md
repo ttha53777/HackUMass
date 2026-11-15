@@ -23,17 +23,17 @@ About 4 minutes. It uses real, hand-checked Hampshire County records. The person
 | 2 | Tick **Food & groceries** and **Heat & utility bills** → **Continue**. | One question per screen. The right rail shows programs in view and what we heard. |
 | 3 | ZIP **01002** → **Continue**. | Coverage is deliberately narrow: only programs we checked by hand. |
 | 4 | Household **1**, **None of these** → **Show my results**. | Three questions, then the Building screen: each row is a real agent step, checked off when the backend says it finished. |
-| 5 | Home. | One next step, ranked by the Action Planning agent, with its wording and caveat. *After that*, two paths (government benefits, local help), and the sharpen card: the one question that would settle the most programs. |
-| 6 | **About you** → *Questions you can answer* → heat & utilities: **My heating system is broken** → **Save answer**. | Any open question can be answered from anywhere. The toast says what moved. |
-| 7 | Housing: **I own my home**. Then benefits you get: **Fuel Assistance** → **Save answer**. | **The key moment.** "Got it. … moved to likely fit." Heating System Repair now fits (broken system, homeowner, gets Fuel Assistance); the Good Neighbor Energy Fund no longer does, because it is for people who don't get state aid. |
-| 8 | **Government benefits**. | Fuel Assistance shows *You have this*. Each card: who decides, questions left, documents, when. "One yes opens more" shows which approvals unlock others. |
-| 9 | Open the **SNAP** guide → *I'm starting this application*. Tap **I have this** on a document if one is listed. | Five sections from the record: check, gather, apply (easiest way first, phone chips, a call script), what to ask, track the decision. Saved on this device only. |
-| 10 | **Home**. | "Pick up where you left off": the started guide is now the next step. |
-| 11 | **Local help** → tap a card. | Grouped by how you get started; the week calendar shows only posted hours. The drawer: reasons, the rules with source links, verified date, and **How we checked this** (agent steps, counts only). |
-| 12 | **Documents**. | One list across every application; each paper counts everywhere it's needed. Nothing is uploaded. |
-| 13 | Optional: **About you** → *Try a sandbox profile* → pick *Simulated: family of four* → tick consent → **Use this profile**. | Clearly simulated. Its deposits differ from what was said, so nothing is used until the person answers the confirm card. |
+| 5 | **Your plan** (`/home`). | The Plan Hub: the door opens as steps get done. One green "Do this first" card, then Today / This week / When you are ready, all in the Action Planning agent's order. Government and Local are marked on every card. |
+| 6 | Side box *One quick question* → heat & utilities: **My heating system is broken** → **Save**. | Any open question can be answered right there or in **My answers**. The toast says what moved, and moved cards flash. |
+| 7 | **My answers** → Housing: **I own my home**; benefits you get: **Fuel Assistance** → **Save**. | **The key moment.** "Got it. … moved to likely fit." Heating System Repair now fits (broken system, homeowner, gets Fuel Assistance); the Good Neighbor Energy Fund no longer does, because it is for people who don't get state aid. |
+| 8 | Tap a program title (**More about this**). | The spotlight, all from the record: cost, when, best way, papers ready; why it may fit (the rule checks); ways to apply with phone links; what to bring; a call opener; what to ask; if they say no; one yes can open more; How we checked this. |
+| 9 | **Talk it through** → type *I got a shutoff notice and I have a toddler* → **Add to my plan**. | Not a chatbot: one card says what it heard (needs, plus the shutoff and the child under 5) and nothing is added until the person taps. The plan now opens with one deadline step and the urgent banner. |
+| 10 | Shortcut **Add a paper once** → a sample paper (fictional) → **Looks right**. | The Document Agent reads it once, the facts wait for a yes, and the paper counts in every step that asks for it. The file stays on the device. |
+| 11 | **Papers**. | Saved and needed papers, the form helper switch, "Going to an appointment?", details read from papers to confirm, **Show at the counter**. |
+| 12 | Optional: shortcut **Connect a bank** → pick a *Simulated* profile → tick consent → **Connect** → **Looks right**. | Clearly simulated and read-only. A figure that differs from an answer starts unticked. **Disconnect** removes everything read from it. |
+| 13 | Optional: **Watch demo** (nav, or the footer link on a phone). | A 70-second walk-through on a separate demo plan; your own plan comes back untouched when it ends. It never starts a form run. |
 
-Close with the guardrails: eligibility is potential, never official; program facts only come from curated records; nothing is ever submitted for the user; no account, no database, no Social Security number.
+Close with the guardrails: eligibility is potential, never official; program facts only come from curated records; nothing is ever submitted for the user (the form helper hands Send back to the person); no account, no database, no Social Security number.
 
 ## If something goes wrong
 

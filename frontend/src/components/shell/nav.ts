@@ -1,3 +1,4 @@
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import { HandHeart, House, Landmark, PiggyBank, UserRound, Wallet, type LucideIcon } from "lucide-react";
 
 export type NavItem = { href: string; label: string; sub: string; icon: LucideIcon };

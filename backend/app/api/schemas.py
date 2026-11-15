@@ -323,6 +323,10 @@ class InterpretOut(BaseModel):
     safety_contacts: list[SafetyContact] = Field(default_factory=list)
     # The message was not about getting help (or tried to give the app instructions).
     off_topic: bool = False
+    # When reading needs: answers to existing follow-up questions the same message gives
+    # (a shutoff notice, a child under 5). Validated against real option ids; never applied
+    # until the person confirms them.
+    proposed: list[AnswerIn] = Field(default_factory=list)
 
 
 # --- Web-search backup (Gemini Google Search) --------------------------------

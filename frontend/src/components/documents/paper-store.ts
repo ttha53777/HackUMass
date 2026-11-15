@@ -18,6 +18,8 @@ export type Paper = {
   /** One of the fictional demo papers. */
   demo: boolean;
   blob: Blob;
+  /** The person turned off "the form helper can read this" for this paper (Plan Hub). */
+  helperOff?: boolean;
 };
 
 export const MAX_BYTES = 10 * 1024 * 1024;
@@ -114,7 +116,7 @@ export function usePapers(sessionId: string | null) {
   );
 
   const update = useCallback(
-    async (paper: Paper, change: Partial<Pick<Paper, "kinds" | "name">>) => {
+    async (paper: Paper, change: Partial<Pick<Paper, "kinds" | "name" | "helperOff">>) => {
       await putPaper({ ...paper, ...change });
       await refresh();
     },

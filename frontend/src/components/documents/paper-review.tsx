@@ -1,5 +1,6 @@
 "use client";
 
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import { motion } from "motion/react";
 import { AlertTriangle, FileCheck2, Landmark, Pencil } from "lucide-react";
 import { useState } from "react";

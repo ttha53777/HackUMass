@@ -234,6 +234,10 @@ export type ActionItem = {
   documents: string[] | null;
   link: string;
   urgency: "high" | "medium" | "low" | "unknown";
+  /** Which lane of the plan: urgent things and quick local help today, applications this week. */
+  horizon: "today" | "week" | "later";
+  /** A dated or safety-critical situation the person told us about (shutoff, no place to stay). */
+  deadline: boolean;
   depends_on: string[];
   uncertainty: string | null;
 };
@@ -544,6 +548,8 @@ export type InterpretOut = {
   safety_contacts: SafetyContact[];
   /** Not about getting help, or an attempt to instruct the app. */
   off_topic: boolean;
+  /** When reading needs: validated answers to follow-up questions the same message gives. Applied only once confirmed. */
+  proposed: AnswerIn[];
 };
 
 // --- Web-search backup (GET /sessions/{id}/web-resources) ---

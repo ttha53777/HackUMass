@@ -9,6 +9,7 @@ from app.agents.action_planning import (
     NO_DOCUMENTS_LISTED,
     action_planning,
     build_plan,
+    horizon_for,
     urgency_for,
 )
 from app.agents.eligibility import assess
@@ -81,6 +82,62 @@ def test_urgency_comes_only_from_answers_and_breaks_ties_in_a_tier():
     plan = build_plan([food, utility], assessments,
                       make_profile(needs=["food", "utilities"], utility_urgency="shutoff"))
     assert [i.program_id for i in plan] == ["utility", "food"]
+
+
+def test_choosing_safety_makes_safety_help_urgent():
+    safety = program("s", categories=["safety"])
+    assert urgency_for(safety, make_profile(needs=["food"])) == "unknown"
+    assert urgency_for(safety, make_profile(needs=["food", "safety"])) == "high"
+
+
+def test_horizon_lanes():
+    walk_in = program("pantry").model_copy(update={"access": "walk_in"})
+    call = program("line").model_copy(update={"access": "call", "documents_needed": []})
+    papers = program("p", documents=["Photo ID"]).model_copy(update={"access": "walk_in"})
+    benefit = program("b").model_copy(update={"track": "benefit", "access": "apply"})
+    # Urgent goes today when the person can act on it; needing more information first, this week.
+    assert horizon_for(benefit, "confirm_eligibility", "high") == "today"
+    assert horizon_for(benefit, "get_more_information", "high") == "week"
+    # Local help reached by walking in or calling, with nothing to bring, can be done today.
+    assert horizon_for(walk_in, "apply_now", "unknown") == "today"
+    assert horizon_for(call, "apply_now", "low") == "today"
+    # ...but not when it asks for papers, or only possibly fits.
+    assert horizon_for(papers, "apply_now", "unknown") == "week"
+    assert horizon_for(walk_in, "confirm_eligibility", "unknown") == "week"
+    # Benefits to apply for or confirm: this week. Needs more information: later.
+    assert horizon_for(benefit, "apply_now", "medium") == "week"
+    assert horizon_for(benefit, "confirm_eligibility", "unknown") == "week"
+    assert horizon_for(benefit, "get_more_information", "unknown") == "later"
+
+
+def test_plan_items_carry_horizon_and_deadline():
+    utility = program("utility", categories=["utilities"])
+    food = program("food").model_copy(update={"access": "walk_in"})
+    assessments = {"utility": assessed("utility", "possibly_eligible"), "food": assessed("food", "likely_eligible")}
+    plan = {i.program_id: i for i in build_plan(
+        [utility, food], assessments, make_profile(needs=["food", "utilities"], utility_urgency="shutoff"))}
+    assert (plan["utility"].horizon, plan["utility"].deadline) == ("today", True)
+    assert (plan["food"].horizon, plan["food"].deadline) == ("today", False)
+    # Only the best-ranked urgent program per need is the deadline; the rest stay urgent but plain.
+    second = program("second", categories=["utilities"])
+    info = program("info", categories=["utilities"])
+    more = {**assessments, "second": assessed("second", "possibly_eligible"), "info": assessed("info", "insufficient_information")}
+    shutoff = {i.program_id: i for i in build_plan(
+        [utility, second, info], more, make_profile(needs=["utilities"], utility_urgency="shutoff"))}
+    # Same tier and urgency, so name breaks the tie: "Second" ranks first and is the deadline.
+    assert [shutoff[p].rank for p in ("second", "utility")] == [1, 2]
+    assert [shutoff[p].deadline for p in ("utility", "second", "info")] == [False, True, False]
+    assert [shutoff[p].horizon for p in ("utility", "second", "info")] == ["today", "today", "week"]
+    # A program urgent for utilities does not become the deadline for its other categories.
+    mixed = program("mixed", categories=["food", "utilities"])
+    pantry = program("pantry2", categories=["food"])
+    two = {"utility": assessed("utility", "likely_eligible"), "mixed": assessed("mixed", "possibly_eligible"),
+           "pantry2": assessed("pantry2", "likely_eligible")}
+    flags = {i.program_id: i.deadline for i in build_plan(
+        [utility, mixed, pantry], two, make_profile(needs=["utilities", "food"], utility_urgency="shutoff"))}
+    assert flags == {"utility": True, "mixed": False, "pantry2": False}
+    calm = build_plan([utility], assessments, make_profile(needs=["utilities"], utility_urgency="reduce"))
+    assert (calm[0].horizon, calm[0].deadline) == ("week", False)
 
 
 def test_links_documents_and_unknowns_come_from_the_record():

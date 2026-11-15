@@ -1,5 +1,6 @@
 "use client";
 
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import { Check, IdCard, Lock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 

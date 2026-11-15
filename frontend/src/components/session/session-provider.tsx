@@ -31,6 +31,9 @@ function Fixture({ children }: { children: ReactNode }) {
     clearAnswerError: () => {},
     whenIdle: async () => {},
     refresh: async () => {},
+    demo: false,
+    beginDemo: () => {},
+    endDemo: async () => {},
   };
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
