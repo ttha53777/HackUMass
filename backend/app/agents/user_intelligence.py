@@ -354,6 +354,52 @@ def apply_review(
     return changed
 
 
+INCOME_KINDS = ("income", "member_income")
+
+
+def household_income(extraction: DocumentExtraction, documents: list[DocumentExtraction]) -> tuple[Fact, set[str]]:
+    """The household's monthly income from its papers: the newest wage or own-income
+    paper plus every other member's income paper (a benefit letter).
+
+    Returns the summed fact (sourced to `extraction`) and the sources it includes,
+    whose own readings it replaces. Two wage papers are never added: the newer one
+    stands and the other is compared as usual.
+    """
+    own = extraction.extracted_facts["monthly_income"]
+    others = [d for d in documents if d.document_id != extraction.document_id and "monthly_income" in d.extracted_facts]
+    included = [d for d in others if d.kind == "member_income"]
+    if extraction.kind == "member_income":
+        wages = [d for d in others if d.kind == "income"]
+        included += wages[-1:]
+    if not included:
+        return own, set()
+    total = own.value + sum(d.extracted_facts["monthly_income"].value for d in included)
+    return own.model_copy(update={"value": round(total, 2)}), {f"doc:{d.document_id}" for d in included}
+
+
+def _supersede(profile: Profile, field: str, sources: set[str]) -> list[str]:
+    """Drop unconfirmed readings from `sources`: a summed figure now includes them."""
+    if not sources:
+        return []
+    changed = False
+    conflict = _conflict_for(profile, field)
+    if conflict is not None:
+        rest = [c for c in conflict.candidates if c.source not in sources]
+        if len(rest) != len(conflict.candidates):
+            changed = True
+            _drop_conflict(profile, field)
+            if len(rest) > 1:
+                profile.conflicts.append(Conflict(field=field, candidates=rest))
+            elif rest:
+                only = rest[0]
+                profile.facts[field] = only.model_copy(update={"confirmed": only.provenance == "user_reported"})
+    fact = profile.facts.get(field)
+    if fact is not None and fact.source in sources and not fact.confirmed:
+        profile.facts.pop(field)
+        changed = True
+    return [field] if changed else []
+
+
 def forget_bank_evidence(profile: Profile) -> list[str]:
     """The person disconnected the simulated bank: drop everything read from it.
 
@@ -456,7 +502,11 @@ def make_user_intelligence(nessie: NessieService | None = None, inbox: Any = Non
                 extraction = by_id.get(document_id)
                 if extraction is not None:
                     # Facts only: the document's text never reaches state.
-                    changed += apply_evidence_facts(profile, dict(extraction.extracted_facts))
+                    facts = dict(extraction.extracted_facts)
+                    if extraction.kind in INCOME_KINDS and "monthly_income" in facts:
+                        facts["monthly_income"], included = household_income(extraction, documents)
+                        changed += _supersede(profile, "monthly_income", included)
+                    changed += apply_evidence_facts(profile, facts)
 
         for decision in state.get("review_decisions") or []:
             changed += apply_review(profile, decision, documents, now)

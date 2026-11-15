@@ -1,5 +1,20 @@
 {
   "program_id": "eversource-ma-discount-rate",
   "mode": "practice",
-  "note": "Practice form only. The real Eversource form is the likeliest to block a datacenter browser (plan section 6)."
+  "note": "Practice form only. The real Eversource form is the likeliest to block a datacenter browser (plan section 6).",
+  "fields": [
+    "first_name",
+    "last_name",
+    "date_of_birth",
+    "phone",
+    "street_address",
+    "city",
+    "state",
+    "zip",
+    "household_size",
+    "monthly_income"
+  ],
+  "fields_optional": [
+    "email"
+  ]
 }

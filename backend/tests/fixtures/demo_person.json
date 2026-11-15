@@ -184,7 +184,7 @@
         "Effective: January 2026"
       ],
       "expected": {},
-      "note": "Rosa's income. Its own kind so it doesn't take Maya's proof-of-income slot; read in a later phase (summed with wages)."
+      "note": "Rosa's income. Its own kind (member_income) so it doesn't take Maya's proof-of-income slot. Read with that kind, the Profile Agent adds it to the pay stub's wages: $1,240 + $1,050 = $2,290 household income."
     }
   ]
 }

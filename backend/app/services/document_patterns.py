@@ -27,6 +27,9 @@ KIND_FIELDS: dict[str, frozenset[str]] = {
     "lease": frozenset({"housing_status", "heat_included_in_rent"}),
     "heat": frozenset({"utility_urgency", "eversource_customer"}),
     "shutoff": frozenset({"utility_urgency", "utility_issues"}),
+    # Another household member's income (a benefit letter): added to the wages
+    # on the household's own income paper by the Profile Agent, not compared.
+    "member_income": frozenset({"monthly_income"}),
     "address": frozenset(),
     "id": frozenset(),
 }
@@ -38,6 +41,8 @@ KIND_IDENTITY: dict[str, frozenset[str]] = {
     "lease": frozenset({"full_name", "street_address", "city", "state", "zip"}),
     "heat": frozenset({"full_name", "phone", "email", "street_address", "city", "state", "zip"}),
     "shutoff": frozenset({"full_name"}),
+    # Someone else's paper: none of its identity details are the person's own.
+    "member_income": frozenset(),
     "address": frozenset({"full_name", "street_address", "city", "state", "zip"}),
     "id": frozenset({"full_name", "date_of_birth", "street_address", "city", "state", "zip"}),
 }
@@ -59,6 +64,7 @@ _TITLES: dict[str, re.Pattern[str]] = {
 # Papers that may also be filed as another kind (a lease or a bill proves an address).
 _ALSO_FITS: dict[str, frozenset[str]] = {
     "address": frozenset({"lease", "heat", "shutoff", "id"}),
+    "member_income": frozenset({"income"}),
 }
 TITLE_LINES = 5
 
@@ -93,6 +99,8 @@ _STATUS = _line(r"status|account\s+status")
 _PAST_DUE = _line(r"amount\s+past\s+due")
 _DISCONNECT = _line(r"disconnection\s+(?:scheduled|date)|shut-?\s?off\s+date|service\s+ends")
 _EMPLOYER = _line(r"employer")
+_BENEFIT = _line(r"benefit\s+amount(?:\s+each\s+month)?|monthly\s+benefit(?:\s+amount)?|amount\s+each\s+month")
+_DOLLARS = re.compile(r"^\$?\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{2}))?$")
 _UTILITY = _line(r"utility|company|provider|electric\s+company|gas\s+company")
 _MEMBER_ROW = re.compile(
     r"(?im)^[ \t]*(?P<name>[A-Z][\w.'-]*(?:[ \t]+[A-Z][\w.'-]*){0,3})[ \t]+-[ \t]+(?P<relation>[a-z ]+?)"
@@ -212,6 +220,12 @@ def read_kind(kind: str, text: str, today: date | None = None) -> KindReading:
 
     if kind == "income" and "situation" in allowed and _value(_EMPLOYER, text):
         reading.facts["situation"] = "working"
+
+    if kind == "member_income":
+        reading.notes.append("income_adds_to_household")
+        amount = _DOLLARS.match(_value(_BENEFIT, text) or "")
+        if amount:
+            reading.facts["monthly_income"] = float(amount.group(1).replace(",", "") + "." + (amount.group(2) or "00"))
 
     if kind == "dob":
         rows = list(_MEMBER_ROW.finditer(text))

@@ -183,6 +183,30 @@ def model_extract(text: str) -> ExtractedNumbers | None:
     return llm.generate_json(prompt, ExtractedNumbers)
 
 
+_AMOUNT = re.compile(r"\$?\s?(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?")
+_WHOLE = re.compile(r"(?<![\d.,$])(\d{1,2})(?![\d.,])")
+
+
+def verified_against(text: str, found: ExtractedNumbers) -> ExtractedNumbers:
+    """Keep a model's number only if the paper shows it.
+
+    Income: some amount on the page equals the monthly figure, or converts to it
+    as a weekly, biweekly or yearly amount (within a dollar). Household size: the
+    number appears on its own on the page. A model can read a messy layout, but
+    it may not invent a figure the paper never states.
+    """
+    amounts = [float(m.group(1).replace(",", "") + "." + (m.group(2) or "0")) for m in _AMOUNT.finditer(text)]
+    income = found.monthly_income
+    if income is not None and not any(
+        abs(amount * factor - income) <= 1.0 for amount in amounts for factor in PER_MONTH.values()
+    ):
+        income = None
+    household = found.household_size
+    if household is not None and str(household) not in {m.group(1) for m in _WHOLE.finditer(text)}:
+        household = None
+    return ExtractedNumbers(monthly_income=income, household_size=household)
+
+
 def _in_range(numbers: ExtractedNumbers) -> ExtractedNumbers:
     income = numbers.monthly_income
     if income is not None and not (INCOME_RANGE[0] <= income <= INCOME_RANGE[1]):
@@ -230,9 +254,12 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
         missing = [name for name in wanted if getattr(numbers, name) is None]
         if missing:
             # The model sees the paper without names, birth dates or addresses.
-            found = model_extract(strip_identity(text))
+            model_text = strip_identity(text)
+            found = model_extract(model_text)
             if found is not None:
-                found = _in_range(found)
+                found = _in_range(verified_against(model_text, found))
+                if any(getattr(numbers, n) is None and getattr(found, n) is not None for n in wanted):
+                    notes.append("model_read")
                 numbers = ExtractedNumbers(
                     monthly_income=numbers.monthly_income if numbers.monthly_income is not None else found.monthly_income,
                     household_size=numbers.household_size if numbers.household_size is not None else found.household_size,
@@ -240,6 +267,10 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
         if known_kind and fits:
             reading = read_kind(known_kind, text)
             other = {k: v for k, v in reading.facts.items() if k in allowed or k.startswith("_")}
+            # A kind-specific income line (a benefit letter) fills a gap the shared patterns left.
+            kind_income = other.pop("monthly_income", None)
+            if kind_income is not None and numbers.monthly_income is None:
+                numbers = _in_range(numbers.model_copy(update={"monthly_income": kind_income}))
             identity = reading.identity
             notes += [n for n in reading.notes if n not in notes]
     finally:

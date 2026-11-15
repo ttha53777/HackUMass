@@ -312,3 +312,68 @@ def test_unclaimed_readings_expire(monkeypatch):
     ref = inbox.put(read_document("x.txt", b"Household size: 2", "dob").extraction)
     clock[0] += documents.INBOX_TTL_SECONDS + 1
     assert inbox.pop(ref) is None
+
+
+# --- another member's income adds to the household's (Rosa's benefit letter) ----
+
+
+@pytest.mark.parametrize("order", [("pay-stub", "benefit-letter"), ("benefit-letter", "pay-stub")])
+def test_a_benefit_letter_adds_to_the_wages_in_either_order(client, order):
+    kinds = {"pay-stub": "income", "benefit-letter": "member_income"}
+    sid = start(client, income=False)
+    for name in order:
+        snap = upload(client, sid, f"{name}.pdf", paper(name), kinds[name]).json()
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert profile.facts["monthly_income"].value == 2290 and not profile.facts["monthly_income"].confirmed
+    assert not any(c.field == "monthly_income" for c in profile.conflicts)  # added, not compared
+    assert "Rosa" not in str(snap["identity"]) and "Rosa" not in str(client.app.state.sessions.values(sid))
+    income_rows = [r for review in snap["pending_reviews"] for r in review["rows"] if r["field"] == "monthly_income"]
+    assert [r["value"] for r in income_rows] == [2290]  # one card carries the household total
+
+
+def test_the_household_total_meets_what_was_typed(client):
+    sid = start(client)  # typed $1,240
+    upload(client, sid, "pay-stub.pdf", paper("pay-stub"), "income")
+    snap = upload(client, sid, "benefit-letter.pdf", paper("benefit-letter"), "member_income").json()
+    profile = client.app.state.sessions.values(sid)["profile"]
+    conflict = next(c for c in profile.conflicts if c.field == "monthly_income")
+    assert sorted(c.value for c in conflict.candidates) == [1240, 2290]
+    assert snap["pending_question"]["id"] == "confirm_monthly_income"
+    assert "Your pay stub and benefit letter show about $2,290" in snap["pending_question"]["prompt"]
+    card = next(r for r in snap["pending_reviews"] if any(x["field"] == "monthly_income" for x in r["rows"]))
+    assert any("household's total" in n for n in card["notes"])
+
+
+def test_two_wage_papers_are_never_added():
+    from app.agents.user_intelligence import household_income
+
+    a = read_document("a.txt", b"Gross monthly pay: $1,000", "income").extraction
+    b = read_document("b.txt", b"Gross monthly pay: $1,100", "income").extraction
+    fact, included = household_income(b, [a, b])
+    assert fact.value == 1100 and included == set()
+
+
+# --- the model may fill gaps, but only with what the paper shows -----------------
+
+
+class _FakeLLM:
+    def __init__(self, **values):
+        self.values = values
+
+    def generate_json(self, prompt, schema):
+        return schema(**self.values)
+
+
+def test_a_model_figure_the_paper_shows_is_kept_and_flagged(monkeypatch):
+    monkeypatch.setattr("app.services.documents.get_llm", lambda: _FakeLLM(monthly_income=2600.0))
+    reading = read_document("stub.txt", b"Employer: Sample Co\nEarnings this period  $1,200.00  biweekly", "income")
+    assert reading.extraction.extracted_facts["monthly_income"].value == 2600.0  # 1,200 x 26 / 12
+    assert "model_read" in reading.extraction.notes
+
+
+@pytest.mark.parametrize("values", [{"monthly_income": 9999.0}, {"household_size": 7}])
+def test_a_model_figure_the_paper_never_states_is_dropped(monkeypatch, values):
+    monkeypatch.setattr("app.services.documents.get_llm", lambda: _FakeLLM(**values))
+    kind = "income" if "monthly_income" in values else "dob"
+    reading = read_document("x.txt", b"Earnings $1,200.00\nPeople listed: 3 adults", kind)
+    assert reading.extraction.extracted_facts == {} and "model_read" not in reading.extraction.notes

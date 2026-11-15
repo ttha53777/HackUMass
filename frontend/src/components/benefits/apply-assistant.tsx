@@ -8,6 +8,7 @@ import { QuestionForm } from "@/components/program/question-form";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 import { useToast } from "@/components/shell/toast";
+import { ReadinessCard, type ReadyState } from "./readiness-card";
 import { answerRun, controlRun, getRun, isApiError, runFrameUrl, startRun, stopRun } from "@/lib/api";
 import type { Program, BrowserRunStatus, RunView } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -64,6 +65,8 @@ export function ApplyAssistant({ program }: { program: Program }) {
   const [tick, setTick] = useState(0);
   // The person can switch to screenshots if the provider's live view won't load.
   const [snapshots, setSnapshots] = useState(false);
+  // "Before we start": confirmed device details to send, and whether a needed answer is disputed.
+  const [ready, setReady] = useState<ReadyState>({ details: {}, blocked: false });
   const runId = run?.run_id ?? null;
   const active = !!run && ACTIVE.includes(run.status);
   // Keep polling after the run ends until its outcome is in the main graph.
@@ -145,7 +148,7 @@ export function ApplyAssistant({ program }: { program: Program }) {
 
   const begin = () =>
     act(async () => {
-      const started = await startRun(sessionId, program.id);
+      const started = await startRun(sessionId, program.id, ready.details);
       writeRunId(key, started.run_id);
       return started;
     });
@@ -161,7 +164,8 @@ export function ApplyAssistant({ program }: { program: Program }) {
         </div>
         <p className="mb-2 text-[12.5px] leading-[1.65] text-muted-foreground">
           An assistant opens the form in a private browser you can watch, fills in what you&apos;ve already told us, and asks you for
-          anything else, like your name or phone number. We keep those only for this form and forget them when it&apos;s done.
+          anything else, like your name or phone number. Details you confirmed under My details are used for this form only, and we forget
+          them when it&apos;s done.
         </p>
         <ul className="mb-3 grid gap-1 text-[12.5px] leading-[1.55]">
           <li className="flex items-start gap-2">
@@ -183,7 +187,8 @@ export function ApplyAssistant({ program }: { program: Program }) {
             This opens a practice copy of the form. Nothing is sent to any agency.
           </Callout>
         )}
-        <button type="button" className={btn("gov")} disabled={pending} onClick={() => void begin()}>
+        <ReadinessCard programId={program.id} onChange={setReady} />
+        <button type="button" className={btn("gov")} disabled={pending || ready.blocked} onClick={() => void begin()}>
           I agree, start filling it in
         </button>
         {error ? <p role="alert" className="mt-2 text-xs font-bold text-amber-ink">{error}</p> : null}

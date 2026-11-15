@@ -6,6 +6,7 @@ import type {
   InterpretIn,
   InterpretOut,
   PersonaOut,
+  ReadinessOut,
   ReviewIn,
   RunView,
   SessionSnapshot,
@@ -122,12 +123,20 @@ export function interpretMessage(sessionId: string, body: InterpretIn): Promise<
 
 const runs = (sessionId: string) => `/sessions/${encodeURIComponent(sessionId)}/applications`;
 
-/** Start the assistant on one program's form. Consent is sent as literally `true`. */
-export function startRun(sessionId: string, programId: string): Promise<RunView> {
+/**
+ * Start the assistant on one program's form. Consent is sent as literally `true`.
+ * `details`: the person's confirmed "My details" (fill-sheet keys), for this run only.
+ */
+export function startRun(sessionId: string, programId: string, details?: Record<string, string>): Promise<RunView> {
   return request<RunView>(runs(sessionId), {
     method: "POST",
-    body: JSON.stringify({ program_id: programId, consent: true }),
+    body: JSON.stringify({ program_id: programId, consent: true, ...(details && Object.keys(details).length ? { details } : {}) }),
   });
+}
+
+/** "Before we start": what the form needs and where each key comes from. Keys only. */
+export function getReadiness(sessionId: string, programId: string): Promise<ReadinessOut> {
+  return request<ReadinessOut>(`${runs(sessionId)}/readiness?program_id=${encodeURIComponent(programId)}`);
 }
 
 export function getRun(sessionId: string, runId: string): Promise<RunView> {

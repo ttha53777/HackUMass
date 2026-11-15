@@ -134,7 +134,7 @@ export function usePapers(sessionId: string | null) {
 
 /** Guess what kind of paper a file is from its name. A suggestion only; the person picks. */
 const NAME_HINTS: [RegExp, string][] = [
-  [/pay ?stub|paystub|pay[-_ ]?slip|w-?2|1099|earning|income|salary|wage|benefit letter|award letter/i, "income"],
+  [/pay[-_ ]?stub|paystub|pay[-_ ]?slip|w-?2|1099|earning|income|salary|wage|benefit letter|award letter/i, "income"],
   [/lease|rental agreement|tenancy/i, "lease"],
   [/electric|gas bill|utility|heat|eversource|oil|energy|water bill/i, "heat"],
   [/shut ?off|disconnect(ion)? notice/i, "shutoff"],

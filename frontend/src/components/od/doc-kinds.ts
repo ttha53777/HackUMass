@@ -4,6 +4,7 @@ export const DOC_LABEL: Record<string, string> = {
   id: "Photo ID",
   status: "Proof of citizenship or immigration status",
   income: "Proof of income",
+  member_income: "Income of someone else at home",
   dob: "Birth dates for everyone at home",
   heat: "Heating or utility bill",
   lease: "Your lease",

@@ -13,8 +13,9 @@ from fastapi import APIRouter, Body, Request
 from fastapi.responses import JSONResponse, Response
 
 from app.api.routes import ApiError
+from app.api.schemas import ReadinessOut
 from app.execution.config import resolve_target
-from app.execution.fields import store_from_profile
+from app.execution.fields import InvalidAnswer, add_device_details, readiness, store_from_profile
 from app.execution.manager import ExecutionError, ExecutionManager, Run
 from app.execution.models import ControlIn, RunView, StartRunIn
 from app.graph.state import AnswerIn, Profile
@@ -60,10 +61,40 @@ async def start_run(request: Request, session_id: str, body: dict = Body(...)) -
     if record is None or not on_list:
         raise ApiError(422, "not_automatable", "The assistant can't fill in this application yet.")
 
+    profile = values.get("profile") or Profile()
+    store = store_from_profile(profile, request.app.state.programs.region)
+    ready = readiness(profile, store, record.fields, record.fields_optional)
+    if ready.blocked_by:
+        store.clear()
+        raise ApiError(409, "facts_in_conflict",
+                       "Two answers this form needs don't match yet. Settle them first, then start again.")
+    try:
+        # Confirmed details from the person's device: this run only, never logged.
+        add_device_details(store, start.details)
+    except InvalidAnswer as exc:
+        store.clear()
+        raise ApiError(422, "validation_error", str(exc)) from None
     target = resolve_target(record, request.app.state.agent_settings)
-    store = store_from_profile(values.get("profile") or Profile(), request.app.state.programs.region)
     run = _manager(request).start(session_id, target, store)
     return _view(run, 201)
+
+
+@router.get("/readiness", response_model=ReadinessOut)
+def read_readiness(request: Request, session_id: str, program_id: str) -> ReadinessOut:
+    """What this program's form needs, by source ("Before we start"). Keys only, never values."""
+    _check_session(request, session_id)
+    values = request.app.state.sessions.values(session_id)
+    record = request.app.state.automation.get(program_id)
+    if record is None or not any(p.id == program_id for p in values.get("programs") or []):
+        raise ApiError(422, "not_automatable", "The assistant can't fill in this application yet.")
+    profile = values.get("profile") or Profile()
+    store = store_from_profile(profile, request.app.state.programs.region)
+    ready = readiness(profile, store, record.fields, record.fields_optional)
+    store.clear()
+    return ReadinessOut(
+        program_id=program_id, from_profile=ready.from_profile, from_device_needed=ready.from_device_needed,
+        will_ask=ready.will_ask, unconfirmed=ready.unconfirmed, blocked_by=ready.blocked_by,
+    )
 
 
 @router.get("/{run_id}", response_model=RunView)

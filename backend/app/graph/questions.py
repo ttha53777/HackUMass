@@ -571,7 +571,17 @@ PAPER_TITLES: dict[str, str] = {
     "shutoff": "your shut-off notice",
     "address": "your proof of address",
     "id": "your ID",
+    "member_income": "your benefit letter",
 }
+
+# A household income figure added up from a wage paper and a member's income paper.
+SUMMED_INCOME_TITLE = "your pay stub and benefit letter"
+
+
+def income_is_summed(documents) -> bool:
+    """True when the household income on file adds a member's income paper to wages."""
+    kinds = {d.kind for d in documents if "monthly_income" in d.extracted_facts}
+    return "member_income" in kinds and "income" in kinds
 
 
 def paper_title(kind: str | None) -> str:
@@ -593,7 +603,8 @@ def _source_phrase(fact, source_labels: dict[str, str]) -> str:
     """ "Your pay stub shows", "The simulated bank profile shows". """
     label = source_labels.get(fact.source or "")
     if label:
-        return f"{label[0].upper()}{label[1:]} shows"
+        verb = "show" if " and " in label else "shows"  # "your pay stub and benefit letter show"
+        return f"{label[0].upper()}{label[1:]} {verb}"
     return _EVIDENCE_SOURCE.get(fact.provenance, "Your document shows")
 
 
