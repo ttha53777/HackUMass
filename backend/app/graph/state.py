@@ -389,6 +389,10 @@ class ActionItem(BaseModel):
     documents: list[str] | None = None  # None means unknown
     link: str  # copied from the Program record, never generated
     urgency: Literal["high", "medium", "low", "unknown"] = "unknown"
+    # When to do it, for the plan's lanes. Decided from the action and the person's answers.
+    horizon: Literal["today", "week", "later"] = "week"
+    # A dated or safety-critical situation the person told us about (shutoff, no place to stay).
+    deadline: bool = False
     depends_on: list[str] = Field(default_factory=list)
     uncertainty: str | None = None
 

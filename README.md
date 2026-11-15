@@ -237,15 +237,17 @@ frontend/src/components/front/      Landing page, Behind the scenes and the conv
 frontend/src/components/front/chat/i18n/ the conversation in English, Spanish, Portuguese, Chinese and Hindi (from the mock's tables; `node scripts/geni18n.mjs src/components/front/chat/i18n` regenerates them). Landing, Building and the dashboard stay English
 frontend/src/components/front-door/ the house drawing used on Home
 frontend/src/components/chat/       answer wording helpers (script.ts) and the agent checklist
-frontend/src/components/home/      Home: next step, plan, sharpen card, glance strip
-frontend/src/components/benefits/  Government benefits and the step-by-step guide
-frontend/src/components/local/     Local help and the week calendar
+frontend/src/components/hub/       the Plan Hub (/home, /papers): hero and door, plan lanes, ask box, drawers, scoped light-only styles (hub.css)
+frontend/src/lib/hub-derive.ts     the hub's selectors: steps, lanes, cases, pips (no statuses decided here)
+frontend/src/components/home/      archived: the old Home (not routed)
+frontend/src/components/benefits/  archived views (guide, benefits list); the browser assistant and readiness card are still used
+frontend/src/components/local/     archived: Local help and the week calendar
 frontend/src/components/documents/ the document wallet
-frontend/src/components/about/     About you: answers, sources, start over
+frontend/src/components/about/     archived: About you (now the hub's My answers drawer)
 frontend/src/components/evidence/  optional document upload, sandbox profile, confirm card
 frontend/src/components/program/   program card, drawer, question form, How we checked this
 frontend/src/components/session/   session, answer and device-plan providers
-frontend/src/components/shell/     sidebar, bottom tabs, toast, gate
+frontend/src/components/shell/     toast and gate (live); sidebar and bottom tabs (archived)
 frontend/src/components/od/        shared OpenDoor building blocks
 frontend/src/components/ui/        shadcn components
 frontend/src/hooks/use-session.ts  session lifecycle, answer submission, polling
@@ -294,7 +296,7 @@ Where to make changes:
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
 - Light/dark: the dashboard follows the system until the sun/moon button (sidebar, mobile header) is used; the choice is kept in `localStorage` (`crn.theme`). The landing page, Behind the scenes, the conversation and Building are light only (`components/front/front-theme.tsx`).
-- The landing page is `/`, Behind the scenes is `/behind` and the conversation is `/start` (`?sample=1` plays the example, `?need=food` starts with a need picked, `?say=…` starts by reading the person's words). On the income question the conversation offers "Or connect a demo bank account"; once linked it moves on, and the bank's income and bills wait on Home as a "simulated" review card (a lone `bank_suggestions` entry for a question still open is offered as a one-tap confirmation). After review, Building ticks each agent off from its real status and opens `/home` on its own; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`, and sends anyone without a finished intake to `/start`. A figure from the bank or a paper that disagrees with an answer is confirmed on Home. The old `/legacy` UI was retired in Phase 6.
+- The landing page is `/`, Behind the scenes is `/behind` and the conversation is `/start` (`?sample=1` plays the example, `?need=food` starts with a need picked, `?say=…` starts by reading the person's words). On the income question the conversation offers "Or connect a demo bank account"; once linked it moves on, and the bank's income and bills wait on Home as a "simulated" review card (a lone `bank_suggestions` entry for a question still open is offered as a one-tap confirmation). After review, Building ticks each agent off from its real status and opens `/home` on its own; the dashboard is the Plan Hub at `/home` ("Your plan") and `/papers`, and sends anyone without a finished intake to `/start`. The old sidebar dashboard (`/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`, `/money`) is archived, not deleted, in `frontend/src/app/(opendoor)/_archive/legacy-dashboard/` (not routed); those URLs redirect into the hub (`next.config.ts`). Plan and progress: `docs/plan-hub-integration-plan.md`; design reference: `docs/ui-reference/opendoor-plan-hub.html`. A figure from the bank or a paper that disagrees with an answer is confirmed on Home. The old `/legacy` UI was retired in Phase 6.
 - Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../interpret` reads what people type in the conversation at `/start`; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear on Building's checklist and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.

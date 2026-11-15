@@ -19,6 +19,14 @@ An application the person sent with the browser agent (status "submitted") moves
 below every unstarted item and says when it was sent; one whose outcome is
 "unclear" asks the person to check, using the provider's own contact details.
 
+Each item also gets a horizon for the plan's lanes (`horizon_for`): "today" for
+urgent programs the person can act on and for local help reached by walking in or
+calling with nothing to bring; "week" for programs to apply for or confirm (and
+urgent ones that need more information first); "later" when more information is
+needed. `deadline` marks one step per urgent need: the highest-ranked program with
+"high" urgency in that need (every "high" rule is a shutoff, no place to stay, or
+safety), so the plan opens with one thing that cannot wait, not a wall of them.
+
 Urgency comes only from the user's answers (a shutoff notice, no stable
 housing); otherwise it is "unknown". Nothing here invents a deadline.
 """
@@ -58,6 +66,8 @@ URGENCY_RULES = [
     ("utilities", "utility_issues", "shutoff", "high"),
     ("housing", "housing_need", "tonight", "high"),
     ("housing", "housing_need", "behind", "medium"),
+    # Choosing "Feeling unsafe at home" puts confidential safety help first.
+    ("safety", "needs", "safety", "high"),
 ]
 
 NO_DOCUMENTS_LISTED = "The provider doesn't list required documents; ask when you contact them."
@@ -86,6 +96,31 @@ def urgency_for(program: Program, profile: Profile) -> str:
             if URGENCY_ORDER[level] < URGENCY_ORDER[best]:
                 best = level
     return best
+
+
+def urgent_categories(program: Program, profile: Profile) -> set[str]:
+    """The program's categories that a "high" urgency rule fired for (shutoff -> utilities)."""
+    out = set()
+    for category, name, answer, level in URGENCY_RULES:
+        fact = profile.facts.get(name)
+        answered = fact is not None and (
+            answer in fact.value if isinstance(fact.value, list) else fact.value == answer
+        )
+        if level == "high" and category in program.categories and answered:
+            out.add(category)
+    return out
+
+
+def horizon_for(program: Program, action: str, urgency: str) -> str:
+    """Which lane of the plan: "today", "week" or "later". Deterministic."""
+    if urgency == "high":
+        return "week" if action == "get_more_information" else "today"
+    quick = program.track == "local" and program.access in ("walk_in", "call") and not program.documents_needed
+    if action == "apply_now" and quick:
+        return "today"
+    if action in ("apply_now", "confirm_eligibility"):
+        return "week"
+    return "later"
 
 
 def _is_open_access(program: Program) -> bool:
@@ -177,7 +212,12 @@ def build_plan(
         rows.append((key, program, assessment, action, urgency, matched))
 
     items: list[ActionItem] = []
+    deadline_needs: set[str] = set()
     for key, program, assessment, action, urgency, matched in sorted(rows, key=lambda row: row[0]):
+        # One deadline per urgent need: the first (best-ranked) high-urgency program that covers it.
+        urgent_needs = urgent_categories(program, profile) if action != "get_more_information" else set()
+        deadline = bool(urgent_needs - deadline_needs) and key[0] == 0  # not one already sent
+        deadline_needs |= urgent_needs
         helps = ", ".join(labels.get(c, c).lower() for _, c in matched)
         rationale = (f"Helps with {helps}. " if helps else "") + STATUS_SENTENCE[action]
         items.append(
@@ -191,6 +231,8 @@ def build_plan(
                 documents=program.documents_needed,
                 link=program.apply_url or program.info_url,
                 urgency=urgency,
+                horizon=horizon_for(program, action, urgency),
+                deadline=deadline,
                 uncertainty=_uncertainty(program),
             )
         )

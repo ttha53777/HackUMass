@@ -234,6 +234,10 @@ export type ActionItem = {
   documents: string[] | null;
   link: string;
   urgency: "high" | "medium" | "low" | "unknown";
+  /** Which lane of the plan: urgent things and quick local help today, applications this week. */
+  horizon: "today" | "week" | "later";
+  /** A dated or safety-critical situation the person told us about (shutoff, no place to stay). */
+  deadline: boolean;
   depends_on: string[];
   uncertainty: string | null;
 };
