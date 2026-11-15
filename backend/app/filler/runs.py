@@ -28,8 +28,11 @@ from typing import Any, Callable
 from app.filler.computer import Computer
 from app.filler.consent import FillerSession, FillerSessions
 from app.filler.dom_map import FieldMapper
+from app.filler.dom_map import load_map
 from app.filler.fast import FastFiller
-from app.filler.gate import HandoffReason
+from app.filler.pdf import READ_VALUES, PdfForm, fill as fill_pdf, render_html
+from app.filler.targets import FillTarget
+from app.filler.gate import CAPTCHA_HOSTS, HandoffReason, host_allowed
 from app.filler.models import CATALOGUE, KIND_LABEL
 from app.filler.loop import AgentLoop, BrowserModel, FillSheet, LoopEnd, ModelUnavailable, SheetEntry, system_instruction
 from app.filler.sandbox import BrowserHandle, CloudBrowser, SandboxError
@@ -193,6 +196,8 @@ PRACTICE_PAGE = (Path(__file__).with_name("practice.html")).read_text()
 PRACTICE_URL = "https://practice.filler.test/practice/"
 PRACTICE_HOSTS = frozenset({"practice.filler.test"})
 FILL_TASK = "Fill in the application on this page from the fill sheet, step by step, up to its final Submit button."
+PDF_URL = "https://pdf.filler.test/form"
+PDF_HOSTS = frozenset({"pdf.filler.test"})
 PRACTICE_RECEIVED = "Practice application received"
 _PRACTICE_REF = _re.compile(r"\bPRACTICE-[A-Z0-9]{6}\b")
 
@@ -247,6 +252,10 @@ class FillRun:
     fill_started: float | None = None
     first_type_seconds: float | None = None
     model_turns_used: bool = False
+    target: FillTarget | None = None  # None: the plain practice form, tied to no program
+    pdf_form: PdfForm | None = None  # a fillable PDF instead of a web form
+    pdf_result: bytes | None = field(default=None, repr=False)
+    result_recorded: bool = False
     _go: bool = False
     _wake: asyncio.Event = field(default_factory=asyncio.Event)
     _answered: bool = False
@@ -269,8 +278,22 @@ class FillRun:
             "plan": self.plan,
             "first_type_seconds": None if self.first_type_seconds is None else round(self.first_type_seconds, 2),
             "used_model": self.model_turns_used,
+            "program_id": self.target.program_id if self.target else None,
+            "mode": self.mode,
+            "result_recorded": self.result_recorded,
+            "pdf_ready": self.pdf_result is not None,
             "seconds_left": max(0, int(RUN_SECONDS - (time.monotonic() - self.started_at))),
         }
+
+    @property
+    def mode(self) -> str:
+        if self.pdf_form is not None:
+            return "pdf"
+        return self.target.mode if self.target else "practice"
+
+    @property
+    def real_site(self) -> bool:
+        return self.mode == "stop_before_submit"
 
     def _set(self, status: FillStatus, message: str | None = None) -> None:
         self.status, self.message = status, message
@@ -297,6 +320,8 @@ class FillRun:
         return self._answered
 
     async def handoff(self, reason: HandoffReason) -> None:
+        if self.real_site and reason in STOP_REASONS:
+            raise StopPoint  # fill-and-stop: a real form is never sent, signed or attested from here
         self.handoff_reason = reason
         self._take = False
         self.stream.publish({"type": "handoff", "reason": reason, "text": HANDOFF_TEXT.get(reason, "")})
@@ -346,6 +371,8 @@ class FillRun:
         """A click, scroll or key from the viewer, during a hand-off or the review only."""
         if self.status not in INTERACTIVE or self.computer is None:
             return
+        if self.real_site and self.status == "review":
+            return  # the stop point is read-only: nothing on a real form can be sent from here
         page = self.computer.page
         kind = event.get("type")
         try:
@@ -372,6 +399,13 @@ class RunTimedOut(Exception):
     pass
 
 
+class StopPoint(Exception):
+    """Fill-and-stop reached a real form's submit or attestation."""
+
+
+STOP_REASONS = {"submit", "attestation"}
+
+
 def fill_sheet_for(state: FillerSession) -> FillSheet:
     """The live fill sheet: confirmed details whose paper is still consented (or typed)."""
 
@@ -390,8 +424,12 @@ class FillRuns:
 
     def __init__(self, browser: CloudBrowser, make_model: Callable[[str], BrowserModel], sessions: FillerSessions,
                  *, type_delay_ms: int | None = None, wait_seconds: float | None = None,
-                 mapper: FieldMapper | None = None, dwell: float | None = None, fast: bool = True) -> None:
+                 mapper: FieldMapper | None = None, dwell: float | None = None, fast: bool = True,
+                 targets: dict[str, FillTarget] | None = None,
+                 on_finish: Callable[[FillRun], Any] | None = None) -> None:
         self._browser, self._make_model, self._sessions = browser, make_model, sessions
+        self.targets = targets or {}
+        self._on_finish = on_finish
         self._mapper, self._dwell, self._fast = mapper, dwell, fast
         self._type_delay_ms = type_delay_ms
         self._wait_seconds = wait_seconds or WAIT_SECONDS
@@ -403,7 +441,22 @@ class FillRuns:
             raise RunError(404, "run_not_found", "That run doesn't exist.")
         return run
 
-    def start(self, session_id: str, *, prepare: bool = False) -> FillRun:
+    def set_on_finish(self, on_finish: Callable[[FillRun], Any]) -> None:
+        self._on_finish = on_finish
+
+    def start(self, session_id: str, *, prepare: bool = False, program_id: str | None = None,
+              pdf_form_id: str | None = None) -> FillRun:
+        target = None
+        pdf_form = None
+        if pdf_form_id is not None:
+            state_for_pdf = self._sessions.get(session_id)
+            pdf_form = state_for_pdf.pdf_forms.get(pdf_form_id) if state_for_pdf else None
+            if pdf_form is None:
+                raise RunError(404, "pdf_form_not_found", "That PDF form isn't here any more. Add it again.")
+        if program_id is not None:
+            target = self.targets.get(program_id)
+            if target is None or not target.enabled:
+                raise RunError(422, "not_fillable", "The helper can't fill this program's form yet.")
         active = [r for r in self._runs.values() if r.status in ACTIVE_FILL]
         if any(r.session_id == session_id for r in active):
             raise RunError(409, "run_active", "A form is already being filled. Stop it first.")
@@ -412,7 +465,7 @@ class FillRuns:
         state = self._sessions.get(session_id)
         assert state is not None
         run = FillRun(id=secrets.token_urlsafe(12), session_id=session_id, state=state,
-                      wait_seconds=self._wait_seconds, prepare=prepare)
+                      wait_seconds=self._wait_seconds, prepare=prepare, target=target, pdf_form=pdf_form)
         for old_id, old in list(self._runs.items()):  # keep finished runs of other sessions briefly
             if old.session_id == session_id and old.status not in ACTIVE_FILL:
                 del self._runs[old_id]
@@ -460,26 +513,44 @@ class FillRuns:
             await stream.close()
             if handle is not None:
                 await handle.close()
+            if self._on_finish is not None and run.target is not None:
+                try:
+                    await self._on_finish(run)  # the outcome goes into the person's plan
+                except Exception as exc:
+                    logger.warning("filler result not recorded: %s", describe_exception(exc))
 
     async def _fill(self, run: FillRun) -> None:
         stream = run.stream
+        target = run.target
         run._set("preparing", "Opening the form")
         run.handle = await self._browser.open()
         page = run.handle.page
         await stream.start_screencast(page)
-        await page.route("**/*", _serve_practice)
-        await page.goto(PRACTICE_URL, wait_until="domcontentloaded")
+        if run.pdf_form is not None:
+            hosts = PDF_HOSTS
+            body = render_html(run.pdf_form.fields, run.pdf_form.title)
+            await page.route("**/*", _serve_page(PDF_URL, body))
+            await page.goto(PDF_URL, wait_until="domcontentloaded")
+        elif run.real_site and target is not None:
+            hosts = frozenset(h.lower() for h in target.allowed_hosts)
+            await page.route("**/*", _allowlist(hosts))
+            await page.goto(str(target.start_url), wait_until="domcontentloaded", timeout=30_000)
+        else:
+            hosts = PRACTICE_HOSTS
+            await page.route("**/*", _serve_practice)
+            await page.goto(PRACTICE_URL, wait_until="domcontentloaded")
+        curated = load_map(target.form_map) if target and target.form_map else {}
         sheet = fill_sheet_for(run.state)
         askable = frozenset(CATALOGUE)
         kwargs = {} if self._type_delay_ms is None else {"type_delay_ms": self._type_delay_ms}
-        run.computer = Computer(page, stream, allowed_hosts=PRACTICE_HOSTS, **kwargs)
+        run.computer = Computer(page, stream, allowed_hosts=hosts, **kwargs)
 
         def typed(_key: str) -> None:
             if run.first_type_seconds is None and run.fill_started is not None:
                 run.first_type_seconds = time.monotonic() - run.fill_started
 
         fast_kwargs = {} if self._dwell is None else {"dwell": self._dwell}
-        fast = FastFiller(run.computer, stream, sheet, run, allowed_hosts=PRACTICE_HOSTS, askable=askable,
+        fast = FastFiller(run.computer, stream, sheet, run, allowed_hosts=hosts, askable=askable, curated=curated,
                           mapper=self._mapper, on_typed=typed, **fast_kwargs)
         if run.prepare:  # the pre-flight card: show the plan, wait for the person's go
             run.plan = await fast.plan()
@@ -490,19 +561,51 @@ class FillRuns:
 
         run.fill_started = time.monotonic()
         run._set("filling")
-        reached = await fast.run() if self._fast else "stuck"  # the page's own HTML; no model turns
-        run.filled = list(fast.typed_keys)
-        if reached != "review":
-            # The fast path couldn't move this page on: Gemini Computer Use takes over from here.
-            run.model_turns_used = True
-            model = self._make_model(system_instruction(sheet, askable))
-            loop = AgentLoop(model, run.computer, stream, sheet, allowed_hosts=PRACTICE_HOSTS, askable=askable, hooks=run)
-            loop.typed_keys = list(fast.typed_keys)
-            end = await loop.run(FILL_TASK)
-            run.filled = list(end.typed_keys)
+        stopped_at_send = False
+        try:
+            reached = await fast.run() if self._fast else "stuck"  # the page's own HTML; no model turns
+            run.filled = list(fast.typed_keys)
+            if reached != "review":
+                # The fast path couldn't move this page on: Gemini Computer Use takes over from here.
+                run.model_turns_used = True
+                model = self._make_model(system_instruction(sheet, askable))
+                loop = AgentLoop(model, run.computer, stream, sheet, allowed_hosts=hosts, askable=askable, hooks=run)
+                loop.typed_keys = list(fast.typed_keys)
+                end = await loop.run(FILL_TASK)
+                run.filled = list(end.typed_keys)
+            stopped_at_send = run.real_site
+        except StopPoint:
+            stopped_at_send = True
+            run.filled = list(dict.fromkeys(run.filled + fast.typed_keys))
 
-        # Review: the person checks the highlighted fields and presses the form's own Submit.
         count = await run.computer.highlight_filled()
+        if stopped_at_send:
+            # Fill-and-stop on a real form: read-only from here. Nothing is sent.
+            stream.step(f"Filled {count} field{'' if count == 1 else 's'}. We stop here: nothing will be sent.")
+            run._set("review", "The form is filled in up to the point of sending. We stop here: nothing will be sent.")
+            while not run._done:
+                await run._sleep_until_woken()
+            run.outcome = {"status": "not_submitted", "confirmation": None}
+            run._set("done", "Stopped before sending, as planned. Nothing was sent.")
+            return
+
+        if run.pdf_form is not None:
+            # A PDF: the person checks the page, then their values go into the real PDF.
+            stream.step(f"Filled {count} field{'' if count == 1 else 's'}. Check them, then make your PDF.")
+            run._set("review", "Check what was filled and tick any boxes that are yours, then make your PDF.")
+            while not run._done:
+                await run._sleep_until_woken()
+            run._set("verifying", "Making your PDF")
+            values = await page.evaluate(READ_VALUES)
+            form = run.pdf_form
+            run.pdf_result = await asyncio.to_thread(fill_pdf, form.data, form.fields, values)
+            run.outcome = {"status": "pdf_ready", "confirmation": None}
+            signs = any(f.kind == "signature" for f in form.fields)
+            run._set("done", "Your filled PDF is ready to download." +
+                     (" Sign it in your PDF app before you send it." if signs else ""))
+            return
+
+        # Practice review: the person checks the highlighted fields and presses the form's own Submit.
         stream.step(f"Filled {count} field{'' if count == 1 else 's'}. Check them, then press Submit yourself.")
         run._set("review", "Check what was filled, then press the form's Submit button yourself.")
         while not run._done:
@@ -517,6 +620,37 @@ class FillRuns:
         else:
             run.outcome = {"status": "not_submitted", "confirmation": None}
             run._set("done", "The form wasn't sent.")
+
+
+def _allowlist(hosts: frozenset[str]) -> Callable[[Any], Any]:
+    """A real site: its own hosts load; a navigation anywhere else is aborted. CDN assets and
+    CAPTCHA frames load (the gate hands a CAPTCHA to the person)."""
+
+    async def handle(route: Any) -> None:
+        request = route.request
+        url = request.url
+        if url.startswith(("data:", "blob:", "about:")) or host_allowed(url, hosts):
+            await route.continue_()
+        elif any(c in url for c in CAPTCHA_HOSTS):
+            await route.continue_()
+        elif request.is_navigation_request():
+            await route.abort("blockedbyclient")
+        else:
+            await route.continue_()
+
+    return handle
+
+
+def _serve_page(url: str, body: str) -> Callable[[Any], Any]:
+    """Fulfil one generated page at `url`; abort everything else (offline)."""
+
+    async def handle(route: Any) -> None:
+        if route.request.url.split("#")[0].split("?")[0] == url:
+            await route.fulfill(status=200, content_type="text/html; charset=utf-8", body=body)
+        else:
+            await route.abort("blockedbyclient")
+
+    return handle
 
 
 async def _serve_practice(route: Any) -> None:

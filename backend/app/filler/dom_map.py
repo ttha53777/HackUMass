@@ -3,7 +3,7 @@
 A form says what each field is: its <label>, `name`, `id`, `autocomplete`, `placeholder`,
 input type. Three sources, in order:
 
-  1. a curated map for a form we know (`app/data/filler/<form>.json`, field id/name -> key),
+  1. a curated map for a form we know (`app/data/filler/maps/<form>.json`, field id/name -> key),
      reviewed by hand like a program record;
   2. rules: `autocomplete` tokens first, then label/name patterns. A field that matches
      two different keys is ambiguous and left for the next source, never guessed;
@@ -29,7 +29,7 @@ from app.filler.models import CATALOGUE
 
 logger = logging.getLogger(__name__)
 
-MAPS_DIR = Path(__file__).resolve().parents[1] / "data" / "filler"
+MAPS_DIR = Path(__file__).resolve().parents[1] / "data" / "filler" / "maps"
 
 # Lists every visible control on the page, tags each with data-filler-id so it can be
 # found again, and describes it the way the gate's _DESCRIBE does. Never reads a value.

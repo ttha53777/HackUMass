@@ -3,9 +3,11 @@
 import { useEffect, useMemo, useRef } from "react";
 
 import { DrawerHead, Stepper } from "@/components/hub/drawer";
+import { usePlan } from "@/components/session/plan-state";
+import { useApp } from "@/components/session/session-provider";
 import { useHub } from "@/components/hub/hub-state";
 import { Arrow } from "@/components/hub/icons";
-import { RUN_INTERACTIVE, type FillerRunStatus, type PlanRow } from "@/lib/filler";
+import { RUN_INTERACTIVE, filledPdfUrl, type FillerRunStatus, type PlanRow } from "@/lib/filler";
 
 import { LiveViewer } from "./live-viewer";
 import { FieldChecklist, PreflightCard, QuestionBox, StepFeed } from "./run-panels";
@@ -33,9 +35,23 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
  * hand-off banner, and the review. The person can pause, take over or stop at any moment,
  * and always presses the form's own Send.
  */
-export function FillerStage({ sessionId }: { sessionId: string }) {
+export function FillerStage({
+  sessionId,
+  programId = null,
+  programTitle = null,
+  provider = null,
+  pdfFormId = null,
+}: {
+  sessionId: string;
+  programId?: string | null;
+  programTitle?: string | null;
+  provider?: string | null;
+  pdfFormId?: string | null;
+}) {
   const { closeSheet } = useHub();
-  const ctl = useFillerRun(sessionId);
+  const { refresh } = useApp();
+  const { setStage } = usePlan();
+  const ctl = useFillerRun(sessionId, programId, pdfFormId);
   const { run, start } = ctl;
   const started = useRef(false);
 
@@ -65,6 +81,14 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
     },
     [],
   );
+
+  // A program's result is in the plan: refresh it, and mark the program applied if it was sent.
+  const recorded = !!run?.result_recorded;
+  useEffect(() => {
+    if (!recorded || !run?.program_id) return;
+    void refresh();
+    if (run.outcome?.status === "submitted") setStage(run.program_id, "applied");
+  }, [recorded, run?.program_id, run?.outcome?.status, refresh, setStage]);
 
   const plan: PlanRow[] = useMemo(() => {
     const rows = run?.plan ?? [];
@@ -97,7 +121,15 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
   }
 
   const s = run.status;
-  const interactive = RUN_INTERACTIVE.includes(s);
+  const real = run.mode === "stop_before_submit";
+  const pdf = run.mode === "pdf";
+  // At a real site's stop point the view is read-only: nothing on it can be sent from here.
+  const interactive = RUN_INTERACTIVE.includes(s) && !(real && s === "review");
+  const where = real
+    ? `${provider ?? "The provider's form"} · fill-and-stop: nothing will be sent`
+    : pdf
+      ? "Your PDF form · filled here, then written into your PDF"
+      : `Practice form${programTitle ? ` for ${programTitle}` : ""} · nothing is sent anywhere`;
   const at = s === "preparing" || s === "ready" ? 1 : s === "review" || s === "verifying" || s === "done" ? 3 : 2;
   const finished = !ctl.active;
 
@@ -106,7 +138,7 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
       <DrawerHead eyebrow={<Stepper at={at} labels={STEPS} />} title={TITLE[s]} onClose={close} />
       <div className="fl-stage">
         <div className="fl-left">
-          <LiveViewer ctl={ctl} interactive={interactive} label={`Practice form · nothing is sent anywhere${ctl.active ? ` · ${clock(run.seconds_left)} left` : ""}`} />
+          <LiveViewer ctl={ctl} interactive={interactive} label={`${where}${ctl.active ? ` · ${clock(run.seconds_left)} left` : ""}`} />
           {ctl.active && s !== "ready" && s !== "preparing" ? (
             <div className="fl-controls" role="group" aria-label="Controls">
               {s === "paused" ? (
@@ -148,7 +180,33 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
             </div>
           ) : null}
 
-          {s === "review" ? (
+          {s === "review" && real ? (
+            <div className="fl-banner review" role="status">
+              <b>Filled in up to the point of sending. We stop here.</b>
+              <p>
+                This is the provider&apos;s real form, so nothing will be sent from here. Check what was filled (outlined in blue),
+                then send it yourself on the provider&apos;s site when you&apos;re ready.
+              </p>
+              <button className="btn sm" type="button" disabled={ctl.busy} onClick={() => void ctl.control("done")}>
+                End here <Arrow />
+              </button>
+            </div>
+          ) : null}
+
+          {s === "review" && pdf ? (
+            <div className="fl-banner review" role="status">
+              <b>Filled in. Check it, then make your PDF.</b>
+              <p>
+                Fields the helper filled are outlined in blue. Change anything that&apos;s wrong and tick any boxes that are yours.
+                Nothing is sent anywhere: you get the PDF to keep, print or send yourself.
+              </p>
+              <button className="btn sm" type="button" disabled={ctl.busy} onClick={() => void ctl.control("done")}>
+                Make my PDF <Arrow />
+              </button>
+            </div>
+          ) : null}
+
+          {s === "review" && !real && !pdf ? (
             <div className="fl-banner review" role="status">
               <b>Filled in. Now it&apos;s yours to check and send.</b>
               <p>
@@ -164,7 +222,7 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
             </div>
           ) : null}
 
-          {finished ? <Result run={run} onAgain={() => (ctl.forget(), void start())} onClose={closeSheet} /> : null}
+          {finished ? <Result run={run} sessionId={sessionId} onAgain={() => (ctl.forget(), void start())} onClose={closeSheet} /> : null}
 
           {s !== "ready" && s !== "preparing" ? (
             <>
@@ -180,16 +238,32 @@ export function FillerStage({ sessionId }: { sessionId: string }) {
   );
 }
 
-function Result({ run, onAgain, onClose }: { run: NonNullable<ReturnType<typeof useFillerRun>["run"]>; onAgain: () => void; onClose: () => void }) {
-  const sent = run.outcome?.status === "submitted";
+function Result({ run, sessionId, onAgain, onClose }: { run: NonNullable<ReturnType<typeof useFillerRun>["run"]>; sessionId: string; onAgain: () => void; onClose: () => void }) {
+  const sent = run.outcome?.status === "submitted" || run.pdf_ready;
   return (
     <div className={`fl-banner${sent ? " sent" : ""}`} role="status">
-      <b>{sent ? "Sent by you" : run.status === "failed" ? "The helper couldn't finish" : "Not sent"}</b>
+      <b>
+        {run.pdf_ready
+          ? "Your PDF is ready"
+          : sent
+          ? "Sent by you"
+          : run.status === "failed"
+            ? "The helper couldn't finish"
+            : run.mode === "stop_before_submit" && run.status === "done"
+              ? "Stopped before sending"
+              : "Not sent"}
+      </b>
       <p>
         {run.message}
         {sent && run.outcome?.confirmation ? ` Reference: ${run.outcome.confirmation}.` : ""}
+        {run.program_id && run.result_recorded ? " Your plan is updated." : ""}
       </p>
       <div className="fl-actions">
+        {run.pdf_ready ? (
+          <a className="btn sm" href={filledPdfUrl(sessionId, run.run_id)} download="filled-form.pdf">
+            Download your PDF
+          </a>
+        ) : null}
         {!sent ? (
           <button className="btn quiet sm" type="button" onClick={onAgain}>
             Start again

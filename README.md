@@ -151,6 +151,8 @@ Phases 3 and 3.5, filling a form. `POST /sessions/{id}/filler/runs` fills the pr
 
 Phase 4, the viewer. On Papers, **Watch it fill a practice form** opens the Filler full screen (`frontend/src/components/filler/filler-stage.tsx`): the live browser with the agent's cursor on the left; on the right the pre-flight card (what it will fill and from which paper, what it will ask, what is the person's), one question at a time, the hand-off banner with **Hand back**, the field checklist and a caption per action. **Pause**, **Take over** and **Stop** are always there. During a hand-off and at the review the person clicks, scrolls and types right in the live view; the review outlines every filled field, and the person presses the form's own Submit, then **I've sent it**. The stream is the run's WebSocket, through the same `/api` rewrite.
 
+Phase 5, real programs and PDFs. Which programs the Filler can fill is curated in `backend/app/data/filler/targets/<program_id>.json` (`practice`, or `stop_before_submit` with its own `start_url` and `allowed_hosts`); those programs get the plan's **Fill my form** button, which opens the Filler. On a real site the run is fill-and-stop: the first Submit or attestation ends it read-only and nothing is sent; navigation off the allowed hosts is aborted. Real-site records ship with `"enabled": false` until the team signs off and the form is checked from Steel. A finished program run writes its outcome into the plan (`application_result`, as v1 does). On Papers, **Fill a PDF form** takes a blank fillable PDF (`POST /sessions/{id}/filler/pdf-forms`): its fields are filled live as a web page, the person ticks boxes and checks it, and **Make my PDF** writes the values into the real PDF (`GET .../runs/{run_id}/pdf`). Signature fields are left for the person to sign in a PDF app.
+
 Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. These dev routes answer requests from this machine only.
 
 | Call | Purpose |
@@ -258,6 +260,7 @@ backend/app/api/practice_routes.py serves the practice application form at /prac
 backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
                                    run manager, fill sheet, outcome check, practice form
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
+backend/app/data/filler/           Filler targets (which programs, how) and hand-checked field maps
 backend/app/filler/                Form-Fill Agent v2: consent, paper reading, cloud browser,
                                    live stream, agent loop
 frontend/src/components/filler/    Filler UI: auto-read setting, consent notice, review card, live viewer stage

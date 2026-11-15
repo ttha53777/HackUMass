@@ -48,7 +48,7 @@ type FrameListener = (frame: Frame) => void;
  * snapshot whenever the status changes, and the person's controls. Frames go straight to
  * listeners (the viewer's <img>), not through React state, so 8 fps costs no re-renders.
  */
-export function useFillerRun(sessionId: string) {
+export function useFillerRun(sessionId: string, programId: string | null = null, pdfFormId: string | null = null) {
   const [run, setRun] = useState<FillerRun | null>(null);
   const [steps, setSteps] = useState<string[]>([]);
   const [cursor, setCursor] = useState<Cursor | null>(null);
@@ -136,12 +136,14 @@ export function useFillerRun(sessionId: string) {
     };
   }, [sessionId, runId, active, refresh]);
 
-  // Backup poll (the countdown, and anything a dropped socket missed).
+  // Backup poll (the countdown, and anything a dropped socket missed). After a program's run
+  // ends, keep polling until its result is in the plan.
+  const awaitingResult = !!run && !active && !!run.program_id && !run.result_recorded && run.status !== "failed";
   useEffect(() => {
-    if (!runId || !active) return;
+    if (!runId || !(active || awaitingResult)) return;
     const timer = window.setInterval(() => void refresh(runId), BACKUP_POLL_MS);
     return () => window.clearInterval(timer);
-  }, [runId, active, refresh]);
+  }, [runId, active, awaitingResult, refresh]);
 
   const act = useCallback(
     async (call: () => Promise<FillerRun>) => {
@@ -164,11 +166,11 @@ export function useFillerRun(sessionId: string) {
     setSteps([]);
     lastFrame.current = null;
     return act(async () => {
-      const next = await startFillerRun(sessionId, true);
+      const next = await startFillerRun(sessionId, true, programId, pdfFormId);
       writeRunId(sessionId, next.run_id);
       return next;
     });
-  }, [act, sessionId]);
+  }, [act, sessionId, programId, pdfFormId]);
 
   const control = useCallback(
     (action: RunControl) => (runId ? act(() => controlFillerRun(sessionId, runId, action)) : Promise.resolve(false)),

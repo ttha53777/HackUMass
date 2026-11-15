@@ -96,6 +96,7 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
             return
         from app.filler.consent import FillerSessions
         from app.filler.dom_map import GeminiFieldMapper
+        from app.filler.targets import all_targets
         from app.filler.extract import GeminiReader
         from app.filler.jobs import PaperJobs
         from app.filler.loop import GeminiModel
@@ -114,7 +115,7 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
             sessions=sessions,
             jobs=PaperJobs(GeminiReader(settings.gemini_api_key, settings.read_model)),
             spike=SpikeRuns(browser, make_model),
-            runs=FillRuns(browser, make_model, sessions,
+            runs=FillRuns(browser, make_model, sessions, targets=all_targets(),
                           mapper=GeminiFieldMapper(settings.gemini_api_key, settings.read_model)),
         )
 
@@ -124,6 +125,14 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
     app.state.filler = filler
     app.include_router(filler_router)
     app.include_router(filler_session_router)
+    if filler.runs is not None:
+        from app.filler.results import make_recorder
+
+        filler.runs.set_on_finish(make_recorder(app.state.sessions))
+        # Programs the Filler can fill join the snapshot's existing list, so the plan's
+        # "Fill my form" buttons appear for them (the Filler wins over v1 for a program).
+        enabled = {pid: t.mode for pid, t in filler.runs.targets.items() if t.enabled}
+        app.state.automation_modes = {**(getattr(app.state, "automation_modes", None) or {}), **enabled}
 
 
 @asynccontextmanager

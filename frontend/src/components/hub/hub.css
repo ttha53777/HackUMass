@@ -1096,3 +1096,4 @@ body:has(.od-hub.touring) div.fixed[role="status"]{bottom:calc(132px + env(safe-
 .fl-check li.yours .fl-mark{box-shadow:inset 0 0 0 1.5px var(--alert);color:var(--alert)}
 .fl-try{justify-self:start;font-size:.9rem;display:inline-flex;gap:.4em;align-items:center}
 .fl-try svg{width:1.2em;height:.8em}
+.fl-tries{display:flex;gap:16px;flex-wrap:wrap}

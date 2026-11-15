@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Literal
 
 from app.filler.models import CATALOGUE, SCOPES, AutoRead, Consent, Detail, Paper, now
+from app.filler.pdf import PdfForm
 
 IDLE_SECONDS = 2 * 60 * 60
 MAX_PAPERS = 20
@@ -44,6 +45,8 @@ class FillerSession:
     details: dict[str, Detail] = field(default_factory=dict)
     # Which papers got their consent from auto-read rather than their own switch.
     auto_consented: set[str] = field(default_factory=set)
+    # Blank fillable PDF forms to fill (not papers: nothing is read from them).
+    pdf_forms: dict[str, PdfForm] = field(default_factory=dict)
     last_seen: float = field(default_factory=time.monotonic)
 
     # -- papers ------------------------------------------------------------------
@@ -199,6 +202,7 @@ class FillerSessions:
             for paper_id in list(state.papers):
                 state.remove_paper(paper_id)
             state.details.clear()
+            state.pdf_forms.clear()
 
     def expire(self) -> None:
         cutoff = self._clock() - self._idle

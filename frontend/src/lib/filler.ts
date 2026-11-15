@@ -125,10 +125,14 @@ export type FillerRun = {
   question: { key: string; label: string; text: string } | null;
   handoff: { reason: string; text: string } | null;
   filled: { key: string; label: string }[];
-  outcome: { status: "submitted" | "not_submitted"; confirmation: string | null } | null;
+  outcome: { status: "submitted" | "not_submitted" | "pdf_ready"; confirmation: string | null } | null;
   plan: PlanRow[] | null;
   first_type_seconds: number | null;
   used_model: boolean;
+  program_id: string | null;
+  mode: "practice" | "stop_before_submit" | "pdf";
+  result_recorded: boolean;
+  pdf_ready: boolean;
   seconds_left: number;
 };
 
@@ -146,8 +150,23 @@ export type LiveEvent =
 
 const runs = (sessionId: string) => `${base(sessionId)}/runs`;
 
-export function startFillerRun(sessionId: string, prepare = true): Promise<FillerRun> {
-  return apiRequest(runs(sessionId), json("POST", { prepare }));
+/** `programId` null: the plain practice form, tied to no program. `pdfFormId`: a fillable PDF instead. */
+export function startFillerRun(sessionId: string, prepare = true, programId: string | null = null, pdfFormId: string | null = null): Promise<FillerRun> {
+  return apiRequest(runs(sessionId), json("POST", { prepare, program_id: programId, pdf_form_id: pdfFormId }));
+}
+
+export type PdfFormOut = { pdf_form_id: string; title: string; fields: { name: string; kind: string; label: string }[] };
+
+/** A blank fillable PDF form to fill (not a paper: nothing is read from it). */
+export function addPdfForm(sessionId: string, file: File): Promise<PdfFormOut> {
+  const body = new FormData();
+  body.append("file", file, file.name);
+  body.append("title", file.name.replace(/\.pdf$/i, ""));
+  return apiRequest(`${base(sessionId)}/pdf-forms`, { method: "POST", body });
+}
+
+export function filledPdfUrl(sessionId: string, runId: string): string {
+  return `/api${runs(sessionId)}/${encodeURIComponent(runId)}/pdf`;
 }
 
 export function getFillerRun(sessionId: string, runId: string): Promise<FillerRun> {

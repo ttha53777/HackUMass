@@ -36,10 +36,11 @@ Phase 3 replaces these with the session-scoped routes in the spec
 from __future__ import annotations
 
 import asyncio
+import secrets
 from pathlib import Path
 
 from fastapi import APIRouter, Body, File, Form, Request, UploadFile, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, Response
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
@@ -48,6 +49,7 @@ from app.filler.consent import ConsentError, FillerSession, scopes_from
 from app.filler.extract import MAX_BYTES, PaperRejected, check_upload
 from app.filler.jobs import PaperJobs
 from app.filler.models import CATALOGUE, NOTICE_VERSION, PAPER_KINDS
+from app.filler.pdf import PdfForm, inspect as inspect_pdf
 from app.filler.runs import FillRuns, RunError, SpikeBusy, SpikeRuns
 
 router = APIRouter(prefix="/api/filler/dev")
@@ -217,13 +219,18 @@ def _run_call(fn):
 
 class StartIn(BaseModel):
     prepare: bool = False  # open and map the form now; fill when the person sends {action: "go"}
+    program_id: str | None = None  # a program with a Filler target; none = the plain practice form
+    pdf_form_id: str | None = None  # a fillable PDF added with POST /pdf-forms
 
 
 @session_router.post("/runs", status_code=202)
 async def start_run(session_id: str, request: Request, body: StartIn | None = Body(None)):
     _state(request, session_id)
     prepare = bool(body and body.prepare)
-    run = _run_call(lambda: _runs_for(request).start(session_id, prepare=prepare))
+    program_id = body.program_id if body else None
+    pdf_form_id = body.pdf_form_id if body else None
+    run = _run_call(lambda: _runs_for(request).start(session_id, prepare=prepare, program_id=program_id,
+                                                     pdf_form_id=pdf_form_id))
     return JSONResponse(run.view(), status_code=202, headers=NO_STORE)
 
 
@@ -262,6 +269,32 @@ async def stop_run(session_id: str, run_id: str, request: Request):
     _run_call(lambda: runs.get(session_id, run_id))
     run = await runs.stop(session_id, run_id)
     return JSONResponse(run.view(), headers=NO_STORE)
+
+
+@session_router.post("/pdf-forms", status_code=201)
+async def add_pdf_form(session_id: str, request: Request, file: UploadFile = File(...), title: str = Form("")):
+    state = _state(request, session_id)
+    data = await file.read(MAX_BYTES + 1)
+    await file.close()
+    try:
+        fields = await run_in_threadpool(inspect_pdf, data)
+    except PaperRejected as exc:
+        raise ApiError(415, "unsupported_file", str(exc)) from exc
+    form = PdfForm(secrets.token_urlsafe(9), data, fields, (title.strip() or file.filename or "Your PDF form")[:80])
+    state.pdf_forms = {form.id: form}  # one form at a time
+    out = {"pdf_form_id": form.id, "title": form.title,
+           "fields": [{"name": f.name, "kind": f.kind, "label": f.label} for f in fields]}
+    return JSONResponse(out, status_code=201, headers=NO_STORE)
+
+
+@session_router.get("/runs/{run_id}/pdf")
+async def run_pdf(session_id: str, run_id: str, request: Request):
+    _state(request, session_id)
+    run = _run_call(lambda: _runs_for(request).get(session_id, run_id))
+    if run.pdf_result is None:
+        raise ApiError(404, "pdf_not_ready", "The PDF isn't ready yet.")
+    return Response(run.pdf_result, media_type="application/pdf", headers={
+        **NO_STORE, "Content-Disposition": 'attachment; filename="filled-form.pdf"'})
 
 
 @session_router.websocket("/runs/{run_id}/live")

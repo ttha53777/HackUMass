@@ -76,3 +76,51 @@ LEASE = make_pdf([
 TINY_PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 )
+
+
+def make_fillable_pdf() -> bytes:
+    """A blank one-page fillable form (AcroForm): five text fields with tooltips, a certify
+    checkbox and a signature field. Field names are deliberately unhelpful, as on real forms."""
+    text_fields = [("f1_applicant[0]", "First name"), ("f2_applicant[0]", "Last name"),
+                   ("f3_dob[0]", "Date of birth"), ("f4_tel[0]", "Phone number"), ("f5_zip[0]", "ZIP code")]
+    objs: dict[int, bytes] = {}
+    field_ids = []
+    n = 6
+    for i, (name, tip) in enumerate(text_fields):
+        y = 700 - i * 40
+        objs[n] = (f"<< /Type /Annot /Subtype /Widget /FT /Tx /T ({name}) /TU ({tip}) /Rect [200 {y} 500 {y + 20}] "
+                   f"/P 4 0 R /F 4 /DA (/Helv 10 Tf 0 g) >>").encode()
+        field_ids.append(n)
+        n += 1
+    on, off = n, n + 1
+    objs[on] = b"<< /Type /XObject /Subtype /Form /BBox [0 0 12 12] /Length 0 >>\nstream\n\nendstream"
+    objs[off] = b"<< /Type /XObject /Subtype /Form /BBox [0 0 12 12] /Length 0 >>\nstream\n\nendstream"
+    n += 2
+    objs[n] = (f"<< /Type /Annot /Subtype /Widget /FT /Btn /T (c1_certify[0]) /TU (I certify the information is true) "
+               f"/Rect [72 460 84 472] /P 4 0 R /F 4 /V /Off /AS /Off /AP << /N << /Yes {on} 0 R /Off {off} 0 R >> >> >>").encode()
+    field_ids.append(n)
+    n += 1
+    objs[n] = (b"<< /Type /Annot /Subtype /Widget /FT /Sig /T (s1_sig[0]) /TU (Applicant signature) "
+               b"/Rect [200 400 500 430] /P 4 0 R /F 4 >>")
+    field_ids.append(n)
+    refs = " ".join(f"{i} 0 R" for i in field_ids)
+    content = b"BT /F1 14 Tf 72 750 Td (Practice fillable form. The person is fictional.) Tj ET"
+    objs[1] = (f"<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [{refs}] /NeedAppearances true "
+               f"/DA (/Helv 0 Tf 0 g) /DR << /Font << /Helv 3 0 R >> >> >> >>").encode()
+    objs[2] = b"<< /Type /Pages /Kids [4 0 R] /Count 1 >>"
+    objs[3] = b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+    objs[4] = (f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> "
+               f"/Contents 5 0 R /Annots [{refs}] >>").encode()
+    objs[5] = b"<< /Length " + str(len(content)).encode() + b" >>\nstream\n" + content + b"\nendstream"
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = {}
+    for i in sorted(objs):
+        offsets[i] = len(out)
+        out += f"{i} 0 obj\n".encode() + objs[i] + b"\nendobj\n"
+    size = max(objs) + 1
+    xref = len(out)
+    out += f"xref\n0 {size}\n0000000000 65535 f \n".encode()
+    for i in range(1, size):
+        out += f"{offsets[i]:010d} 00000 n \n".encode()
+    out += f"trailer\n<< /Size {size} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    return bytes(out)
