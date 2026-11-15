@@ -1,0 +1,14 @@
+/*
+ * "Through the door": evergreen floods out of the button you pressed, then the
+ * door swings open onto warm light. Lives outside .od-front so it can cover a
+ * route change, so it carries its own (light-only) colors.
+ */
+.od-through{
+  --sun:#F2D58A; --door:#1E5843; --on-door:#F4F6F1; --brass:#B8862C;
+  position:fixed;inset:0;z-index:50;pointer-events:none;visibility:hidden;perspective:1600px;perspective-origin:0 50%
+}
+.od-through.on{visibility:visible;pointer-events:auto}
+.od-through .th-light{position:absolute;inset:0;background:var(--sun);opacity:0}
+.od-through .th-door{position:absolute;inset:0;background:var(--door);transform-origin:0 50%;clip-path:circle(0 at var(--cx,50%) var(--cy,50%))}
+.od-through .th-door::before{content:"";position:absolute;inset:6vh 6vw;border:1.5px solid color-mix(in srgb,var(--on-door) 22%,transparent);border-radius:3px}
+.od-through .th-door::after{content:"";position:absolute;right:7vw;top:50%;width:clamp(16px,2vw,26px);aspect-ratio:1;border-radius:50%;background:var(--brass)}

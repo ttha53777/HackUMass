@@ -6,14 +6,14 @@ import { useEffect, type ReactNode } from "react";
 import { useApp } from "@/components/session/session-provider";
 import { coreDone } from "@/lib/derive";
 
-/** The dashboard needs a finished intake. Without one, go back to the front door. */
+/** The dashboard needs a finished intake. Without one, go to the conversation at /start. */
 export function Gate({ children }: { children: ReactNode }) {
   const { snapshot, loadError } = useApp();
   const router = useRouter();
   const ready = coreDone(snapshot);
 
   useEffect(() => {
-    if (snapshot && !ready) router.replace("/");
+    if (snapshot && !ready) router.replace("/start");
   }, [snapshot, ready, router]);
 
   if (loadError) {

@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+</head>
+<body>
+<title>OpenDoor Onboarding</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: an editorial paper page. Large serif statements set flush-left; pen doodles live in the
+   right-hand margin and move with you. A door is the one recurring object: it opens as you scroll,
+   you walk through it to start, and on your plan it opens a little more with every step you finish. */
+:root{
+  --paper:#F1F3EE; --paper-2:#E5E9E2; --raised:#FAFBF8;
+  --ink:#16201B; --ink-2:#47524C; --ink-3:#77827B;
+  --line:rgba(22,32,27,.13); --line-2:rgba(22,32,27,.28);
+  --door:#1E5843; --on-door:#F4F6F1; --brass:#B8862C;
+  --wash:#D5E4DA; --sun:#F2D58A; --alert:#9C3F27; --alert-wash:#F4E0D6;
+
+  --display:"Newsreader","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+
+  color-scheme:light;
+  --e-out:cubic-bezier(.16,1,.3,1); --e-io:cubic-bezier(.65,0,.35,1); --e-spring:cubic-bezier(.34,1.5,.64,1);
+  --gut:max(clamp(16px,4.4vw,56px),env(safe-area-inset-left,0px));
+  --gut-r:max(clamp(16px,4.4vw,56px),env(safe-area-inset-right,0px));
+}
+*,*::before,*::after{box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font:400 1.125rem/1.55 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden;text-rendering:optimizeLegibility}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+input{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2.5px solid var(--door);outline-offset:3px;border-radius:8px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.wrap{max-width:1280px;margin-inline:auto;padding-left:var(--gut);padding-right:var(--gut-r)}
+.mono{font:500 .74rem/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2)}
+h1,h2,h3{font-family:var(--display);font-weight:340;text-wrap:balance;margin:0;letter-spacing:-.022em}
+em{font-style:italic}
+p{margin:0}
+
+/* Doodles: one pen, one wobble. */
+.dd{fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;overflow:visible;filter:url(#pen)}
+.dd.sm{stroke-width:4.6}
+.f-wash{fill:var(--wash)} .f-sun{fill:var(--sun)} .f-paper{fill:var(--raised)} .f-ink{fill:currentColor} .f-door{fill:var(--door)}
+.dd text{stroke:none;fill:currentColor;font-family:var(--display);font-style:italic}
+
+/* Word-by-word rise */
+.w{display:inline-block;overflow:hidden;vertical-align:top;padding:0 .06em .12em 0;margin:0 -.06em -.12em 0}
+.w>span{display:inline-block;transform:translateY(108%);animation:rise 1s var(--e-out) forwards;animation-delay:var(--d,0ms)}
+@keyframes rise{to{transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@keyframes fillin{to{fill-opacity:1}}
+@keyframes fade{to{opacity:1}}
+.ink{stroke-dasharray:1;stroke-dashoffset:1;fill-opacity:0;animation:draw 1.3s var(--e-io) var(--d,0ms) forwards,fillin .9s ease calc(var(--d,0ms) + 700ms) forwards}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.7em;background:var(--door);color:var(--on-door);border-radius:999px;padding:.95em 1.35em .95em 1.6em;font-weight:700;font-size:1.02rem;transition:transform .35s var(--e-spring),background .2s}
+.btn svg{width:1.4em;height:1em;transition:transform .45s var(--e-out)}
+.btn:hover svg{transform:translateX(4px)}
+.btn:active{transform:scale(.97)}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.btn.quiet{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.txt-btn{font-weight:700;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.28em;text-decoration-color:var(--line-2);transition:text-decoration-color .2s}
+.txt-btn:hover{text-decoration-color:currentColor}
+
+.view{min-height:100%}
+[hidden]{display:none!important}
+
+/* ───────────────────────── LANDING ───────────────────────── */
+.l-nav{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:22px}
+.mark{display:inline-flex;align-items:center;gap:.5em;font:500 1.45rem/1 var(--display);letter-spacing:-.02em;text-decoration:none}
+.mark svg{width:22px;height:28px}
+.l-nav nav{display:flex;align-items:center;gap:28px;font-size:.98rem}
+.l-nav nav a{text-decoration:none;color:var(--ink-2)}
+.l-nav nav a:hover{color:var(--ink)}
+.l-nav .btn{padding:.6em 1em .6em 1.2em;font-size:.94rem}
+
+.hero{--hp:0;padding-block:clamp(24px,5vw,64px) clamp(40px,6vw,96px);display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:end}
+.hero-copy{transform:translateY(calc(var(--hp) * 60px));opacity:calc(1 - var(--hp) * .5)}
+.hero h1{font-size:clamp(3.3rem,8.6vw,8.2rem);line-height:.94;font-weight:300;letter-spacing:-.04em;font-variation-settings:"opsz" 72;margin-top:22px}
+h1 em{font-weight:300;position:relative;display:inline-block}
+h1 .ul{position:absolute;left:-2%;bottom:.02em;height:.22em;width:106%;color:var(--brass);stroke-width:3.4}
+h1 .ul path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s var(--e-io) 1.15s forwards}
+.lede{font-size:clamp(1.12rem,1.5vw,1.3rem);color:var(--ink-2);max-width:34ch;margin-top:28px;opacity:0;animation:fade .9s ease .9s forwards}
+.hero-cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px 26px;margin-top:34px;opacity:0;animation:fade .9s ease 1.1s forwards}
+.assure{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:30px;opacity:0;animation:fade .9s ease 1.3s forwards}
+.assure span{display:inline-flex;align-items:center;gap:7px}
+.assure svg{width:14px;height:14px;color:var(--door)}
+
+.scene{position:relative;aspect-ratio:600/520;width:100%;max-width:640px;justify-self:end}
+.scene>svg{position:absolute;inset:0;width:100%;height:100%}
+.scene .lay{transition:transform .6s var(--e-out)}
+.scene .lay-plant{transform:translateY(calc(var(--hp) * -70px))}
+.scene .lay-cat{transform:translateY(calc(var(--hp) * -26px))}
+.scene .lay-bird{transform:translate(calc(var(--hp) * -40px),calc(var(--hp) * 30px))}
+.spill{transform-box:fill-box;transform-origin:50% 0;transform:scaleY(calc(.35 + var(--open-n,0) * .9)) scaleX(calc(.7 + var(--open-n,0) * .5));opacity:calc(.25 + var(--open-n,0) * .75);transition:transform .6s var(--e-out),opacity .6s}
+.door-wrap{position:absolute;left:37%;top:25.2%;width:26.4%;height:65.6%;perspective:620px;perspective-origin:0 50%}
+.door{position:absolute;inset:0;transform-origin:0 50%;transform:rotateY(calc(var(--open,0) * 1deg));transition:transform 1.1s var(--e-out);transform-style:preserve-3d}
+.door svg{width:100%;height:100%;display:block}
+.door::after{content:"";position:absolute;inset:0;background:var(--ink);opacity:calc(var(--open-n,0) * .28);border-radius:2px;pointer-events:none;transition:opacity 1.1s}
+.door .sign{transform-origin:79px 64px;animation:swing 5s ease-in-out infinite}
+@keyframes swing{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.scene-note{position:absolute;right:2%;top:2%;font:italic 400 1.05rem/1.2 var(--display);color:var(--ink-2);transform:rotate(-4deg);text-align:right;opacity:0;animation:fade 1s ease 2.2s forwards}
+.scene-note svg{display:block;width:60px;height:40px;margin:4px 0 0 auto;color:var(--ink-3)}
+
+/* Phrases you can start with */
+.phr{padding-block:clamp(40px,7vw,96px) clamp(24px,4vw,48px);border-top:1px solid var(--line);overflow:clip}
+.phr-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+.phr-head p:last-child{color:var(--ink-2);font-size:1rem;max-width:36ch}
+.rows{margin-top:clamp(20px,3vw,40px);display:grid;gap:8px}
+.row{display:flex;gap:28px;width:max-content;align-items:center;will-change:transform}
+.phrase{font:italic 300 clamp(2rem,4.6vw,4rem)/1.15 var(--display);letter-spacing:-.025em;white-space:nowrap;color:var(--ink);padding:.05em .1em;border-radius:12px;transition:color .25s,background .25s}
+.phrase:hover,.phrase:focus-visible{color:var(--door);background:var(--wash)}
+.row .star{width:26px;height:26px;color:var(--brass);flex:none}
+
+/* Sticky story */
+.story{height:330vh;position:relative;border-top:1px solid var(--line)}
+.story-pin{position:sticky;top:0;height:100vh;height:100svh;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(24px,5vw,80px);align-items:center}
+.story-copy{display:grid;gap:30px;align-content:center}
+.beats{display:grid}
+.beat{grid-area:1/1;transition:opacity .6s var(--e-out),transform .8s var(--e-out);opacity:0;transform:translateY(28px);pointer-events:none}
+.beat.on{opacity:1;transform:none;pointer-events:auto}
+.beat.past{opacity:0;transform:translateY(-28px)}
+.beat .k{font:italic 400 1.35rem/1 var(--display);color:var(--brass)}
+.beat h3{font-size:clamp(2.2rem,4.6vw,4.1rem);line-height:1;margin-top:14px;font-weight:320}
+.beat p{color:var(--ink-2);max-width:40ch;margin-top:20px}
+.rail{display:flex;gap:10px;align-items:center}
+.rail i{height:3px;flex:0 0 46px;border-radius:2px;background:var(--line-2);position:relative;overflow:hidden}
+.rail i::after{content:"";position:absolute;inset:0;background:var(--ink);transform-origin:0 50%;transform:scaleX(var(--f,0))}
+.stage{position:relative;aspect-ratio:400/360;width:100%;max-width:560px;justify-self:center}
+.stage svg{position:absolute;inset:0;width:100%;height:100%;transition:opacity .5s}
+.stage svg .dr{stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--k,0))}
+.stage svg .fl{opacity:calc(var(--k,0) * 1.4 - .3)}
+.stage svg .pin{transform:translateY(calc((1 - min(1, var(--k,0) * 1.6)) * -40px));opacity:min(1,calc(var(--k,0) * 3 - var(--pi,0)))}
+.stage svg .chk{stroke-dasharray:1;stroke-dashoffset:calc(1 - clamp(0, (var(--k,0) - var(--ci,0)) * 4, 1))}
+
+/* Needs */
+.needs{padding-block:clamp(56px,8vw,120px);border-top:1px solid var(--line)}
+.sec-head{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:24px 64px;align-items:end}
+.sec-head h2{font-size:clamp(2.5rem,5.6vw,5rem);line-height:.98;font-weight:300}
+.sec-head p{color:var(--ink-2);max-width:38ch}
+.tiles{margin-top:clamp(32px,5vw,64px);display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line);border-left:1px solid var(--line)}
+.tile{position:relative;display:grid;gap:6px;align-content:start;padding:22px 22px 26px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:left;isolation:isolate;overflow:hidden}
+.tile::before{content:"";position:absolute;inset:0;background:var(--wash);transform:translateY(101%);transition:transform .55s var(--e-out);z-index:-1}
+.tile:hover::before,.tile:focus-visible::before{transform:none}
+.tile .dd{width:96px;height:80px;margin-bottom:10px;transition:transform .5s var(--e-spring)}
+.tile:hover .dd{transform:translateY(-4px) rotate(-2deg)}
+.tile b{font:400 1.55rem/1.1 var(--display);letter-spacing:-.015em}
+.tile span{color:var(--ink-2);font-size:.95rem}
+.tile .go{position:absolute;right:20px;top:22px;width:22px;height:22px;opacity:0;transform:translateX(-6px);transition:all .4s var(--e-out)}
+.tile:hover .go,.tile:focus-visible .go{opacity:1;transform:none}
+/* doodle hover behaviours */
+.steam{animation:none}
+.tile:hover .steam,.opt:hover .steam{animation:steam 1.6s ease-in-out infinite}
+.tile:hover .steam:nth-child(2){animation-delay:.25s} .tile:hover .steam:nth-child(3){animation-delay:.5s}
+@keyframes steam{0%{transform:translateY(4px);opacity:.2}50%{opacity:1}100%{transform:translateY(-8px);opacity:0}}
+.tile:hover .wheel{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.tile:hover .arc{animation:ping 1.2s ease-out infinite} .tile:hover .arc.a2{animation-delay:.2s}
+@keyframes ping{0%{opacity:.1}40%{opacity:1}100%{opacity:.1}}
+.tile:hover .lite{fill:var(--sun)}
+.tile:hover .wig{animation:wig .6s ease-in-out 2}
+@keyframes wig{25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+.wig,.tilt,.topple{transform-box:fill-box;transform-origin:50% 50%}
+.tile:hover .tilt{animation:tilt 1.4s ease-in-out infinite}
+@keyframes tilt{25%{transform:rotate(-7deg)}75%{transform:rotate(7deg)}}
+.tile:hover .topple{animation:topple .9s var(--e-spring) forwards}
+@keyframes topple{to{transform:rotate(12deg) translate(6px,-2px)}}
+.pop{transform-box:fill-box;transform-origin:20% 100%;transition:transform .45s var(--e-spring)}
+.tile:not(:hover) .pop{transform:scale(.0)}
+.tile:hover .flame{animation:flick .5s ease-in-out infinite alternate}
+@keyframes flick{to{transform:translateY(-3px) scaleY(1.08)}}
+.flame{transform-box:fill-box;transform-origin:50% 100%}
+
+/* Promises */
+.prom{padding-block:clamp(56px,8vw,120px);border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:40px clamp(32px,6vw,96px)}
+.prom h2{font-size:clamp(2.5rem,5.2vw,4.6rem);line-height:1;font-weight:300;position:sticky;top:48px;align-self:start}
+.prom ul{list-style:none;margin:0;padding:0;display:grid}
+.prom li{display:grid;grid-template-columns:72px minmax(0,1fr);gap:20px;padding-block:28px;border-top:1px solid var(--line)}
+.prom li:last-child{border-bottom:1px solid var(--line)}
+.prom li .dd{width:64px;height:54px}
+.prom b{font:400 1.75rem/1.1 var(--display);letter-spacing:-.015em;display:block}
+.prom li p{color:var(--ink-2);margin-top:8px;max-width:46ch}
+
+/* Final */
+.fin{padding-block:clamp(56px,9vw,140px);border-top:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:32px;align-items:center}
+.fin h2{font-size:clamp(2.8rem,7vw,6.6rem);line-height:.95;font-weight:300;letter-spacing:-.04em}
+.fin p{color:var(--ink-2);margin-top:22px;max-width:38ch}
+.fin .hero-cta{opacity:1;animation:none}
+.fin .frame{width:100%;max-width:360px;justify-self:center;color:var(--ink)}
+.fin .frame .dr{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset 1.6s var(--e-io)}
+.fin.in .frame .dr{stroke-dashoffset:0}
+.fin .frame .fl{opacity:0;transition:opacity 1s ease 1s}
+.fin.in .frame .fl{opacity:1}
+
+.foot{border-top:1px solid var(--line);padding-block:28px 40px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px 32px;font-size:.95rem;color:var(--ink-2)}
+.crisis{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;color:var(--ink)}
+.crisis b{font-variant-numeric:tabular-nums}
+
+/* Reveal on scroll (only when JS + IO are available) */
+.js-io .rv{opacity:0;transform:translateY(26px);transition:opacity .9s var(--e-out),transform 1s var(--e-out);transition-delay:var(--rd,0ms)}
+.js-io .rv.in{opacity:1;transform:none}
+
+/* ───────────────────────── THROUGH THE DOOR ───────────────────────── */
+#through{position:fixed;inset:0;z-index:50;pointer-events:none;visibility:hidden;perspective:1600px;perspective-origin:0 50%}
+#through.on{visibility:visible;pointer-events:auto}
+#through .th-light{position:absolute;inset:0;background:var(--sun);opacity:0}
+#through .th-door{position:absolute;inset:0;background:var(--door);transform-origin:0 50%;clip-path:circle(0 at var(--cx,50%) var(--cy,50%))}
+#through .th-door::before{content:"";position:absolute;inset:6vh 6vw;border:1.5px solid color-mix(in srgb,var(--on-door) 22%,transparent);border-radius:3px}
+#through .th-door::after{content:"";position:absolute;right:7vw;top:50%;width:clamp(16px,2vw,26px);aspect-ratio:1;border-radius:50%;background:var(--brass)}
+
+/* ───────────────────────── CONVERSATION ───────────────────────── */
+.c-top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--paper);display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:24px;padding-block:16px;border-bottom:1px solid var(--line)}
+.prog{display:grid;gap:6px}
+.prog svg{width:100%;height:16px;display:block;overflow:visible}
+.prog .base{stroke:var(--line-2)}
+.prog .fillp{stroke:var(--door);stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--p,0));transition:stroke-dashoffset 1s var(--e-out)}
+.prog .mono{display:flex;justify-content:space-between;color:var(--ink-3)}
+.c-acts{display:flex;gap:18px;align-items:center;font-size:.92rem}
+.leave{display:inline-flex;align-items:center;gap:8px;padding:.5em .9em;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line-2);font-weight:700;font-size:.88rem;text-decoration:none}
+.leave:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.c-grid{display:grid;grid-template-columns:minmax(0,1fr) 0px;column-gap:0px;padding-block:clamp(36px,5vw,72px) 120px;align-items:start;transition:grid-template-columns 1s var(--e-io),column-gap 1s var(--e-io)}
+.c-grid.rail{grid-template-columns:minmax(0,1fr) 380px;column-gap:clamp(32px,5vw,88px)}
+.c-main{width:100%;max-width:860px;margin-inline:auto}
+.c-main{min-width:0;display:grid;gap:28px}
+
+.auto-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border-radius:14px;background:var(--wash);font-size:.95rem}
+.auto-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--door);display:inline-block;margin-right:10px;animation:blink 1.4s ease-in-out infinite}
+@keyframes blink{50%{opacity:.25}}
+
+.transcript{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.transcript li{animation:tin .6s var(--e-out) both}
+@keyframes tin{from{opacity:0;transform:translateY(-6px)}}
+.transcript button{display:grid;grid-template-columns:150px minmax(0,1fr) auto;gap:16px;align-items:baseline;width:100%;text-align:left;padding:10px 0;border-bottom:1px dashed var(--line-2)}
+.transcript .tq{font:500 .7rem/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.transcript .ta{font:400 1.18rem/1.3 var(--display);color:var(--ink);min-width:0;overflow-wrap:anywhere}
+.transcript .te{font-size:.82rem;color:var(--ink-3);opacity:0;transition:opacity .2s}
+.transcript button:hover .te,.transcript button:focus-visible .te{opacity:1}
+
+.navline{min-height:3.2em;display:grid;gap:12px}
+.nl-who{display:flex;align-items:center;gap:8px}
+.nl-who svg{width:15px;height:19px;color:var(--door)}
+.nl-text{font:italic 400 clamp(1.25rem,2vw,1.5rem)/1.35 var(--display);color:var(--ink-2);max-width:44ch}
+.typing{display:inline-flex;gap:5px;padding:8px 0}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--ink-3);animation:bob 1s ease-in-out infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bob{50%{transform:translateY(-5px);opacity:.4}}
+.rel{display:flex;flex-wrap:wrap;gap:8px;align-items:center;animation:tin .6s var(--e-out) both}
+.rel p{font-size:.95rem;color:var(--ink-2);margin-right:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:.42em .85em;border-radius:999px;box-shadow:inset 0 0 0 1.5px var(--line-2);font-size:.92rem;font-weight:500;transition:all .25s}
+.chip:hover{box-shadow:inset 0 0 0 1.5px var(--door);color:var(--door)}
+.chip.added{background:var(--wash);box-shadow:none;color:var(--door)}
+
+.qstage{transition:opacity .28s ease,transform .28s ease}
+.qstage.leaving{opacity:0;transform:translateY(-14px)}
+.q-eye{display:flex;gap:14px;align-items:center;opacity:0;animation:fade .6s ease forwards}
+.q-eye .bar{width:28px;height:1.5px;background:var(--ink-3)}
+.q-title{font-size:clamp(2.1rem,4.5vw,3.7rem);line-height:1.03;font-weight:330;letter-spacing:-.028em;margin-top:16px;max-width:18ch;font-variation-settings:"opsz" 60}
+.q-title:focus{outline:none}
+.q-why{display:flex;gap:10px;align-items:flex-start;color:var(--ink-2);margin-top:16px;max-width:52ch;font-size:1.02rem;opacity:0;animation:fade .7s ease .35s forwards}
+.q-why svg{flex:none;width:20px;height:20px;margin-top:3px;color:var(--brass)}
+.q-body{margin-top:30px}
+.q-acts{display:flex;align-items:center;gap:22px;margin-top:30px;flex-wrap:wrap;opacity:0;animation:fade .6s ease .5s forwards}
+.q-acts .sp{flex:1}
+.q-acts .txt-btn{font-weight:500;color:var(--ink-2)}
+.stag>*{opacity:0;transform:translateY(14px);animation:optin .7s var(--e-out) forwards;animation-delay:calc(260ms + var(--i,0) * 45ms)}
+@keyframes optin{to{opacity:1;transform:none}}
+
+.opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.opt{position:relative;display:flex;align-items:center;gap:12px;padding:10px 40px 10px 10px;border-radius:14px;background:var(--raised);box-shadow:inset 0 0 0 1.5px var(--line);text-align:left;transition:box-shadow .2s,background .25s,transform .3s var(--e-spring)}
+.opt:hover{box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.opt:active,.opt.pressing{transform:scale(.97)}
+.opt .dd{width:52px;height:44px;flex:none}
+.opt b{display:block;font-weight:700;font-size:1rem;line-height:1.2}
+.opt small{display:block;color:var(--ink-2);font-size:.84rem;line-height:1.3;margin-top:2px}
+.opt .tick{position:absolute;right:12px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-2);display:grid;place-items:center;transition:all .25s}
+.opt .tick svg{width:12px;height:12px;stroke:var(--on-door);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .35s var(--e-out) .05s}
+.opt[aria-pressed="true"]{background:var(--wash);box-shadow:inset 0 0 0 2px var(--door)}
+.opt[aria-pressed="true"] .tick{background:var(--door);box-shadow:none}
+.opt[aria-pressed="true"] .tick svg{stroke-dashoffset:0}
+.opts.list{grid-template-columns:1fr;gap:0;border-top:1px solid var(--line)}
+.opts.list .opt{background:transparent;box-shadow:none;border-radius:0;border-bottom:1px solid var(--line);padding:18px 48px 18px 4px;font:400 clamp(1.25rem,2vw,1.5rem)/1.25 var(--display)}
+.opts.list .opt small{font-family:var(--body);font-size:.9rem}
+.opts.list .opt:hover{background:color-mix(in srgb,var(--wash) 45%,transparent)}
+.opts.list .opt[aria-pressed="true"]{background:var(--wash);box-shadow:none}
+.opts.list .opt .tick{right:12px}
+
+.own{display:flex;gap:10px;margin-top:18px;align-items:center;flex-wrap:wrap}
+.own label{width:100%;font-size:.95rem;color:var(--ink-2)}
+.field{flex:1 1 260px;min-width:0;padding:.85em 1em;border-radius:12px;border:0;background:var(--raised);box-shadow:inset 0 0 0 1.5px var(--line-2);font-size:1.05rem;transition:box-shadow .2s}
+.field:focus{outline:none;box-shadow:inset 0 0 0 2px var(--door)}
+.field.big{font:400 clamp(1.6rem,3vw,2.2rem)/1.2 var(--display);padding:.45em .6em;max-width:420px}
+.matched{font-size:.95rem;color:var(--door);margin-top:10px;animation:tin .5s var(--e-out) both}
+.safety{margin-top:20px;padding:20px 22px;border-radius:16px;background:var(--alert-wash);color:var(--ink);display:grid;gap:6px;animation:tin .5s var(--e-out) both}
+.safety b{font:400 1.4rem/1.2 var(--display);color:var(--alert)}
+.safety .num{font-weight:700;font-variant-numeric:tabular-nums;user-select:all}
+
+.zip{display:flex;gap:20px 40px;align-items:center;flex-wrap:wrap}
+.zip-in{display:grid;gap:14px}
+.zbox{position:relative;display:flex;gap:10px}
+.zbox span{width:clamp(48px,7vw,66px);height:clamp(62px,9vw,84px);border-radius:12px;background:var(--raised);box-shadow:inset 0 0 0 1.5px var(--line-2);display:grid;place-items:center;font:350 clamp(2rem,4vw,2.8rem)/1 var(--display);font-variant-numeric:tabular-nums;transition:box-shadow .2s,transform .3s var(--e-spring)}
+.zbox span.cur{box-shadow:inset 0 0 0 2px var(--door)}
+.zbox span.has{transform:translateY(-2px)}
+.zbox input{position:absolute;inset:0;width:100%;opacity:0;font-size:16px;letter-spacing:2em;cursor:text}
+.ztown{min-height:2em;font:italic 400 1.5rem/1.2 var(--display);color:var(--door)}
+.ztown.out{color:var(--alert);font-size:1.15rem;max-width:30ch}
+
+.count{display:flex;align-items:center;gap:22px}
+.count button.step{width:56px;height:56px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--line-2);display:grid;place-items:center;transition:all .2s}
+.count button.step:hover{box-shadow:inset 0 0 0 1.5px var(--ink)}
+.count button.step svg{width:20px;height:20px}
+.count output{font:300 clamp(4rem,9vw,6.4rem)/1 var(--display);min-width:1.4ch;text-align:center;font-variant-numeric:tabular-nums}
+.people{display:flex;flex-wrap:wrap;gap:2px;margin-top:18px;min-height:96px;align-items:flex-end}
+.people svg{width:54px;height:92px;animation:popin .55s var(--e-spring) both}
+@keyframes popin{from{transform:translateY(16px) scale(.6);opacity:0}}
+
+.review{display:grid;border-top:1px solid var(--line)}
+.review button{display:grid;grid-template-columns:170px minmax(0,1fr) auto;gap:16px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line);text-align:left}
+.review .rq{font:500 .72rem/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3)}
+.review .ra{font:400 1.35rem/1.3 var(--display);min-width:0}
+.review .re{font-size:.9rem;color:var(--door);font-weight:700}
+
+/* Map beside the ZIP code, and the running count in the header */
+.zmap{width:min(300px,100%);color:var(--ink)}
+.zmap svg{width:100%;height:auto;display:block}
+.zmap .town{fill:var(--ink-3);stroke:none}
+.zmap .cap{font:500 9px var(--mono);letter-spacing:.08em;fill:var(--ink-3);stroke:none;font-style:normal;text-transform:uppercase}
+.zmap .tlabel{font:italic 400 15px var(--display);fill:var(--ink);stroke:none}
+/* Ledger: hidden until the ZIP code is in, then it slides in beside the conversation */
+.ledger{position:sticky;top:110px;width:380px;display:grid;gap:18px;padding:24px;border-radius:20px;background:var(--raised);box-shadow:0 0 0 1px var(--line);visibility:hidden;opacity:0;transform:translateX(48px);transition:opacity .7s var(--e-out),transform 1s var(--e-out),visibility 0s linear 1s}
+.c-grid.rail .ledger{visibility:visible;opacity:1;transform:none;transition:opacity .8s var(--e-out) .55s,transform 1.1s var(--e-out) .5s,visibility 0s}
+.lg-count{display:flex;align-items:baseline;gap:12px;margin-top:6px}
+.lg-count b{font:300 4rem/1 var(--display);font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.lg-count span{color:var(--ink-2);font-size:.98rem;line-height:1.3;max-width:15ch}
+.lg-map svg{width:100%;height:auto;display:block}
+.lg-map .town{fill:var(--ink-3);stroke:none}
+.lg-map .cap{font:500 9px var(--mono);letter-spacing:.08em;fill:var(--ink-3);stroke:none;font-style:normal;text-transform:uppercase}
+.lg-map .tlabel{font:italic 400 15px var(--display);fill:var(--ink);stroke:none}
+.lg-list{list-style:none;margin:0;padding:0;display:grid;max-height:min(42vh,420px);overflow:auto}
+.lg-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:12px 0;border-top:1px solid var(--line);animation:lin .7s var(--e-out) both;animation-delay:calc(var(--b,0ms) + var(--i,0) * 70ms)}
+@keyframes lin{from{opacity:0;transform:translateX(14px)}}
+.lg-list .nm{font:400 1.08rem/1.25 var(--display);min-width:0}
+.lg-list .pv{grid-column:1;font-size:.8rem;color:var(--ink-3)}
+.lg-empty{color:var(--ink-2);font-size:.98rem;padding:6px 0}
+.lg-note{font-size:.84rem;color:var(--ink-3);border-top:1px solid var(--line);padding-top:14px}
+.lg-toggle{display:none}
+.fit{align-self:start;justify-self:end;white-space:nowrap;font:500 .66rem/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;padding:.5em .65em;border-radius:999px}
+.fit.likely{background:var(--door);color:var(--on-door)}
+.fit.possibly{background:var(--sun);color:var(--ink)}
+.fit.info{box-shadow:inset 0 0 0 1.2px var(--line-2);color:var(--ink-2)}
+
+/* ───────────────────────── BUILDING ───────────────────────── */
+#v-build{display:grid;place-items:center;min-height:100vh;min-height:100svh;padding-block:48px}
+#v-build[hidden]{display:none}
+.bld{width:min(640px,100%);display:grid;gap:28px;transition:opacity .6s,transform .8s var(--e-out)}
+.bld.exit{opacity:0;transform:translateY(-30px)}
+.bld h2{font-size:clamp(2.2rem,5vw,3.6rem);line-height:1.02;font-weight:300}
+.bld ol{list-style:none;padding:0;margin:0;display:grid;border-top:1px solid var(--line)}
+.bld li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--line);color:var(--ink-3);transition:color .4s}
+.bld li.on,.bld li.ok{color:var(--ink)}
+.bld li span{font:400 1.3rem/1.25 var(--display)}
+.bld li .ct{font:500 .74rem var(--mono);letter-spacing:.06em;color:var(--ink-3);text-transform:uppercase}
+.bld li svg{width:28px;height:28px}
+.bld li .ring{stroke-dasharray:.25 .75;transform-origin:50% 50%;opacity:0}
+.bld li.on .ring{opacity:1;animation:spin 1.1s linear infinite}
+.bld li .ck{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .5s var(--e-out);color:var(--door)}
+.bld li.ok .ck{stroke-dashoffset:0}
+.bld .fine{font-size:.92rem;color:var(--ink-3)}
+
+/* ───────────────────────── PLAN ───────────────────────── */
+.plan{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100vh}
+.p-rail{position:sticky;top:0;height:100vh;height:100svh;padding:28px 24px 28px var(--gut);border-right:1px solid var(--line);display:flex;flex-direction:column;gap:36px}
+.p-rail nav{display:grid;gap:2px}
+.p-rail nav a{display:flex;justify-content:space-between;padding:.55em .7em;margin-left:-.7em;border-radius:10px;text-decoration:none;color:var(--ink-2);font-size:.98rem}
+.p-rail nav a:hover{background:var(--paper-2);color:var(--ink)}
+.p-rail nav a.cur{color:var(--ink);background:var(--paper-2);font-weight:700}
+.p-rail nav a small{font:500 .72rem var(--mono);color:var(--ink-3);align-self:center}
+.p-rail .bottom{margin-top:auto;display:grid;gap:14px;font-size:.88rem;color:var(--ink-2)}
+.p-rail .bottom .crisis{font-size:.9rem;display:block}
+.p-main{min-width:0;padding:clamp(28px,4vw,56px) var(--gut-r) 120px clamp(24px,5vw,80px)}
+.p-sheet{animation:sheet 1.1s var(--e-out) both}
+@keyframes sheet{from{clip-path:inset(18% 0 0 0);transform:translateY(40px);opacity:0}to{clip-path:inset(0 0 0 0);transform:none;opacity:1}}
+.p-head{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px 48px;align-items:end;padding-bottom:40px;border-bottom:1px solid var(--line)}
+.p-head h1{font-size:clamp(2.8rem,6.6vw,6rem);line-height:.96;font-weight:300;letter-spacing:-.038em;margin-top:18px}
+.p-head .lede{opacity:1;animation:none;max-width:48ch;margin-top:22px}
+.p-head .lede b{color:var(--ink);font-weight:700}
+.pdoor{width:150px;display:grid;gap:10px;justify-items:center;text-align:center}
+.pdoor .frame{position:relative;width:120px;height:150px}
+.pdoor .frame>svg{position:absolute;inset:0;width:100%;height:100%}
+.pdoor .leaf{position:absolute;left:15%;top:10%;width:70%;height:86%;perspective:400px;perspective-origin:0 50%}
+.pdoor .leaf div{position:absolute;inset:0;background:var(--door);border-radius:2px;transform-origin:0 50%;transform:rotateY(calc(var(--o,0) * 1deg));transition:transform 1.2s var(--e-spring)}
+.pdoor .leaf div::after{content:"";position:absolute;right:12%;top:52%;width:7px;height:7px;border-radius:50%;background:var(--brass)}
+.pdoor .light{position:absolute;left:15%;top:10%;width:70%;height:86%;background:var(--sun)}
+.pdoor p{font-size:.85rem;color:var(--ink-2)}
+
+.p-sec{padding-block:clamp(40px,5vw,64px) 0}
+.p-sec>header{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:24px}
+.p-sec h2{font-size:clamp(2rem,3.6vw,3rem);line-height:1;font-weight:330}
+.p-sec header p{color:var(--ink-2);font-size:.98rem;max-width:44ch}
+
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:16px}
+.step{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px 24px;padding:26px 28px 26px 22px;border-radius:20px;background:var(--raised);box-shadow:0 0 0 1px var(--line);transition:opacity .5s,background .4s;opacity:0;animation:optin .8s var(--e-out) forwards;animation-delay:calc(500ms + var(--i,0) * 120ms)}
+.step.urgent{box-shadow:0 0 0 1.5px var(--alert)}
+.step .num{position:relative;width:64px;height:64px;display:grid;place-items:center;font:300 2.2rem/1 var(--display)}
+.step .num svg{position:absolute;inset:0;width:100%;height:100%;color:var(--brass)}
+.step .num path{stroke-dasharray:1;stroke-dashoffset:1;animation:draw 1s var(--e-io) forwards;animation-delay:calc(900ms + var(--i,0) * 150ms)}
+.step .kick{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.step .kick .urg{color:var(--alert)}
+.step h3{font-size:clamp(1.5rem,2.4vw,2rem);line-height:1.1;margin-top:8px;position:relative;display:inline}
+.step .strike{position:absolute;left:-2%;top:50%;width:104%;height:14px;margin-top:-6px;color:var(--ink);pointer-events:none}
+.step .strike path{stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .6s var(--e-out)}
+.step.done .strike path{stroke-dashoffset:0}
+.step.done{background:transparent}
+.step.done .body{opacity:.55}
+.step .prov{color:var(--ink-2);font-size:.95rem;margin-top:8px}
+.step .body{grid-column:2;display:grid;gap:16px;margin-top:6px;transition:opacity .4s}
+.step dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:8px 16px;margin:0;font-size:1rem}
+.step dt{font:500 .7rem/1.6 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);padding-top:.25em}
+.step dd{margin:0;color:var(--ink-2);min-width:0}
+.acts{display:flex;flex-wrap:wrap;gap:10px 20px;align-items:center}
+.phone{display:inline-flex;align-items:center;gap:10px;padding:.55em .6em .55em 1em;border-radius:999px;background:var(--wash)}
+.phone b{font-variant-numeric:tabular-nums;user-select:all;font-weight:700}
+.phone button{font:500 .7rem var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:.45em .7em;border-radius:999px;background:var(--raised)}
+.bring{display:flex;flex-wrap:wrap;gap:6px}
+.bring span{font-size:.86rem;padding:.35em .7em;border-radius:8px;background:var(--paper-2);color:var(--ink-2)}
+details.say summary{cursor:pointer;font-weight:700;font-size:.95rem;list-style:none;display:inline-flex;gap:8px;align-items:center}
+details.say summary::-webkit-details-marker{display:none}
+details.say summary svg{width:14px;height:14px;transition:transform .3s}
+details.say[open] summary svg{transform:rotate(90deg)}
+details.say blockquote{margin:12px 0 0;padding:14px 18px;border-left:3px solid var(--brass);font:italic 400 1.2rem/1.4 var(--display);color:var(--ink)}
+.done-btn{display:inline-flex;align-items:center;gap:10px;font-weight:700;font-size:.95rem}
+.done-btn i{width:24px;height:24px;border-radius:7px;box-shadow:inset 0 0 0 1.5px var(--line-2);display:grid;place-items:center;transition:all .25s}
+.done-btn svg{width:14px;height:14px;fill:none;stroke:var(--on-door);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:1;transition:stroke-dashoffset .35s var(--e-out)}
+.step.done .done-btn i{background:var(--door);box-shadow:none}
+.step.done .done-btn svg{stroke-dashoffset:0}
+
+.groups{display:grid;gap:36px}
+.group h3{font:500 .74rem/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.group h3 .dd{width:34px;height:28px;color:var(--ink)}
+.prog-list{list-style:none;margin:0;padding:0}
+.prog-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 24px;padding:18px 0;border-top:1px solid var(--line)}
+.prog-list .nm{font:400 1.35rem/1.2 var(--display)}
+.prog-list .ds{grid-column:1;color:var(--ink-2);font-size:.98rem;max-width:62ch}
+.prog-list .mt{grid-column:1;display:flex;gap:18px;flex-wrap:wrap;font-size:.9rem;color:var(--ink-3)}
+.prog-list a{font-weight:700;color:var(--door);text-decoration:none}
+.prog-list a:hover{text-decoration:underline}
+
+.papers{list-style:none;margin:0;padding:0;columns:2 320px;column-gap:40px}
+.papers li{break-inside:avoid;padding:12px 0;border-top:1px solid var(--line)}
+.papers label{display:grid;grid-template-columns:24px minmax(0,1fr);gap:14px;cursor:pointer}
+.papers input{appearance:none;width:22px;height:22px;margin:2px 0 0;border-radius:6px;box-shadow:inset 0 0 0 1.5px var(--line-2);display:grid;place-items:center;cursor:pointer;transition:background .2s}
+.papers input:checked{background:var(--door);box-shadow:none}
+.papers input:checked::after{content:"";width:10px;height:6px;border-left:2.5px solid var(--on-door);border-bottom:2.5px solid var(--on-door);transform:translateY(-1px) rotate(-45deg)}
+.papers input:checked+span{text-decoration:line-through;text-decoration-color:var(--ink-3);color:var(--ink-3)}
+.papers small{display:block;font:500 .66rem/1.4 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-top:3px}
+
+.sharpen{margin-top:clamp(40px,5vw,64px);display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:20px 28px;align-items:center;padding:24px 28px;border-radius:20px;background:var(--wash)}
+.sharpen .dd{width:70px;height:58px}
+.sharpen b{font:400 1.5rem/1.15 var(--display);display:block}
+.sharpen p{color:var(--ink-2);margin-top:6px}
+.fineprint{margin-top:48px;color:var(--ink-3);font-size:.9rem;max-width:70ch}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;background:var(--ink);color:var(--paper);padding:.7em 1.1em;border-radius:999px;font-size:.92rem;font-weight:700;transition:all .4s var(--e-out);z-index:60;pointer-events:none}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* Mock navigation for reviewers */
+.dock{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;font-size:.85rem}
+.dock summary{list-style:none;cursor:pointer;font:500 .7rem var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:.7em 1em;border-radius:999px;background:var(--raised);box-shadow:0 0 0 1px var(--line-2),0 6px 20px rgba(0,0,0,.08)}
+.dock summary::-webkit-details-marker{display:none}
+.dock div{position:absolute;right:0;bottom:calc(100% + 8px);display:grid;gap:2px;padding:8px;border-radius:14px;background:var(--raised);box-shadow:0 0 0 1px var(--line-2),0 10px 30px rgba(0,0,0,.12);width:220px}
+.dock button{text-align:left;padding:.55em .7em;border-radius:8px}
+.dock button:hover{background:var(--paper-2)}
+.dock p{font-size:.76rem;color:var(--ink-3);padding:.4em .7em 0}
+
+/* ───────────── Narrow screens ───────────── */
+@media (max-width:980px){
+  .hero{grid-template-columns:1fr}
+  .scene{justify-self:center;max-width:520px}
+  .story-pin{grid-template-columns:1fr;align-content:center;gap:12px;padding-block:72px 24px}
+  .stage{max-width:300px;order:-1}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .sec-head,.prom,.fin{grid-template-columns:1fr}
+  .prom h2{position:static}
+  .fin .frame{max-width:240px;justify-self:start}
+  .c-grid{grid-template-columns:1fr}
+  .c-grid,.c-grid.rail{grid-template-columns:1fr;column-gap:0}
+  .ledger{position:fixed;left:0;right:0;bottom:0;top:auto;width:auto;z-index:30;border-radius:20px 20px 0 0;padding:14px var(--gut-r) calc(14px + env(safe-area-inset-bottom,0px)) var(--gut);max-height:78vh;overflow:auto;transform:translateY(105%);box-shadow:0 -1px 0 var(--line-2),0 -10px 30px rgba(0,0,0,.08)}
+  .c-grid.rail .ledger{transform:translateY(calc(100% - 74px - env(safe-area-inset-bottom,0px)));transition:transform .9s var(--e-spring) .3s,opacity .4s ease .3s,visibility 0s}
+  .c-grid.rail .ledger.open{transform:none;transition:transform .5s var(--e-out)}
+  .lg-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;min-height:46px}
+  .lg-toggle b{font:400 1.25rem var(--display)}
+  .lg-toggle svg{width:18px;height:18px;transition:transform .4s}
+  .ledger.open .lg-toggle svg{transform:rotate(180deg)}
+  .lg-head{display:none}
+  .plan{grid-template-columns:1fr}
+  .p-rail{position:static;height:auto;flex-direction:row;align-items:center;flex-wrap:wrap;gap:12px 24px;padding:16px var(--gut-r) 16px var(--gut);border-right:0;border-bottom:1px solid var(--line)}
+  .p-rail nav{display:flex;flex-wrap:wrap}
+  .p-rail .bottom{display:none}
+  .p-main{padding-left:var(--gut)}
+}
+@media (max-width:640px){
+  body{font-size:1.06rem}
+  .l-nav nav a{display:none}
+  .c-top{grid-template-columns:auto auto;gap:12px 16px}
+  .prog{grid-column:1/-1;order:3}
+  .c-acts .txt-btn{display:none}
+  .transcript button,.review button{grid-template-columns:1fr auto}
+  .transcript .tq,.review .rq{grid-column:1/-1}
+  .opts{grid-template-columns:1fr 1fr}
+  .opt{padding-right:12px;flex-direction:column;align-items:flex-start;gap:6px}
+  .opt .tick{top:12px;margin-top:0}
+  .opts.list{grid-template-columns:1fr}
+  .opts.list .opt{flex-direction:row}
+  .tile{padding:18px 16px 20px}
+  .tile .dd{width:72px;height:60px}
+  .tile b{font-size:1.3rem}
+  .step{grid-template-columns:1fr;padding:22px 18px}
+  .step .body{grid-column:1}
+  .step .num{width:52px;height:52px;font-size:1.8rem}
+  .step dl{grid-template-columns:1fr;gap:2px}
+  .step dd{margin-bottom:8px}
+  .p-head{grid-template-columns:1fr}
+  .pdoor{justify-items:start;text-align:left;grid-template-columns:auto 1fr;width:auto;align-items:center}
+  .pdoor .frame{width:72px;height:90px}
+  .sharpen{grid-template-columns:1fr}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;transition-duration:.001ms!important;transition-delay:0ms!important}
+  .w>span{transform:none}
+  .ink{stroke-dashoffset:0;fill-opacity:1}
+  .story{height:auto}
+  .story-pin{position:static;height:auto;grid-template-columns:1fr;padding-block:64px}
+  .beats{gap:40px}
+  .beat{grid-area:auto;opacity:1;transform:none}
+  .stage{display:none}
+  .rail{display:none}
+  .js-io .rv{opacity:1;transform:none}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <filter id="pen" x="-4%" y="-4%" width="108%" height="108%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.032" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <filter id="boil" x="-4%" y="-4%" width="108%" height="108%">
+      <feTurbulence id="boilT" type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="1" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.8" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <symbol id="i-door" viewBox="0 0 22 28"><path d="M2 27 V2.5 C8 1.6 14 1.6 20 2.4 V27" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 27 V5 L15 7 V25.5 Z" fill="currentColor"/><circle cx="12.6" cy="16.5" r="1.1" fill="var(--paper)"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 28 20"><path d="M2 10.5 C9 9.5 17 10.2 25 10 M18 3 C20 6 22 8.4 25.5 10 C22 11.6 20 14 18.5 17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-check" viewBox="0 0 16 16"><path pathLength="1" d="M2.5 8.5 L6.3 12 L13.5 3.8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-star" viewBox="0 0 26 26"><path d="M13 2 C13.5 9 14 11 24 13 C14 14.5 13.6 17 13 24 C12.4 17 11.6 14.5 2 13 C11.6 11.5 12.4 9 13 2Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-why" viewBox="0 0 20 20"><path d="M10 2.5 C14.5 2.3 17.6 5.6 17.5 10 C17.4 14.3 14.2 17.6 9.8 17.5 C5.4 17.4 2.4 14.2 2.5 9.9 C2.6 5.8 5.6 2.7 10 2.5Z M10 9 V14 M10 6 V6.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </defs>
+</svg>
+
+<!-- ═══════════════════════ LANDING ═══════════════════════ -->
+<div id="v-land" class="view">
+  <header class="wrap l-nav">
+    <a class="mark" href="#" aria-label="OpenDoor home"><svg aria-hidden="true"><use href="#i-door"/></svg>OpenDoor</a>
+    <nav aria-label="Page">
+      <a href="#how">How it works</a>
+      <a href="#promises">Our promises</a>
+      <button class="btn" data-start>Start<svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+    </nav>
+  </header>
+
+  <section class="wrap hero" id="hero" aria-labelledby="hero-h">
+    <div class="hero-copy">
+      <p class="mono">Free help finder · Hampshire County, Massachusetts</p>
+      <h1 id="hero-h" data-rise="Help is |closer| than it feels.">Help is <em>closer</em> than it feels.</h1>
+      <p class="lede">OpenDoor asks a few plain questions, then shows you the help near you for food, heat, housing and more, and exactly what to do first.</p>
+      <div class="hero-cta">
+        <button class="btn" data-start>Start, it takes about 3 minutes<svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="txt-btn" data-sample>Watch an example first</button>
+      </div>
+      <div class="assure mono">
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>No account</span>
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>No Social Security number</span>
+        <span><svg aria-hidden="true"><use href="#i-check"/></svg>Skip anything</span>
+      </div>
+    </div>
+
+    <div class="scene" id="scene" aria-hidden="true">
+      <svg class="dd boil" viewBox="0 0 600 520">
+        <!-- inside the doorway -->
+        <path class="f-sun" d="M222 472 L222 132 C280 129 330 129 380 131 L380 472 Z" stroke="none"/>
+        <g stroke-width="2">
+          <path class="ink" pathLength="1" style="--d:900ms" d="M252 196 L300 194 L301 252 L251 253 Z M276 195 L276 252 M252 224 L300 223"/>
+          <path class="ink" pathLength="1" style="--d:1000ms" d="M338 300 L338 432 M326 432 L350 432"/>
+          <path class="ink f-paper" pathLength="1" style="--d:1050ms" d="M318 300 L358 300 L349 272 L327 272 Z"/>
+        </g>
+        <!-- light spill on the floor -->
+        <path class="spill f-sun" stroke="none" d="M222 472 L380 472 L478 514 L136 514 Z"/>
+        <!-- floor -->
+        <path class="ink" pathLength="1" style="--d:100ms" d="M18 472 C150 468 430 475 584 469"/>
+        <!-- frame -->
+        <path class="ink" pathLength="1" style="--d:250ms" stroke-width="2.8" d="M206 472 C205 380 207 220 208 118 C262 113 338 113 394 116 C394 230 393 380 395 472"/>
+        <path class="ink" pathLength="1" style="--d:420ms" d="M222 472 L222 132 C280 129 330 129 380 131 L380 472"/>
+        <path class="ink" pathLength="1" style="--d:500ms" d="M196 112 C260 104 344 106 404 110"/>
+        <!-- sconce -->
+        <path class="ink" pathLength="1" style="--d:1200ms" d="M414 196 L414 212"/>
+        <path class="ink f-sun" pathLength="1" style="--d:1250ms" d="M406 212 L422 212 L428 234 L400 234 Z"/>
+        <path class="ink" pathLength="1" style="--d:1500ms" d="M436 214 L446 208 M438 230 L450 232 M392 214 L382 208"/>
+        <!-- mat -->
+        <path class="ink f-wash" pathLength="1" style="--d:700ms" d="M238 480 L366 480 L378 497 L226 497 Z"/>
+        <g class="lay lay-cat">
+          <path class="ink f-ink" pathLength="1" style="--d:1300ms" d="M136 471 C126 446 132 420 150 414 C168 418 176 444 170 471 Z"/>
+          <path class="ink f-ink" pathLength="1" style="--d:1400ms" d="M141 420 C137 402 146 392 156 394 C168 396 170 410 162 420 Z M142 404 L139 386 L150 395 M158 394 L166 384 L166 400"/>
+          <path class="ink" pathLength="1" style="--d:1550ms" d="M168 466 C192 472 202 452 188 442"/>
+        </g>
+        <g class="lay lay-plant">
+          <path class="ink f-wash" pathLength="1" style="--d:600ms" d="M456 472 L446 420 L510 420 L500 472 Z"/>
+          <path class="ink" pathLength="1" style="--d:650ms" d="M440 420 L516 420"/>
+          <path class="ink" pathLength="1" style="--d:800ms" d="M478 420 C474 380 456 360 432 350 M478 420 C482 372 502 352 528 344 M478 420 C478 380 480 340 476 302"/>
+          <path class="ink f-door" pathLength="1" style="--d:950ms" d="M432 350 C444 334 462 344 458 364 C444 368 434 362 432 350 Z"/>
+          <path class="ink f-door" pathLength="1" style="--d:1000ms" d="M528 344 C530 362 514 372 500 362 C502 346 514 338 528 344 Z"/>
+          <path class="ink f-door" pathLength="1" style="--d:1050ms" d="M476 302 C464 290 470 270 484 268 C492 282 490 296 476 302 Z"/>
+          <path class="ink f-door" pathLength="1" style="--d:1100ms" d="M479 372 C466 366 460 350 468 340 C480 344 484 360 479 372 Z"/>
+        </g>
+        <g class="lay lay-bird">
+          <path class="ink" pathLength="1" style="--d:1700ms" d="M90 120 C96 112 102 112 106 120 C110 112 116 112 122 120"/>
+          <path class="ink" pathLength="1" style="--d:1800ms" d="M128 92 C132 87 136 87 139 92 C142 87 146 87 150 92"/>
+        </g>
+      </svg>
+      <div class="door-wrap">
+        <div class="door" id="door">
+          <svg class="dd boil" viewBox="0 0 158 342" preserveAspectRatio="none">
+            <path class="ink f-door" pathLength="1" style="--d:450ms" d="M2 2 C50 0 110 1 156 3 L155 340 C100 341 50 341 3 339 Z"/>
+            <g stroke="var(--on-door)" stroke-opacity=".38" stroke-width="2">
+              <path class="ink" pathLength="1" style="--d:900ms" d="M24 30 L134 31 L133 150 L25 149 Z"/>
+              <path class="ink" pathLength="1" style="--d:1000ms" d="M24 180 L134 181 L133 314 L25 313 Z"/>
+            </g>
+            <circle cx="136" cy="176" r="6.5" fill="var(--brass)" stroke="none"/>
+            <g class="sign">
+              <path class="ink" pathLength="1" style="--d:1300ms" d="M50 96 L79 64 L108 96"/>
+              <circle cx="79" cy="63" r="2.5" class="f-ink" stroke="none"/>
+              <path class="ink f-paper" pathLength="1" style="--d:1400ms" d="M38 96 L120 95 L118 132 L40 133 Z"/>
+              <text x="79" y="120" text-anchor="middle" font-size="19">Come in</text>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <p class="scene-note">it opens as you scroll<svg class="dd" viewBox="0 0 60 40"><path d="M50 4 C40 18 26 28 8 32 M8 32 L18 24 M8 32 L18 37"/></svg></p>
+    </div>
+  </section>
+
+  <section class="phr" aria-labelledby="phr-h">
+    <div class="wrap phr-head">
+      <p class="mono" id="phr-h">You can start with a sentence like</p>
+      <p>Tap one and we'll begin from there. Your own words work too.</p>
+    </div>
+    <div class="rows">
+      <div class="row" id="row1"></div>
+      <div class="row" id="row2"></div>
+    </div>
+  </section>
+
+  <section class="story" id="how" aria-label="How it works">
+    <div class="wrap story-pin">
+      <div class="story-copy">
+        <p class="mono">How it works</p>
+        <div class="beats">
+          <article class="beat on" data-b="0"><span class="k">First</span><h3>You tell us what's going on, in your own words.</h3><p>Tap what fits or type a sentence. We ask one thing at a time, and you can skip anything you'd rather not answer.</p></article>
+          <article class="beat" data-b="1"><span class="k">Then</span><h3>We look at what's actually near you.</h3><p>Your ZIP code narrows a hand-checked list of food, heat, housing and health programs to the ones that serve your town.</p></article>
+          <article class="beat" data-b="2"><span class="k">Finally</span><h3>You leave with a plan you can start today.</h3><p>What to do first, who to call, what to say, and which papers to bring. Every program links to its source.</p></article>
+        </div>
+        <div class="rail" aria-hidden="true"><i></i><i></i><i></i></div>
+      </div>
+      <div class="stage" aria-hidden="true">
+        <svg class="dd" viewBox="0 0 400 360" data-s="0">
+          <path class="dr fl f-paper" pathLength="1" d="M54 70 Q54 44 82 44 L262 44 Q290 44 290 72 L290 136 Q290 162 262 162 L130 162 L92 196 L102 162 L82 162 Q54 162 54 134 Z"/>
+          <path class="dr" pathLength="1" d="M88 84 C140 82 200 86 252 82"/>
+          <path class="dr" pathLength="1" d="M88 108 C130 106 180 110 226 106"/>
+          <path class="dr" pathLength="1" d="M88 132 C116 131 150 133 176 131"/>
+          <path class="dr fl f-wash" pathLength="1" d="M168 214 Q168 192 192 192 L322 192 Q346 192 346 216 L346 256 Q346 280 322 280 L304 280 L312 312 L282 280 L192 280 Q168 280 168 256 Z"/>
+          <circle class="fl f-ink" cx="226" cy="236" r="6" stroke="none"/><circle class="fl f-ink" cx="257" cy="236" r="6" stroke="none"/><circle class="fl f-ink" cx="288" cy="236" r="6" stroke="none"/>
+        </svg>
+        <svg class="dd" viewBox="0 0 400 360" data-s="1" style="opacity:0">
+          <path class="dr fl f-paper" pathLength="1" d="M58 92 L150 68 L246 96 L342 72 L342 284 L246 308 L150 280 L58 304 Z"/>
+          <path class="dr" pathLength="1" d="M150 68 L150 280 M246 96 L246 308"/>
+          <path class="dr fl f-wash" pathLength="1" d="M82 150 C110 128 130 170 160 150 C190 130 200 180 230 170 L230 230 C200 250 170 210 140 236 C110 256 96 220 82 230 Z"/>
+          <path class="dr" pathLength="1" stroke-dasharray="1" d="M96 262 C140 230 170 270 206 214 C230 176 270 196 300 140"/>
+          <g class="pin" style="--pi:.6"><path class="f-door" d="M300 140 C288 124 287 106 300 103 C313 106 312 124 300 140 Z"/><circle class="f-paper" cx="300" cy="117" r="4" stroke="none"/></g>
+          <g class="pin" style="--pi:1.2"><path class="f-sun" d="M206 214 C198 202 198 190 206 188 C214 190 214 202 206 214 Z"/></g>
+          <g class="pin" style="--pi:1.8"><path class="f-sun" d="M110 252 C102 240 102 228 110 226 C118 228 118 240 110 252 Z"/></g>
+        </svg>
+        <svg class="dd" viewBox="0 0 400 360" data-s="2" style="opacity:0">
+          <path class="dr fl f-paper" pathLength="1" d="M92 56 L308 58 L306 326 L94 324 Z"/>
+          <path class="dr fl f-wash" pathLength="1" d="M160 40 L240 40 L242 72 L158 72 Z"/>
+          <path class="dr" pathLength="1" d="M126 118 L150 118 L150 142 L126 142 Z M170 130 C210 128 240 132 276 129"/>
+          <path class="dr" pathLength="1" d="M126 180 L150 180 L150 204 L126 204 Z M170 192 C200 190 230 194 262 191"/>
+          <path class="dr" pathLength="1" d="M126 242 L150 242 L150 266 L126 266 Z M170 254 C206 252 236 256 270 253"/>
+          <path class="chk" style="--ci:.25;color:var(--door)" stroke-width="4" pathLength="1" d="M122 126 L136 140 L160 106"/>
+          <path class="chk" style="--ci:.45;color:var(--door)" stroke-width="4" pathLength="1" d="M122 188 L136 202 L160 168"/>
+          <path class="chk" style="--ci:.65;color:var(--door)" stroke-width="4" pathLength="1" d="M122 250 L136 264 L160 230"/>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="needs" aria-labelledby="needs-h">
+    <div class="wrap">
+      <div class="sec-head">
+        <h2 id="needs-h" class="rv">Whatever it is, <em>start there.</em></h2>
+        <p class="rv" style="--rd:120ms">Pick the one that's loudest right now. You can add the rest once we get going.</p>
+      </div>
+      <div class="tiles" id="tiles"></div>
+    </div>
+  </section>
+
+  <section class="wrap prom" id="promises" aria-labelledby="prom-h">
+    <h2 id="prom-h" class="rv">A few promises, in <em>plain words.</em></h2>
+    <ul>
+      <li class="rv"><svg class="dd" viewBox="0 0 120 100"><path class="f-paper" d="M30 14 L82 14 L92 26 L92 88 L30 88 Z"/><path d="M42 36 L80 36 M42 50 L80 50 M42 64 L66 64"/><path stroke-width="3" d="M18 82 C46 54 76 34 104 16" style="color:var(--alert)"/></svg><div><b>No account, nothing to remember.</b><p>No sign-up, no password. Close the page and your answers go with it.</p></div></li>
+      <li class="rv"><svg class="dd" viewBox="0 0 120 100"><path d="M44 48 L44 36 C44 20 76 20 76 36 L76 48"/><path class="f-wash" d="M34 48 L86 48 L86 88 L34 88 Z"/><circle class="f-ink" cx="60" cy="64" r="5" stroke="none"/><path d="M60 68 L60 78"/></svg><div><b>We never ask for your Social Security number.</b><p>A ZIP code and a few rough answers are enough to point you the right way.</p></div></li>
+      <li class="rv"><svg class="dd" viewBox="0 0 120 100"><path d="M60 18 L60 88 M40 88 L80 88 M26 30 L94 30"/><path class="f-wash" d="M14 58 C18 72 38 72 42 58 Z"/><path d="M26 30 L14 58 M26 30 L42 58"/><path class="f-sun" d="M78 58 C82 72 102 72 106 58 Z"/><path d="M94 30 L78 58 M94 30 L106 58"/></svg><div><b>Straight about what's possible.</b><p>We'll tell you a program might fit. Only the program itself can say yes, so we'll tell you how to ask.</p></div></li>
+      <li class="rv"><svg class="dd" viewBox="0 0 120 100"><path class="f-paper" d="M24 20 L96 20 L96 84 L24 84 Z"/><path d="M36 38 L48 50 L66 30" style="color:var(--door)" stroke-width="3"/><path d="M36 66 L84 66 M74 40 L84 40"/></svg><div><b>Every listing is checked by a person.</b><p>Programs come from a list our team checked by hand, each with a link to its source. Anything found on the open web is marked unchecked.</p></div></li>
+    </ul>
+  </section>
+
+  <section class="wrap fin" id="fin" aria-labelledby="fin-h">
+    <div>
+      <h2 id="fin-h">The door's open whenever you're <em>ready.</em></h2>
+      <p>About three minutes. You can skip anything, go back, or change an answer at any point.</p>
+      <div class="hero-cta">
+        <button class="btn" data-start>Start now<svg aria-hidden="true"><use href="#i-arrow"/></svg></button>
+        <button class="txt-btn" data-sample>Watch an example first</button>
+      </div>
+    </div>
+    <svg class="dd frame" viewBox="0 0 240 300" aria-hidden="true">
+      <path class="fl f-sun" stroke="none" d="M56 286 L56 40 C100 36 140 36 184 40 L184 286 Z"/>
+      <path class="dr" pathLength="1" stroke-width="2.6" d="M40 288 C39 200 41 100 42 26 C96 21 146 21 198 24 C198 120 197 220 199 288"/>
+      <path class="dr" pathLength="1" d="M56 288 L56 40 C100 36 140 36 184 40 L184 288"/>
+      <path class="dr" pathLength="1" d="M10 288 C80 285 160 290 232 286"/>
+      <path class="fl f-door" d="M56 40 L104 52 L104 300 L56 288 Z"/>
+      <circle class="fl" cx="96" cy="170" r="3.5" fill="var(--brass)" stroke="none"/>
+    </svg>
+  </section>
+
+  <footer class="wrap foot">
+    <p class="crisis"><span>In danger right now? Call <b>911</b>.</span><span>For crisis support any time, call or text <b>988</b>.</span></p>
+    <p>OpenDoor · a HackUMass project · Design mock. Answers stay on this page.</p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════ CONVERSATION ═══════════════════════ -->
+<div id="v-chat" class="view" hidden>
+  <header class="c-top wrap">
+    <a class="mark" href="#" data-home aria-label="OpenDoor, back to start"><svg aria-hidden="true"><use href="#i-door"/></svg>OpenDoor</a>
+    <div class="prog" id="prog">
+      <svg viewBox="0 0 600 16" preserveAspectRatio="none" aria-hidden="true" class="dd" style="filter:none">
+        <path class="base" vector-effect="non-scaling-stroke" stroke-width="2" d="M0 8 C40 3 80 13 120 8 S200 3 240 8 S320 13 360 8 S440 3 480 8 S560 13 600 8"/>
+        <path class="fillp" pathLength="1" vector-effect="non-scaling-stroke" stroke-width="3" d="M0 8 C40 3 80 13 120 8 S200 3 240 8 S320 13 360 8 S440 3 480 8 S560 13 600 8"/>
+      </svg>
+      <p class="mono"><span id="progL">Getting started</span><span id="progR">About 3 minutes</span></p>
+    </div>
+    <div class="c-acts">
+      <button class="txt-btn" data-restart>Start over</button>
+      <a class="leave" href="https://www.weather.gov" target="_blank" rel="noopener" data-leave title="Opens the weather and clears this page">Leave quickly</a>
+    </div>
+  </header>
+  <div class="wrap c-grid" id="cgrid">
+    <main class="c-main" id="cmain">
+      <div class="auto-bar" id="autobar" hidden><span><i class="dot"></i>Playing an example for Maya.</span><button class="txt-btn" id="takeover">Answer for myself</button></div>
+      <ol class="transcript" id="transcript" aria-label="Your answers so far"></ol>
+      <div class="navline" id="navline" aria-live="polite"></div>
+      <div class="qstage" id="qstage"></div>
+    </main>
+    <aside class="ledger" id="ledger" aria-label="Places found so far">
+      <button class="lg-toggle" id="lgToggle" aria-expanded="false"><b><span id="lgNumM">0</span> places so far</b><svg viewBox="0 0 20 20" class="dd" style="filter:none"><path d="M4 12 L10 6 L16 12"/></svg></button>
+      <div class="lg-head">
+        <p class="mono">Found near you</p>
+        <div class="lg-count"><b id="lgNum">0</b><span id="lgSub">places that might help</span></div>
+      </div>
+      <div class="lg-map" id="lgMap"></div>
+      <ul class="lg-list" id="lgList"></ul>
+      <p class="lg-note">Labels are a first look. Only each program can say for sure who qualifies.</p>
+    </aside>
+  </div>
+</div>
+
+<!-- ═══════════════════════ BUILDING ═══════════════════════ -->
+<div id="v-build" class="view wrap" hidden>
+  <div class="bld" id="bld"></div>
+</div>
+
+<!-- ═══════════════════════ PLAN ═══════════════════════ -->
+<div id="v-plan" class="view" hidden></div>
+
+<div id="through" aria-hidden="true"><div class="th-light"></div><div class="th-door"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
+<details class="dock">
+  <summary>Mock views</summary>
+  <div>
+    <button data-jump="land">Landing page</button>
+    <button data-jump="chat">Conversation</button>
+    <button data-jump="sample">Example, played for you</button>
+    <button data-jump="plan">Finished plan (example)</button>
+    <p>Program details come from the curated Hampshire County list. Fit labels here are illustrative.</p>
+  </div>
+</details>
+
+<script>
+(() => {
+"use strict";
+const DATA = [{"id":"amherst-survival-center-health-clinic","n":"Free Drop-In Health Clinic","p":"Amherst Survival Center","c":["healthcare"],"d":"A free weekly medical clinic at the Amherst Survival Center.","docs":[],"tel":"413-549-3968","url":"https://amherstsurvival.org/programs/free-drop-in-health-clinic/","sw":false},{"id":"asc-campus-pantry","n":"Campus Pantry at UMass Amherst","p":"Amherst Survival Center","c":["food"],"d":"Free groceries for members of the UMass Amherst community at 472 North Pleasant Street, Amherst.","docs":["UMass ID (or other UMass affiliated material)"],"tel":"(413) 545-8880","url":"https://amherstsurvival.org/campus-pantry/","sw":false},{"id":"asc-community-meals","n":"Amherst Survival Center Community Meals","p":"Amherst Survival Center","c":["food"],"d":"Free hot lunch made fresh on site at 138 Sunderland Rd., North Amherst, to eat in the dining room or take to go.","docs":[],"tel":"413-549-3968","url":"https://amherstsurvival.org/community-meals/","sw":false},{"id":"asc-food-pantry","n":"Amherst Survival Center Food Pantry","p":"Amherst Survival Center","c":["food"],"d":"Free groceries for all household members, including produce, frozen meat, milk, eggs, and shelf-stable goods, at 138 Sunderland Rd., North Amherst.","docs":["Residency verification showing your name and current address (for example a license, a piece of mail, a bank statement, or a lease). It does not need to be a photo ID. People experiencing homelessness are exempt."],"tel":"413-549-3968","url":"https://amherstsurvival.org/food-pantry-register/","sw":false},{"id":"capv-fuel-assistance","n":"Fuel Assistance (Home Energy Assistance / LIHEAP)","p":"Community Action Pioneer Valley","c":["utilities"],"d":"Free program that helps pay part of winter heating costs.","docs":["State or federally-issued photo ID for the applicant","Proof of citizenship or qualified alien status","Verification of all sources of income for the 30 days prior to the appointment","Dates of birth for all household members"],"tel":"413-774-2310","url":"https://www.toapply.org/CA","sw":false},{"id":"capv-head-start-at-home","n":"Head Start at Home","p":"Community Action Pioneer Valley","c":["childcare"],"d":"Free support and education in your home for expectant parents and children birth to three, offered in Franklin, Hampshire and Western Hampden Counties.","docs":["Documentation of eligibility","Child's birth certificate","Child's health records"],"tel":"413-387-1250","url":"https://www.goengage.app/pre-app?globalID=22594","sw":false},{"id":"capv-head-start-center-based","n":"Center-Based Head Start & Early Head Start","p":"Community Action Pioneer Valley","c":["childcare"],"d":"Free and low-cost center-based programs for children birth to five in Franklin, Hampshire and Western Hampden Counties.","docs":["Documentation of eligibility","Child's birth certificate","Child's health records"],"tel":"413-387-1250","url":"https://www.goengage.app/pre-app?globalID=22594","sw":false},{"id":"capv-heating-system-repair","n":"Heating System Repair and Replacement","p":"Community Action Pioneer Valley","c":["utilities","housing"],"d":"Helps homeowners by repairing or replacing heating systems that no longer work.","docs":["Name, address, phone, email and LIHEAP number (if you have one)","Copies of electric and natural gas bills"],"tel":"413-376-1115","url":"https://www.communityaction.us/program/help-my-heating-system-is-broken/","sw":false},{"id":"capv-reentry-workforce","n":"Re-Entry Workforce Program","p":"Community Action Pioneer Valley","c":["employment"],"d":"A free training program for returning citizens who are recently out or soon to be out of incarceration.","docs":[],"tel":"413-834-2169","url":"https://www.communityaction.us/program/re-entry-workforce-program/","sw":false},{"id":"capv-rent-utility-assistance","n":"Rent and Utility Help (Community Resources & Advocacy)","p":"Community Action Pioneer Valley","c":["utilities","housing"],"d":"CAPV's Community Resources & Advocacy program may be able to help with rent and utility bills, including a metered utility in danger of being shut off because of late payment.","docs":["Proof of identity for head of household","Proof of Massachusetts address","Proof of working income from within the last 90 days that covers 4 weeks in a row","Proof of non-working income (e.g. Social Security, unemployment, child support, disability)"],"tel":"413-475-1570","url":"https://www.communityaction.us/program/rent-utility-assistance/","sw":false},{"id":"capv-vita-tax-help","n":"VITA Free Tax Help","p":"Community Action Pioneer Valley","c":["taxes"],"d":"Volunteer Income Tax Assistance (VITA): free tax return preparation by volunteers at Community Action Pioneer Valley's tax clinics, which run January-April.","docs":[],"tel":"413-376-1136","url":"https://www.communityaction.us/taxes","sw":false},{"id":"capv-weatherization","n":"Weatherization and Energy Efficiency Programs","p":"Community Action Pioneer Valley","c":["utilities","housing"],"d":"Free major home improvements to reduce energy usage (weatherization) and electric efficiency audits, for homeowners and renters who receive fuel assistance or the utility discount rate.","docs":["Name, LIHEAP application number (if you have one), home address, phone and email","Copy of electric bill (and natural gas account number/bill if not on fuel assistance)"],"tel":"413-376-1140","url":"https://forms.monday.com/forms/0172eaed3ccf243cfac7464cba1fc6b9?r=use1","sw":false},{"id":"capv-wic","n":"WIC (Women, Infants & Children) Nutrition Program","p":"Community Action Pioneer Valley","c":["food"],"d":"WIC provides free, healthy food, feeding support, and nutrition consultations for pregnant and postpartum people, infants, and children under 5.","docs":[],"tel":"413-376-1160","url":"https://www.communityaction.us/program/wic/","sw":false},{"id":"cna-immigration-legal-services","n":"Immigration Legal Services","p":"Center for New Americans","c":["legal"],"d":"The Center for New Americans helps immigrants and refugees in Western Massachusetts with immigration applications, including family immigration, green card applications, humanitarian applications (TPS, VAWA, DACA renewals), employment authorization, travel documents, fee waivers for government application fees, and USCIS change of address.","docs":[],"tel":"(413) 239-9550","url":"https://cnam.org/immigration-legal-services/","sw":false},{"id":"craigs-doors-shelter","n":"Craig's Doors Emergency Shelter","p":"Craig's Doors","c":["housing"],"d":"Craig's Doors provides vulnerable and unhoused community members with emergency shelter, food, and safety.","docs":[],"tel":"413-256-0704","url":"https://craigsdoors.org/active-sites","sw":false},{"id":"cso-hampshire-crisis-services","n":"Emergency & Crisis Stabilization Services (Hampshire County)","p":"Clinical & Support Options (CSO)","c":["mental_health"],"d":"CSO's crisis team for Northampton/Hampshire County is staffed 24 hours a day, 365 days a year, for youth, families and adults.","docs":[],"tel":null,"url":"https://www.csoinc.org/emergency-crisis-stabilization-services","sw":false},{"id":"eversource-ma-discount-rate","n":"Eversource Massachusetts Discount Program (discount rate)","p":"Eversource","c":["utilities"],"d":"Discount on Eversource electric or gas bills for customers who receive a qualifying public assistance benefit or meet household income requirements.","docs":[],"tel":null,"url":"https://www.eversource.com/cg/customer/discount-rate-application#/form","sw":false},{"id":"fbwm-brown-bag","n":"Brown Bag: Food for Elders","p":"The Food Bank of Western Massachusetts","c":["food"],"d":"A free monthly bag of groceries for older adults, picked up at senior centers and community organizations.","docs":[],"tel":"413-247-9738","url":"https://www.foodbankwma.org/wp-content/uploads/2025/05/Brown-Bag-Application-2025.pdf","sw":false},{"id":"fbwm-mobile-food-bank","n":"Mobile Food Bank","p":"The Food Bank of Western Massachusetts","c":["food"],"d":"A truck brings free fresh and non-perishable groceries from the Food Bank's warehouse to community sites for same-day distribution.","docs":[],"tel":"413-419-0079","url":"https://www.foodbankwma.org/get-help/mobile-food-bank/","sw":false},{"id":"fbwm-snap-application-assistance","n":"SNAP Application Assistance","p":"The Food Bank of Western Massachusetts","c":["food"],"d":"The Food Bank's SNAP outreach team can check whether you may be eligible for SNAP and help you apply by phone, online, or in person.","docs":[],"tel":"413-992-6204","url":"https://www.foodbankwma.org/snap-referral/","sw":false},{"id":"forbes-library-hotspot-lending","n":"Wi-Fi Hotspot Lending","p":"Forbes Library","c":["phone_internet"],"d":"Forbes Library in Northampton lends Wi-Fi hotspots for 3 weeks, with one renewal.","docs":[],"tel":"(413) 587-1011","url":"https://forbeslibrary.org/help/library-of-things/borrow-a-hotspot/","sw":false},{"id":"getyourrefund-free-tax-filing","n":"GetYourRefund Free Tax Filing","p":"GetYourRefund","c":["taxes"],"d":"A free, IRS-certified virtual tax filing service for low-income households across America, with options to file on your own with help (FileMyself), have a tax expert file for you over the internet (Assist, Virtual), or find a local IRS site to file in person.","docs":[],"tel":null,"url":"https://www.getyourrefund.org/en","sw":true},{"id":"hves-benefits-support","n":"Benefits Support Program","p":"Highland Valley Elder Services","c":["food","healthcare","utilities"],"d":"A Benefits Support Specialist can help people access public benefits such as Medicaid (MassHealth), SNAP and Fuel Assistance.","docs":[],"tel":"(413) 586-2000","url":"https://highlandvalley.org/services/benefits-support-program/","sw":false},{"id":"hves-home-delivered-meals","n":"Home Delivered Meals","p":"Highland Valley Elder Services","c":["food"],"d":"Meals prepared in Highland Valley Elder Services' kitchen and delivered to older adults at home.","docs":[],"tel":"(413) 586-2000","url":"https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375","sw":false},{"id":"hves-information-referral","n":"Information & Referral","p":"Highland Valley Elder Services","c":["transportation"],"d":"Free, friendly conversation about community resources and services for people age 60 and over, their caregivers and interested individuals, including help with long-term care choices.","docs":[],"tel":"(413) 586-2000","url":"https://highlandvalley.org/services/information-referral/","sw":false},{"id":"lifeline-phone-internet","n":"Lifeline Phone and Internet Discount","p":"Universal Service Administrative Company (Lifeline Support Center), for the FCC","c":["phone_internet"],"d":"Lifeline is a federal program that lowers the monthly cost of phone or internet service.","docs":[],"tel":"(800) 234-9473","url":"https://getinternet.gov/apply?id=nv_home","sw":true},{"id":"ma-behavioral-health-help-line","n":"Massachusetts Behavioral Health Help Line","p":"Massachusetts Behavioral Health Partnership (for the Commonwealth of Massachusetts)","c":["mental_health"],"d":"A free, confidential help line for mental health and substance use concerns, run as a service of the Commonwealth of Massachusetts.","docs":[],"tel":"833-773-2445","url":"https://www.masshelpline.com/","sw":true},{"id":"ma-free-legal-answers","n":"Massachusetts Free Legal Answers","p":"American Bar Association (ABA Free Legal Answers)","c":["legal"],"d":"A free online legal advice clinic: qualifying users post non-criminal (civil) legal questions, such as family, divorce, custody, housing, eviction, homelessness and consumer rights, and volunteer lawyers answer them.","docs":[],"tel":null,"url":"https://mass.freelegalanswers.org/","sw":true},{"id":"ma-good-neighbor-energy-fund","n":"Massachusetts Good Neighbor Energy Fund","p":"The Salvation Army (Massachusetts Good Neighbor Energy Fund)","c":["utilities"],"d":"Energy bill help for Massachusetts residents who, because of temporary financial difficulty, cannot meet a month's energy expense and are not eligible for state or federal energy assistance.","docs":[],"tel":"800-262-1320","url":"https://www.magoodneighbor.org/assistance.html","sw":true},{"id":"masshire-fh-career-center","n":"MassHire Franklin Hampshire Career Center","p":"MassHire Franklin Hampshire Career Center","c":["employment"],"d":"The public career center for Franklin County, Hampshire County and the North Quabbin area.","docs":[],"tel":"(413) 774-4361","url":"https://jobquest.mass.gov/JobQuest/Login/Index","sw":false},{"id":"pvta-ada-paratransit","n":"PVTA ADA Paratransit","p":"Pioneer Valley Transit Authority (PVTA)","c":["transportation"],"d":"Shared-ride, door-to-door van transportation for individuals whose disabilities prevent them from riding the city bus.","docs":["Completed PVTA ADA paratransit application (must be completed in its entirety)"],"tel":"413-732-6248","url":"https://www.pvta.com/van_service/ada_paratransit/index.php","sw":false},{"id":"pvta-fare-free-fy27","n":"PVTA Fare-Free Buses and Vans (FY27)","p":"Pioneer Valley Transit Authority (PVTA)","c":["transportation"],"d":"PVTA is fare-free for FY27: no fares or passes are needed for fixed-route buses or vans.","docs":[],"tel":"413-781-7882","url":"https://www.pvta.com/bus_service/fares.php","sw":false},{"id":"pvta-senior-dial-a-ride","n":"PVTA Senior Dial-A-Ride","p":"Pioneer Valley Transit Authority (PVTA)","c":["transportation"],"d":"Van service for seniors aged 60 and older throughout PVTA's 24 member communities (Amherst is a member community).","docs":[],"tel":"413-739-7436","url":"https://www.pvta.com/van_service/senior_dial_a_ride.php","sw":false},{"id":"raft-way-finders","n":"Residential Assistance for Families in Transition (RAFT)","p":"Commonwealth of Massachusetts; application help from Way Finders","c":["housing","utilities"],"d":"The Commonwealth's RAFT program helps households stay in stable housing when facing eviction, loss of utilities, foreclosure, and other housing emergencies.","docs":[],"tel":"413-233-1500","url":"https://www.wayfinders.org/housing-help/housinghelpforrenters/","sw":false},{"id":"safe-passage-helpline","n":"Safe Passage Domestic Violence Services","p":"Safe Passage","c":["safety"],"d":"Free, confidential services for anyone who has experienced domestic violence or relationship abuse, of any gender: counseling, advocacy, support groups, legal help for Probate and Family Court cases, immigration services, and help connecting to emergency shelter.","docs":[],"tel":"(413) 586-5066","url":"https://www.safepass.org/","sw":false},{"id":"safelink-dv-hotline","n":"SafeLink Domestic Violence Hotline","p":"Casa Myrna","c":["safety"],"d":"Massachusetts' statewide 24/7 toll-free domestic violence hotline.","docs":[],"tel":"(877) 785-2020","url":"https://casamyrna.org/get-support/safelink/","sw":true},{"id":"way-finders-housing-centers","n":"Way Finders Housing Centers (housing help)","p":"Way Finders","c":["housing"],"d":"Way Finders Housing Centers (including Northampton) help renters search for housing, apply for subsidies or Way Finders apartments, understand evictions and court processes, report health and safety issues to code enforcement, and apply for SNAP and other benefits.","docs":[],"tel":"413-233-1500","url":"https://www.wayfinders.org/housing-help/housing-centers/","sw":false}];
+const ZIPS = {"01002":"Amherst","01003":"Amherst","01007":"Belchertown","01012":"Chesterfield","01026":"Cummington","01027":"Easthampton","01032":"Goshen","01033":"Granby","01035":"Hadley","01038":"Hatfield","01039":"Haydenville","01050":"Huntington","01053":"Leeds","01060":"Northampton","01062":"Florence","01063":"Smith College","01066":"North Hatfield","01070":"Plainfield","01073":"Southampton","01075":"South Hadley","01082":"Ware","01084":"West Chesterfield","01088":"West Hatfield","01096":"Williamsburg","01098":"Worthington"};
+
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const wait = ms => new Promise(r => setTimeout(r, RM ? Math.min(ms, 40) : ms));
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const byId = Object.fromEntries(DATA.map(p => [p.id, p]));
+function list(a){ if(a.length<2) return a.join(""); return a.slice(0,-1).join(", ") + " and " + a[a.length-1]; }
+
+/* Split a sentence into rising words. |pipes| mark italic, with a hand-drawn underline. */
+function rise(text, base = 0, step = 55){
+  let i = 0;
+  return text.split(/(\|[^|]+\|)/).filter(Boolean).map(chunk => {
+    const it = chunk.startsWith("|");
+    const words = chunk.replace(/\|/g, "").trim().split(/\s+/).filter(Boolean);
+    const html = words.map(w => `<span class="w"><span style="--d:${base + (i++) * step}ms">${esc(w)}</span></span>`).join(" ");
+    if(!it) return html;
+    return `<em>${html}<svg class="dd ul" viewBox="0 0 240 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 15 C60 7 150 6 236 10 C170 13 90 16 26 21"/></svg></em>`;
+  }).join(" ");
+}
+
+/* ───────── Doodles ───────── */
+function radiator(){ let s=""; for(let i=0;i<5;i++){ const x=28+i*13; s+=`<path class="f-wash" d="M${x} 44 C${x} 38 ${x+10} 38 ${x+10} 44 L${x+10} 80 C${x+10} 86 ${x} 86 ${x} 80Z"/>`; } return s; }
+const D = {
+  food:`<path class="steam" d="M46 34 C42 28 50 22 46 14"/><path class="steam" d="M60 32 C56 24 64 18 60 10"/><path class="steam" d="M74 34 C70 28 78 22 74 14"/><path class="f-wash" d="M22 48 C26 80 94 80 98 48 Z"/><path d="M14 48 L106 48"/><path d="M44 88 L76 88"/>`,
+  utilities: radiator()+`<path d="M22 56 L28 56 M93 56 L100 56 M30 86 L30 92 M86 86 L86 92"/><path class="flame f-sun" d="M60 32 C50 24 54 14 60 8 C62 16 70 18 66 28 C64 32 62 33 60 32Z"/>`,
+  housing:`<path class="f-wash" d="M28 50 L60 24 L92 50 L92 88 L28 88 Z"/><path d="M20 56 L60 20 L100 56"/><path class="lite f-paper" d="M52 88 L52 62 L68 62 L68 88"/><path d="M34 58 L46 58 L46 70 L34 70 Z M74 58 L86 58 L86 70 L74 70Z"/><path d="M80 34 L80 22 L88 22 L88 40"/>`,
+  healthcare:`<g class="wig"><path class="f-sun" d="M28 72 L70 30 C78 22 92 36 84 44 L42 86 C34 94 20 80 28 72Z"/><path class="f-paper" d="M46 56 L56 46 L68 58 L58 68Z"/><circle cx="36" cy="74" r="1.4" class="f-ink"/><circle cx="42" cy="80" r="1.4" class="f-ink"/><circle cx="76" cy="36" r="1.4" class="f-ink"/><circle cx="82" cy="42" r="1.4" class="f-ink"/></g>`,
+  transportation:`<path class="f-wash" d="M16 30 C16 24 20 20 26 20 L94 20 C100 20 104 24 104 30 L104 74 L16 74 Z"/><path d="M24 30 L46 30 L46 48 L24 48Z M52 30 L72 30 L72 48 L52 48Z M78 30 L96 30 L96 48 L78 48Z M16 58 L104 58"/><g class="wheel" style="transform-origin:38px 76px"><circle class="f-paper" cx="38" cy="76" r="9"/><path d="M38 70 L38 82 M32 76 L44 76"/></g><g class="wheel" style="transform-origin:84px 76px"><circle class="f-paper" cx="84" cy="76" r="9"/><path d="M84 70 L84 82 M78 76 L90 76"/></g><path d="M6 88 L114 88"/>`,
+  phone_internet:`<path class="f-wash" d="M42 16 L72 16 C76 16 78 18 78 22 L78 84 C78 88 76 90 72 90 L42 90 C38 90 36 88 36 84 L36 22 C36 18 38 16 42 16Z"/><path d="M50 80 L64 80 M50 24 L64 24"/><path class="arc a1" d="M86 38 C92 44 92 54 86 60"/><path class="arc a2" d="M95 30 C106 41 106 57 95 68"/>`,
+  childcare:`<g class="topple"><path class="f-sun" d="M22 58 L52 58 L52 88 L22 88Z"/><path class="f-wash" d="M58 58 L88 58 L88 88 L58 88Z"/><path class="f-paper" d="M38 26 L70 26 L70 58 L38 58Z"/><text x="31" y="80" font-size="20">a</text><text x="67" y="80" font-size="20">b</text><text x="48" y="49" font-size="20">c</text></g>`,
+  mental_health:`<path d="M20 40 L20 88 M20 66 L44 66 M44 66 L44 88"/><path d="M100 40 L100 88 M100 66 L76 66 M76 66 L76 88"/><path class="f-wash" d="M52 72 L68 72 L66 88 L54 88Z"/><path class="pop f-sun" d="M44 22 C44 12 76 12 76 22 C76 32 62 34 56 32 L48 40 L50 31 C46 30 44 27 44 22Z"/>`,
+  legal:`<g class="tilt"><path d="M60 18 L60 88 M40 88 L80 88 M26 30 L94 30"/><path class="f-wash" d="M14 58 C18 72 38 72 42 58 Z"/><path d="M26 30 L14 58 M26 30 L42 58"/><path class="f-sun" d="M78 58 C82 72 102 72 106 58 Z"/><path d="M94 30 L78 58 M94 30 L106 58"/></g>`,
+  employment:`<path class="f-wash" d="M16 44 L104 44 L104 86 L16 86Z"/><path d="M44 44 L44 34 C44 30 46 28 50 28 L70 28 C74 28 76 30 76 34 L76 44 M16 62 L104 62"/><path class="f-sun wig" d="M52 56 L68 56 L68 68 L52 68Z"/>`,
+  taxes:`<path class="f-paper" d="M32 14 L88 14 L88 92 L80 86 L72 92 L64 86 L56 92 L48 86 L40 92 L32 86Z"/><path d="M44 30 L76 30 M44 42 L76 42 M44 54 L64 54"/><path class="f-sun wig" d="M44 68 L76 68 L76 76 L44 76Z"/>`,
+  safety:`<path d="M44 48 L44 36 C44 20 76 20 76 36 L76 48"/><path class="f-wash" d="M34 48 L86 48 L86 88 L34 88Z"/><circle class="f-ink" cx="60" cy="64" r="5"/><path d="M60 68 L60 78"/>`,
+  idea:`<path class="f-sun" d="M60 14 C78 14 88 28 86 42 C84 54 74 58 72 70 L48 70 C46 58 36 54 34 42 C32 28 42 14 60 14Z"/><path d="M48 78 L72 78 M50 86 L70 86 M60 4 L60 0 M22 22 L18 18 M98 22 L102 18"/>`
+};
+const dd = (k, cls = "") => `<svg class="dd ${cls}" viewBox="0 0 120 100" aria-hidden="true">${D[k] || ""}</svg>`;
+
+const HAIR = [
+  `<path class="f-ink" d="M-10 -34 C-8 -46 9 -46 10 -33 C4 -38 -4 -39 -10 -34Z"/>`,
+  `<path class="f-ink" d="M-10 -32 C-12 -46 12 -46 10 -32 L12 -18 C8 -24 9 -32 6 -36 C0 -34 -6 -36 -8 -33 C-10 -28 -8 -22 -12 -18Z"/>`,
+  `<circle class="f-ink" cx="0" cy="-45" r="5"/><path class="f-ink" d="M-10 -33 C-9 -42 9 -42 10 -33 C4 -37 -4 -37 -10 -33Z"/>`,
+  `<path d="M-9 -36 C-6 -40 -2 -36 0 -40 C2 -36 6 -40 9 -36"/>`,
+];
+function person(i){
+  const fill = i % 3 === 0 ? "f-sun" : i % 3 === 1 ? "f-wash" : "f-paper";
+  return `<svg class="dd" viewBox="-27 -60 54 92" aria-hidden="true" style="animation-delay:${i*40}ms"><path class="${fill}" d="M-15 30 C-16 6 -12 -12 0 -13 C12 -12 16 6 15 30 Z"/><path class="f-paper" d="M0 -16 C-7 -16 -10 -22 -10 -29 C-10 -36 -6 -40 0 -40 C6 -40 10 -36 10 -29 C10 -22 7 -16 0 -16Z"/>${HAIR[i % HAIR.length]}</svg>`;
+}
+
+/* ───────── Content ───────── */
+const NEEDS = [
+  {id:"food", label:"Food", hint:"Groceries, meals"},
+  {id:"utilities", label:"Heat & utilities", hint:"Heating, electric, fuel"},
+  {id:"housing", label:"Rent & housing", hint:"Rent, repairs, a place to stay"},
+  {id:"healthcare", label:"Medical care", hint:"A clinic, coverage"},
+  {id:"transportation", label:"Getting around", hint:"Buses, rides to appointments"},
+  {id:"phone_internet", label:"Phone & internet", hint:"Service, a hotspot"},
+  {id:"childcare", label:"Childcare", hint:"Early learning, Head Start"},
+  {id:"mental_health", label:"Someone to talk to", hint:"Support, a crisis line"},
+  {id:"legal", label:"Legal help", hint:"Questions, immigration"},
+  {id:"employment", label:"Work & training", hint:"Finding a job"},
+  {id:"taxes", label:"Free tax help", hint:"Filing for free"},
+  {id:"safety", label:"Safety at home", hint:"Confidential support"},
+];
+const NEED = Object.fromEntries(NEEDS.map(n => [n.id, n]));
+const RELATED = {food:["utilities","healthcare"], utilities:["housing","phone_internet"], housing:["utilities","legal"], healthcare:["transportation","mental_health"], transportation:["healthcare","employment"], phone_internet:["utilities","employment"], childcare:["food","employment"], mental_health:["healthcare","safety"], legal:["housing"], employment:["childcare","transportation"], taxes:["employment"], safety:["housing","mental_health"]};
+const KEYWORDS = [
+  [/food|grocer|hungry|eat|meal|pantry|snap|ebt|payday/i, "food"],
+  [/heat|electric|gas\b|oil|fuel|shut.?off|utility|utilities|propane|cold/i, "utilities"],
+  [/rent|evict|housing|landlord|apartment|homeless|place to stay|mortgage/i, "housing"],
+  [/doctor|clinic|sick|medic|prescription|health insurance|dentist/i, "healthcare"],
+  [/bus|ride|car\b|transport|get to|appointment/i, "transportation"],
+  [/phone|internet|wi-?fi|hotspot|cut off/i, "phone_internet"],
+  [/child ?care|daycare|kid|preschool|baby|toddler/i, "childcare"],
+  [/talk|lonely|anxious|depress|stress|sad|overwhelm|mom\b|a hand/i, "mental_health"],
+  [/lawyer|legal|court|immigra|visa/i, "legal"],
+  [/job|work|laid off|unemploy|career|training/i, "employment"],
+  [/tax/i, "taxes"],
+  [/hits me|abuse|violent|afraid of|scared of|unsafe at home/i, "safety"],
+];
+const CRISIS = /kill myself|suicid|end my life|hurt myself|want to die|in danger|hits me|going to hurt/i;
+const PHRASES = [
+  "My heat might get shut off.", "I'm behind on rent.", "We need groceries until payday.", "I can't get to my doctor.",
+  "My phone got cut off.", "I just need someone to talk to.", "I lost my job last month.", "I need help with my taxes.",
+  "I'm caring for my mom and need a hand.", "My kids need childcare so I can work.",
+];
+
+const Q = [
+  {id:"name", short:"Your name", kind:"text", eye:"Before we start", skippable:true,
+    prompt:()=>"What should I call you?", why:"Only so this feels less like a form. A first name or a nickname is plenty."},
+  {id:"needs", short:"What's going on", kind:"needs", eye:"What brings you here",
+    prompt:s=>s.name?`What's been weighing on you lately, ${s.name}?`:"What's been weighing on you lately?",
+    why:"Pick everything that fits. You don't need to know which programs exist. That's our job."},
+  {id:"zip", short:"Where", kind:"zip", eye:"Where you are",
+    prompt:()=>"What's your ZIP code?", why:"Most help is run by towns and counties, so this tells us which offices actually serve you."},
+  {id:"size", short:"Household", kind:"count", eye:"Who's at home",
+    prompt:()=>"How many people live with you, counting you?", why:"Count everyone you share food or bills with. Income limits are set by household size."},
+  {id:"who", short:"Anyone who", kind:"multi", eye:"Who's at home",
+    prompt:s=>s.size===1?"Do any of these describe you?":"Does anyone at home fit any of these?", why:"Some programs are only for older adults, young children or pregnancy.",
+    options:[{id:"60",label:"60 or older"},{id:"55",label:"55 to 59"},{id:"child",label:"A child under 5, or a pregnancy"},{id:"none",label:"No one like that",only:true}]},
+  {id:"shutoff", short:"Heating", kind:"single", eye:"About the heat", when:s=>s.needs.has("utilities"),
+    prompt:()=>"Has a utility sent a shut-off notice, or is your fuel about to run out?", why:"From November 1 to April 30, heating emergencies can get faster help.",
+    options:[{id:"yes",label:"Yes, it's urgent"},{id:"behind",label:"Not yet, but I'm behind on bills"},{id:"no",label:"No, I just need help with the cost"}]},
+  {id:"housing", short:"Housing", kind:"single", eye:"Where you're staying", when:s=>s.needs.has("housing")||s.needs.has("utilities"),
+    prompt:()=>"Where are you staying right now?", why:"Some help is only for renters, some only for homeowners.",
+    options:[{id:"rent",label:"I rent"},{id:"own",label:"I own my home"},{id:"family",label:"With friends or family for now"},{id:"none",label:"I don't have a safe place tonight"}]},
+  {id:"income", short:"Monthly income", kind:"single", eye:"Money coming in", skippable:true,
+    prompt:()=>"Roughly how much comes in each month, for everyone at home?", why:"Most programs set income limits. A rough range is fine, and you can skip this.",
+    options:[{id:"u1500",label:"Under $1,500"},{id:"u2500",label:"$1,500 to $2,500"},{id:"u4000",label:"$2,500 to $4,000"},{id:"o4000",label:"More than $4,000"}]},
+  {id:"review", short:"Review", kind:"review", eye:"Almost there", prompt:()=>"Here's what I heard.", why:"Tap anything to change it. Then we'll put your plan together."},
+];
+const QI = Object.fromEntries(Q.map(q => [q.id, q]));
+
+/* ───────── State ───────── */
+const fresh = () => ({name:"", needs:new Set(), zip:"", town:"", inArea:true, size:null, who:new Set(), shutoff:null, housing:null, income:null, done:new Set(), typed:"", safety:false});
+let S = fresh();
+let cur = "name";
+let auto = false, autoTok = 0;
+let shownIds = new Set();
+
+/* ───────── Matching (mock of the deterministic rules) ───────── */
+const SENIOR = new Set(["fbwm-brown-bag","hves-home-delivered-meals","hves-benefits-support","hves-information-referral","pvta-senior-dial-a-ride"]);
+const CHILD = new Set(["capv-wic","capv-head-start-at-home","capv-head-start-center-based"]);
+const SKIP = new Set(["capv-reentry-workforce"]);
+const OPEN = new Set(["asc-food-pantry","asc-community-meals","fbwm-mobile-food-bank","amherst-survival-center-health-clinic","ma-behavioral-health-help-line","cso-hampshire-crisis-services","safelink-dv-hotline","safe-passage-helpline","pvta-fare-free-fy27","hves-information-referral","way-finders-housing-centers","ma-free-legal-answers","forbes-library-hotspot-lending","masshire-fh-career-center","getyourrefund-free-tax-filing","capv-vita-tax-help","craigs-doors-shelter"]);
+const PRI = {food:["asc-food-pantry","fbwm-snap-application-assistance","hves-home-delivered-meals","capv-wic","fbwm-brown-bag","fbwm-mobile-food-bank","asc-community-meals"], utilities:["capv-fuel-assistance","eversource-ma-discount-rate","ma-good-neighbor-energy-fund","capv-rent-utility-assistance","capv-weatherization"], housing:["raft-way-finders","way-finders-housing-centers","capv-rent-utility-assistance"], healthcare:["amherst-survival-center-health-clinic","hves-benefits-support"], transportation:["pvta-fare-free-fy27","pvta-senior-dial-a-ride","hves-information-referral"], phone_internet:["lifeline-phone-internet","forbes-library-hotspot-lending"], childcare:["capv-head-start-center-based","capv-head-start-at-home"], mental_health:["ma-behavioral-health-help-line","cso-hampshire-crisis-services"], legal:["ma-free-legal-answers","cna-immigration-legal-services"], employment:["masshire-fh-career-center"], taxes:["capv-vita-tax-help","getyourrefund-free-tax-filing"], safety:["safelink-dv-hotline","safe-passage-helpline"]};
+
+function matches(){
+  if(!S.zip) return [];
+  const out = []; const seen = new Set();
+  const knowWho = S.done.has("who");
+  for(const need of S.needs){
+    const ids = [...(PRI[need]||[]), ...DATA.filter(p => p.c.includes(need)).map(p => p.id)];
+    for(const id of ids){
+      if(seen.has(id)) continue;
+      const p = byId[id]; if(!p || !p.c.includes(need)) continue;
+      if(SKIP.has(id)) continue;
+      if(!S.inArea && !p.sw) continue;
+      if(SENIOR.has(id) && !(knowWho && S.who.has("60"))) continue;
+      if(CHILD.has(id) && !(knowWho && S.who.has("child"))) continue;
+      if(id === "asc-campus-pantry" && S.zip !== "01003") continue;
+      if(id === "craigs-doors-shelter" && S.housing !== "none") continue;
+      if(id === "pvta-ada-paratransit" && !S.done.has("who")) continue;
+      seen.add(id);
+      let fit = "info";
+      if(OPEN.has(id)) fit = "likely";
+      else if(S.income) fit = S.income === "o4000" && (S.size||1) <= 2 ? "info" : "possibly";
+      out.push({p, need, fit});
+    }
+  }
+  if(S.safety && !seen.has("safelink-dv-hotline")) out.unshift({p:byId["safelink-dv-hotline"], need:"safety", fit:"likely"});
+  return out;
+}
+const FIT = {likely:"Likely a fit", possibly:"Possibly a fit", info:"Need more info"};
+
+function planSteps(m){
+  const steps = []; const used = new Set();
+  const add = (id, why, urgent) => { const x = m.find(r => r.p.id === id); if(x && !used.has(id)){ used.add(id); steps.push({...x, why, urgent}); } };
+  if(S.housing === "none") add("craigs-doors-shelter", "You said you don't have a safe place tonight.", true);
+  if(S.safety || S.needs.has("safety")) add("safelink-dv-hotline", "You mentioned not feeling safe. This line is confidential.", true);
+  if(S.shutoff === "yes") add("capv-fuel-assistance", "You said a shut-off notice came or your fuel is about to run out.", true);
+  for(const need of S.needs){
+    if(steps.length >= 3) break;
+    const id = (PRI[need]||[]).find(i => m.some(r => r.p.id === i) && !used.has(i));
+    if(id){
+      let why = `You mentioned ${NEED[need].label.toLowerCase()}.`;
+      if(SENIOR.has(id)) why += S.size === 1 ? " This one is for adults 60 and older." : " This one is for adults 60 and older, and someone at home is.";
+      if(id === "capv-fuel-assistance" && S.shutoff === "behind") why = "You said you're behind on heating bills.";
+      add(id, why, false);
+    }
+  }
+  return steps.slice(0, 3);
+}
+
+/* ───────── View switching ───────── */
+const views = {land:$("#v-land"), chat:$("#v-chat"), build:$("#v-build"), plan:$("#v-plan")};
+let view = "land";
+function show(v){
+  for(const [k, el] of Object.entries(views)) el.hidden = k !== v;
+  view = v; window.scrollTo(0, 0);
+}
+
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
+
+/* Walk through the door: evergreen floods out of the button, then swings open onto warm light. */
+async function through(fromEl, then){
+  const o = $("#through"), door = o.querySelector(".th-door"), light = o.querySelector(".th-light");
+  if(RM){ then(); return; }
+  const r = fromEl ? fromEl.getBoundingClientRect() : {left:innerWidth/2, top:innerHeight/2, width:0, height:0};
+  o.style.setProperty("--cx", (r.left + r.width/2) + "px");
+  o.style.setProperty("--cy", (r.top + r.height/2) + "px");
+  door.style.transition = "none"; door.style.transform = "none"; door.style.opacity = 1;
+  light.style.transition = "none"; light.style.opacity = 0;
+  o.classList.add("on");
+  door.getBoundingClientRect();
+  door.style.transition = "clip-path .75s cubic-bezier(.65,0,.35,1)";
+  door.style.clipPath = "circle(150% at var(--cx) var(--cy))";
+  await wait(780);
+  light.style.opacity = 1;
+  then();
+  await wait(120);
+  door.style.transition = "transform 1.05s cubic-bezier(.6,0,.25,1), opacity .4s ease .75s";
+  door.style.transform = "rotateY(100deg)";
+  door.style.opacity = 0;
+  await wait(800);
+  light.style.transition = "opacity .7s ease";
+  light.style.opacity = 0;
+  await wait(720);
+  o.classList.remove("on");
+  door.style.transition = "none"; door.style.clipPath = ""; door.style.transform = "none";
+}
+
+/* ═════════════ LANDING ═════════════ */
+function initLanding(){
+  $("#hero-h").innerHTML = rise($("#hero-h").dataset.rise, 120, 70);
+
+  const mk = (arr) => arr.map(p => `<button class="phrase" data-phrase="${esc(p)}">${esc(p)}</button><svg class="star" aria-hidden="true"><use href="#i-star"/></svg>`).join("");
+  $("#row1").innerHTML = mk(PHRASES.slice(0,5).concat(PHRASES.slice(0,5)));
+  $("#row2").innerHTML = mk(PHRASES.slice(5).concat(PHRASES.slice(5)));
+
+  $("#tiles").innerHTML = ["food","utilities","housing","healthcare","transportation","phone_internet","childcare","mental_health"].map((id, i) =>
+    `<button class="tile rv" style="--rd:${i*60}ms" data-need="${id}">${dd(id)}<b>${esc(NEED[id].label)}</b><span>${esc(NEED[id].hint)}</span><svg class="go" aria-hidden="true"><use href="#i-arrow"/></svg></button>`).join("");
+
+  // Reveal on scroll
+  if("IntersectionObserver" in window && !RM){
+    document.documentElement.classList.add("js-io");
+    const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }), {rootMargin:"0px 0px -8% 0px"});
+    $$(".rv, #fin").forEach(el => io.observe(el));
+  } else { $$(".rv, #fin").forEach(el => el.classList.add("in")); }
+
+  const hero = $("#hero"), scene = $("#scene"), story = $("#how"), beats = $$(".beat"), stages = $$(".stage svg"), rails = $$(".rail i");
+  const r1 = $("#row1"), r2 = $("#row2"), phr = $(".phr");
+  let ticking = false, loaded = false;
+  setTimeout(() => { loaded = true; update(); }, 650);
+
+  function update(){
+    ticking = false;
+    if(view !== "land") return;
+    const y = scrollY, vh = innerHeight;
+    const hp = clamp(y / (hero.offsetHeight * .9), 0, 1);
+    hero.style.setProperty("--hp", hp.toFixed(3));
+    const open = loaded ? 32 + hp * 50 : 0;
+    scene.style.setProperty("--open", open.toFixed(1));
+    scene.style.setProperty("--open-n", (open / 80).toFixed(3));
+
+    const pr = phr.getBoundingClientRect();
+    const off = (vh - pr.top) * .45;
+    r1.style.transform = `translateX(${-off}px)`;
+    r2.style.transform = `translateX(${off - r2.scrollWidth / 2 + innerWidth * .2}px)`;
+
+    if(!RM){
+      const sr = story.getBoundingClientRect();
+      const total = story.offsetHeight - vh;
+      const sp = clamp(-sr.top / total, 0, .9999);
+      const idx = Math.floor(sp * 3), local = sp * 3 - idx;
+      beats.forEach((b, i) => { b.classList.toggle("on", i === idx); b.classList.toggle("past", i < idx); });
+      stages.forEach((s, i) => {
+        const k = i < idx ? 1 : i === idx ? clamp(local * 1.5, 0, 1) : 0;
+        s.style.setProperty("--k", k.toFixed(3));
+        s.style.opacity = i === idx ? 1 : 0;
+      });
+      rails.forEach((r, i) => r.style.setProperty("--f", i < idx ? 1 : i === idx ? local.toFixed(3) : 0));
+    }
+  }
+  addEventListener("scroll", () => { if(!ticking){ ticking = true; requestAnimationFrame(update); } }, {passive:true});
+  addEventListener("resize", update);
+  update();
+
+  // Line boil on the hero doodle: three hand-drawn frames on a loop, the way animators keep a still drawing alive.
+  if(!RM){
+    const t = $("#boilT"); let f = 0;
+    $$(".scene .boil").forEach(s => s.style.filter = "url(#boil)");
+    setInterval(() => { if(view === "land" && scrollY < hero.offsetHeight){ f = (f + 1) % 3; t.setAttribute("seed", [1, 7, 13][f]); } }, 170);
+  }
+}
+
+/* ═════════════ CONVERSATION ═════════════ */
+const order = () => Q.filter(q => !q.when || q.when(S)).map(q => q.id);
+
+function startFlow(fromEl, opts = {}){
+  S = fresh(); shownIds = new Set(); auto = !!opts.sample; autoTok++;
+  if(opts.needs) opts.needs.forEach(n => S.needs.add(n));
+  if(opts.typed){ S.typed = opts.typed; parseNeeds(opts.typed).forEach(n => S.needs.add(n)); }
+  through(fromEl, () => {
+    show("chat");
+    $("#autobar").hidden = !auto;
+    $("#transcript").innerHTML = ""; $("#navline").innerHTML = "";
+    renderLedger(); progress();
+    cur = "name";
+    renderQ();
+  });
+}
+
+function parseNeeds(text){ const out = []; for(const [re, id] of KEYWORDS) if(re.test(text) && !out.includes(id)) out.push(id); return out; }
+
+function progress(){
+  const ord = order().filter(id => id !== "review");
+  const done = ord.filter(id => S.done.has(id)).length;
+  const p = cur === "review" ? 1 : done / (ord.length + .5);
+  $("#prog").style.setProperty("--p", p.toFixed(3));
+  const left = ord.length - done;
+  $("#progL").textContent = cur === "review" ? "All answered" : `Question ${Math.min(done + 1, ord.length)} of about ${ord.length}`;
+  const time = cur === "review" ? "Ready when you are" : left <= 2 ? "Almost done" : `About ${Math.max(1, Math.round(left * 20 / 60))} minute${left * 20 / 60 >= 1.5 ? "s" : ""} left`;
+  $("#progR").textContent = time;
+}
+
+function answerText(id){
+  switch(id){
+    case "name": return S.name || "Skipped";
+    case "needs": return list([...S.needs].map(n => NEED[n].label)) || "Not sure yet";
+    case "zip": return S.zip ? `${S.zip} · ${S.inArea ? S.town : "outside our area"}` : "";
+    case "size": return S.size === 1 ? "Just me" : `${S.size} people`;
+    case "who": return list(QI.who.options.filter(o => S.who.has(o.id)).map(o => o.label));
+    case "shutoff": return QI.shutoff.options.find(o => o.id === S.shutoff)?.label || "";
+    case "housing": return QI.housing.options.find(o => o.id === S.housing)?.label || "";
+    case "income": return QI.income.options.find(o => o.id === S.income)?.label || "Skipped";
+  }
+  return "";
+}
+
+function renderTranscript(){
+  const ids = order().filter(id => id !== "review" && S.done.has(id) && id !== cur);
+  $("#transcript").innerHTML = ids.map(id => `<li><button data-edit="${id}"><span class="tq">${esc(QI[id].short)}</span><span class="ta">${esc(answerText(id))}</span><span class="te">Change</span></button></li>`).join("");
+}
+
+async function say(text, extra = ""){
+  const nl = $("#navline");
+  nl.innerHTML = `<p class="nl-who mono"><svg aria-hidden="true"><use href="#i-door"/></svg>OpenDoor</p><span class="typing" aria-hidden="true"><i></i><i></i><i></i></span>`;
+  await wait(Math.min(1100, 420 + text.length * 7));
+  nl.innerHTML = `<p class="nl-who mono"><svg aria-hidden="true"><use href="#i-door"/></svg>OpenDoor</p><p class="nl-text">${rise(text, 0, 28)}</p>${extra}`;
+}
+
+function qHead(q, idx){
+  const prompt = q.prompt(S);
+  return `<p class="q-eye mono"><span class="bar"></span>${esc(q.eye)}</p>
+    <h2 class="q-title" id="qt" tabindex="-1">${rise(prompt, 80, 48)}</h2>
+    <p class="q-why"><svg aria-hidden="true"><use href="#i-why"/></svg><span>${esc(q.why)}</span></p>`;
+}
+function qActs(q, {cont = true, label = "Continue", disabled = false} = {}){
+  const first = order()[0] === q.id;
+  return `<div class="q-acts">
+    ${first ? "" : `<button class="txt-btn" data-back>Back</button>`}
+    <span class="sp"></span>
+    ${q.skippable ? `<button class="txt-btn" data-skip>${q.id === "income" ? "I'd rather not say" : "Skip"}</button>` : ""}
+    ${cont ? `<button class="btn" data-continue ${disabled ? "disabled" : ""}>${label}<svg aria-hidden="true"><use href="#i-arrow"/></svg></button>` : ""}
+  </div>`;
+}
+
+function renderQ(){
+  const q = QI[cur]; const st = $("#qstage");
+  st.classList.remove("leaving");
+  renderTranscript(); progress();
+  let body = "", acts = "";
+  if(q.kind === "text"){
+    body = `<input class="field big" id="f-name" autocomplete="given-name" placeholder="Your first name" maxlength="30" value="${esc(S.name)}" aria-labelledby="qt">`;
+    acts = qActs(q);
+  } else if(q.kind === "needs"){
+    body = `<div class="opts stag" role="group" aria-labelledby="qt">${NEEDS.map((n, i) =>
+      `<button class="opt" style="--i:${i}" data-opt="${n.id}" aria-pressed="${S.needs.has(n.id)}">${dd(n.id, "sm")}<span><b>${esc(n.label)}</b><small>${esc(n.hint)}</small></span><span class="tick"><svg viewBox="0 0 16 16"><path pathLength="1" d="M3 8.5 L6.5 12 L13 4"/></svg></span></button>`).join("")}</div>
+      <div class="own"><label for="f-own">Or tell me in your own words</label><input class="field" id="f-own" maxlength="300" placeholder="For example: my electric bill is way behind" value="${esc(S.typed)}"><button class="btn quiet" data-own>Add</button></div>
+      <div id="ownOut">${S.typed && S.needs.size ? `<p class="matched">From what you wrote, I've marked ${esc(list([...S.needs].map(n => NEED[n].label)))}. Add anything else.</p>` : ""}</div>`;
+    acts = qActs(q, {disabled: !S.needs.size});
+  } else if(q.kind === "zip"){
+    body = `<div class="zip"><div class="zip-in"><div class="zbox" id="zbox">${[0,1,2,3,4].map(i => `<span>${S.zip[i] || ""}</span>`).join("")}<input id="f-zip" inputmode="numeric" autocomplete="postal-code" maxlength="5" value="${esc(S.zip)}" aria-labelledby="qt"></div><p class="ztown" id="ztown" aria-live="polite"></p></div><div class="zmap" id="zmap" aria-hidden="true">${mapSvg("")}</div></div>`;
+    acts = qActs(q, {disabled: S.zip.length !== 5});
+  } else if(q.kind === "count"){
+    const n = S.size || 1;
+    body = `<div class="count"><button class="step" data-dec aria-label="One fewer"><svg class="dd" viewBox="0 0 20 20" style="filter:none"><path d="M4 10 L16 10"/></svg></button><output id="cnt" aria-live="polite">${n}</output><button class="step" data-inc aria-label="One more"><svg class="dd" viewBox="0 0 20 20" style="filter:none"><path d="M4 10 L16 10 M10 4 L10 16"/></svg></button></div><div class="people" id="people" aria-hidden="true">${Array.from({length:n}, (_, i) => person(i)).join("")}</div>`;
+    acts = qActs(q);
+  } else if(q.kind === "multi"){
+    body = `<div class="opts list stag" role="group" aria-labelledby="qt">${q.options.map((o, i) => `<button class="opt" style="--i:${i}" data-opt="${o.id}" aria-pressed="${S.who.has(o.id)}"><span>${esc(o.label)}</span><span class="tick"><svg viewBox="0 0 16 16"><path pathLength="1" d="M3 8.5 L6.5 12 L13 4"/></svg></span></button>`).join("")}</div>`;
+    acts = qActs(q, {disabled: !S.who.size});
+  } else if(q.kind === "single"){
+    const val = S[q.id];
+    body = `<div class="opts list stag" role="radiogroup" aria-labelledby="qt">${q.options.map((o, i) => `<button class="opt" role="radio" style="--i:${i}" data-opt="${o.id}" aria-pressed="${val === o.id}" aria-checked="${val === o.id}"><span>${esc(o.label)}</span><span class="tick"><svg viewBox="0 0 16 16"><path pathLength="1" d="M3 8.5 L6.5 12 L13 4"/></svg></span></button>`).join("")}</div>`;
+    acts = qActs(q, {cont:false});
+  } else if(q.kind === "review"){
+    body = `<div class="review stag">${order().filter(id => id !== "review").map((id, i) => `<button style="--i:${i}" data-edit="${id}"><span class="rq">${esc(QI[id].short)}</span><span class="ra">${esc(answerText(id) || "Not answered")}</span><span class="re">Change</span></button>`).join("")}</div>`;
+    acts = qActs(q, {label:"Put my plan together"});
+  }
+  st.innerHTML = qHead(q) + `<div class="q-body">${body}</div>` + acts;
+  wireQ(q);
+  const top = st.getBoundingClientRect().top;
+  if(top > innerHeight * .55 || top < 0) window.scrollTo({top: Math.max(0, top + scrollY - innerHeight * .22), behavior: RM ? "auto" : "smooth"});
+  if(!auto){
+    const t = $("#qt"); setTimeout(() => { if(q.kind === "text") $("#f-name")?.focus({preventScroll:true}); else if(q.kind === "zip") $("#f-zip")?.focus({preventScroll:true}); else t?.focus({preventScroll:true}); }, 350);
+  } else autoPlay(q);
+}
+
+function wireQ(q){
+  const st = $("#qstage");
+  const contBtn = st.querySelector("[data-continue]");
+  const setCont = ok => { if(contBtn) contBtn.disabled = !ok; };
+  st.querySelector("[data-back]")?.addEventListener("click", back);
+  st.querySelector("[data-skip]")?.addEventListener("click", () => commit(q, "skip"));
+  contBtn?.addEventListener("click", () => commit(q));
+
+  if(q.kind === "text"){
+    const f = $("#f-name");
+    f.addEventListener("keydown", e => { if(e.key === "Enter") commit(q); });
+  }
+  if(q.kind === "needs"){
+    st.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.opt; S.needs.has(id) ? S.needs.delete(id) : S.needs.add(id);
+      b.setAttribute("aria-pressed", S.needs.has(id)); setCont(S.needs.size > 0);
+    }));
+    const own = $("#f-own"), addOwn = () => {
+      const t = own.value.trim(); if(!t) return;
+      S.typed = t;
+      const out = $("#ownOut");
+      if(CRISIS.test(t)){
+        S.safety = true;
+        out.innerHTML = `<div class="safety" role="alert"><b>Your safety comes first.</b><span>If you're in immediate danger, call <span class="num">911</span>.</span><span>For crisis support any time, call or text <span class="num">988</span>.</span><span>You can keep going here whenever it feels right. I can look for practical help too.</span></div>`;
+      }
+      const found = parseNeeds(t);
+      found.forEach(id => { S.needs.add(id); st.querySelector(`[data-opt="${id}"]`)?.setAttribute("aria-pressed", "true"); });
+      if(found.length) out.insertAdjacentHTML("beforeend", `<p class="matched">I've marked ${esc(list(found.map(n => NEED[n].label)))} from what you wrote. I'll keep your words too.</p>`);
+      else if(!CRISIS.test(t)) out.innerHTML = `<p class="matched">Thank you. I've kept your words. Tap anything above that's close, and I'll look for it.</p>`;
+      setCont(S.needs.size > 0);
+    };
+    st.querySelector("[data-own]").addEventListener("click", addOwn);
+    own.addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); addOwn(); } });
+  }
+  if(q.kind === "zip"){
+    const f = $("#f-zip"), boxes = $$("#zbox span"), town = $("#ztown"), zm = $("#zmap"); let pinned = "";
+    const paint = () => {
+      const v = f.value.replace(/\D/g, "").slice(0, 5); f.value = v;
+      boxes.forEach((b, i) => { b.textContent = v[i] || ""; b.classList.toggle("has", !!v[i]); b.classList.toggle("cur", document.activeElement === f && i === Math.min(v.length, 4)); });
+      if(v.length === 5){
+        if(ZIPS[v]){ town.className = "ztown"; town.textContent = ZIPS[v] + ", MA"; }
+        else { town.className = "ztown out"; town.textContent = "We only have local listings for Hampshire County so far. You can still continue for statewide help."; }
+      } else town.textContent = "";
+      const t = v.length === 5 ? (ZIPS[v] || "") : "";
+      if(t !== pinned){ pinned = t; zm.innerHTML = mapSvg(t); }
+      setCont(v.length === 5);
+    };
+    f.addEventListener("input", paint); f.addEventListener("focus", paint); f.addEventListener("blur", paint);
+    f.addEventListener("keydown", e => { if(e.key === "Enter" && f.value.length === 5) commit(q); });
+    paint();
+  }
+  if(q.kind === "count"){
+    S.size = S.size || 1;
+    const out = $("#cnt"), ppl = $("#people");
+    const set = n => {
+      n = clamp(n, 1, 10); const prev = S.size; S.size = n; out.textContent = n === 10 ? "10+" : n;
+      if(n > prev) ppl.insertAdjacentHTML("beforeend", person(n - 1));
+      else if(n < prev) ppl.lastElementChild?.remove();
+    };
+    st.querySelector("[data-inc]").addEventListener("click", () => set(S.size + 1));
+    st.querySelector("[data-dec]").addEventListener("click", () => set(S.size - 1));
+  }
+  if(q.kind === "multi"){
+    st.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.opt, only = q.options.find(o => o.id === id).only;
+      if(S.who.has(id)) S.who.delete(id);
+      else { if(only) S.who.clear(); else q.options.filter(o => o.only).forEach(o => S.who.delete(o.id)); S.who.add(id); }
+      st.querySelectorAll("[data-opt]").forEach(x => x.setAttribute("aria-pressed", S.who.has(x.dataset.opt)));
+      setCont(S.who.size > 0);
+    }));
+  }
+  if(q.kind === "single"){
+    st.querySelectorAll("[data-opt]").forEach(b => b.addEventListener("click", () => {
+      S[q.id] = b.dataset.opt;
+      st.querySelectorAll("[data-opt]").forEach(x => { const on = x === b; x.setAttribute("aria-pressed", on); x.setAttribute("aria-checked", on); });
+      setTimeout(() => commit(q), RM ? 0 : 380);
+    }));
+  }
+}
+
+function ackFor(q, skipped){
+  switch(q.id){
+    case "name": return skipped ? "That's fine. Let's begin." : `Nice to meet you, ${S.name}. Let's take this one step at a time.`;
+    case "needs": {
+      const l = [...S.needs].map(n => NEED[n].label.toLowerCase());
+      return S.needs.size >= 3 ? `${cap(list(l))}. That's a lot to carry at once. We'll take it one piece at a time.` : `${cap(list(l))}. Thank you for telling me. Next, let's find what's near you.`;
+    }
+    case "zip": return S.inArea ? `${S.town}. I know what's around there. I've already found ${matches().length} places that might help.` : "I don't have local listings there yet, so I'll show statewide help and say so.";
+    case "size": return S.size === 1 ? "Just you. Got it." : `${S.size} of you. Got it.`;
+    case "who":
+      if(S.who.has("60")) return "Some help is just for adults 60 and older. I've added those.";
+      if(S.who.has("child")) return "Some food and early-learning programs are for young children and pregnancy. I've added those.";
+      return "Thanks. That's everything I need about your household.";
+    case "shutoff": return S.shutoff === "yes" ? "Okay. I'll put the fastest heating help at the top of your plan." : S.shutoff === "behind" ? "Thanks for telling me. Being behind is common, and there's help for it." : "Got it. I'll look for help that lowers the cost.";
+    case "housing": return S.housing === "none" ? "Thank you for telling me. I'll put a place to stay tonight first." : "Thanks. That narrows things down.";
+    case "income": return skipped ? "No problem. I'll mark income-based programs as needing more info." : "Thanks. That helps me read income limits.";
+  }
+  return "";
+}
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+async function commit(q, mode){
+  const skipped = mode === "skip";
+  if(q.kind === "text"){ S.name = skipped ? "" : ($("#f-name")?.value.trim().split(/\s+/)[0] || "").slice(0, 24); }
+  if(q.kind === "needs" && !S.needs.size) return;
+  if(q.kind === "zip"){
+    const v = $("#f-zip").value; if(v.length !== 5) return;
+    S.zip = v; S.inArea = !!ZIPS[v]; S.town = ZIPS[v] || "";
+  }
+  if(q.kind === "multi" && !S.who.size) return;
+  if(q.id === "income" && skipped) S.income = null;
+  if(q.kind === "review") return buildPlan();
+  S.done.add(q.id);
+
+  const st = $("#qstage"); st.classList.add("leaving");
+  await wait(280);
+  st.innerHTML = "";
+  renderLedger();
+  const ord = order(); const i = ord.indexOf(q.id);
+  const next = ord.slice(i + 1).find(id => !S.done.has(id)) || "review";
+  cur = next; renderTranscript(); progress();
+
+  let extra = "";
+  if(q.id === "needs" && !shownIds.has("rel")){
+    shownIds.add("rel");
+    const rel = [...new Set([...S.needs].flatMap(n => RELATED[n] || []))].filter(n => !S.needs.has(n)).slice(0, 2);
+    if(rel.length){
+      const first = NEED[[...S.needs][0]].label.toLowerCase();
+      extra = `<div class="rel"><p>People asking about ${esc(first)} often ask about these too:</p>${rel.map(n => `<button class="chip" data-rel="${n}">+ ${esc(NEED[n].label)}</button>`).join("")}</div>`;
+    }
+  }
+  if(q.id === "housing" && S.housing === "none"){
+    extra = `<div class="safety" role="alert"><b>Craig's Doors offers emergency shelter, food and safety.</b><span>Call <span class="num">${esc(byId["craigs-doors-shelter"].tel || "")}</span>. It will be first in your plan. If you're in danger, call <span class="num">911</span>.</span></div>`;
+  }
+  await say(ackFor(q, skipped), extra);
+  renderQ();
+}
+
+function back(){
+  const ord = order(); const i = ord.indexOf(cur);
+  if(i <= 0) return;
+  edit(ord[i - 1]);
+}
+function edit(id){
+  autoTok++; if(auto){ auto = false; $("#autobar").hidden = true; }
+  if(view === "plan"){ show("chat"); renderLedger(); }
+  cur = id;
+  $("#navline").innerHTML = "";
+  renderQ();
+}
+
+let lastCount = 0;
+function renderLedger(){
+  const grid = $("#cgrid"), on = S.done.has("zip");
+  const entering = on && !grid.classList.contains("rail");
+  grid.classList.toggle("rail", on);
+  if(!on){ lastCount = 0; $("#lgNum").textContent = 0; $("#lgNumM").textContent = 0; $("#lgList").innerHTML = ""; $("#ledger").classList.remove("open"); return; }
+  const m = matches(), n = m.length;
+  const base = entering && !RM ? 900 : 0;
+  setTimeout(() => { tween($("#lgNum"), lastCount, n); lastCount = n; }, base);
+  $("#lgNumM").textContent = n;
+  $("#lgSub").textContent = n === 1 ? "place that might help" : "places that might help";
+  $("#lgMap").innerHTML = mapSvg(S.inArea ? S.town : "");
+  let k = 0;
+  $("#lgList").innerHTML = m.map(r => {
+    const isNew = entering || !shownIds.has(r.p.id); shownIds.add(r.p.id);
+    return `<li style="--b:${base}ms;--i:${isNew ? k++ : 0};${isNew ? "" : "animation:none"}"><span class="nm">${esc(r.p.n)}</span><span class="fit ${r.fit}">${FIT[r.fit]}</span><span class="pv">${esc(r.p.p)}</span></li>`;
+  }).join("") || `<li class="lg-empty" style="display:block;border:0">Nothing in our list matches yet. Your plan will still include general places to start.</li>`;
+}
+function tween(el, a, b){
+  if(RM || a === b){ el.textContent = b; return; }
+  const t0 = performance.now(), d = 800;
+  const step = t => { const k = clamp((t - t0) / d, 0, 1), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(a + (b - a) * e); if(k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+}
+const TOWNS = {Amherst:[196,96],Northampton:[146,118],Easthampton:[132,152],Hadley:[172,112],Belchertown:[228,120],Ware:[254,144],"South Hadley":[180,166],Granby:[208,158],Hatfield:[150,84],Williamsburg:[110,92],Florence:[134,110],Leeds:[128,100],Haydenville:[116,98],Goshen:[90,72],Cummington:[62,78],Worthington:[60,110],Chesterfield:[88,102],"West Chesterfield":[78,96],Huntington:[70,152],Southampton:[110,164],Plainfield:[54,62],"Smith College":[148,122],"North Hatfield":[152,72],"West Hatfield":[140,86]};
+function mapSvg(town){
+  const at = TOWNS[town];
+  const dots = Object.values(TOWNS).map(([x, y]) => `<circle class="town" cx="${x}" cy="${y}" r="1.8"/>`).join("");
+  return `<svg class="dd" viewBox="0 0 300 214" aria-hidden="true">
+    <path class="f-wash" stroke-width="1.8" d="M40 58 C70 30 128 34 160 40 C200 30 250 40 268 70 C284 110 270 150 250 176 C220 196 170 190 140 196 C100 200 60 186 46 160 C30 130 24 90 40 58Z"/>
+    <path stroke-width="2.2" stroke-dasharray="1 5" d="M162 34 C150 80 170 110 158 140 C148 166 160 184 154 200" style="color:var(--door)"/>
+    ${dots}
+    ${at ? `<g class="here" style="transform:translate(${at[0]}px,${at[1]}px)"><path class="f-door" stroke-width="1.6" d="M0 0 C-9 -12 -10 -24 0 -26 C10 -24 9 -12 0 0Z" style="animation:popin .7s var(--e-spring) both"/><circle class="f-paper" cy="-17" r="3.4" stroke="none"/><text class="tlabel" x="10" y="-14">${esc(town)}</text></g>` : ""}
+    <text class="cap" x="16" y="208">Hampshire County · not to scale</text>
+  </svg>`;
+}
+
+/* Example, played for you */
+const SAMPLE = {name:"Maya", needs:["food","utilities"], zip:"01002", size:2, who:["60"], shutoff:"behind", housing:"rent", income:"u2500"};
+async function autoPlay(q){
+  const tok = autoTok; const live = () => auto && tok === autoTok;
+  await wait(1300); if(!live()) return;
+  const st = $("#qstage");
+  const press = async el => { el.classList.add("pressing"); await wait(160); el.classList.remove("pressing"); el.click(); await wait(420); };
+  if(q.kind === "text"){ const f = $("#f-name"); for(const ch of SAMPLE.name){ if(!live()) return; f.value += ch; await wait(110); } await wait(400); }
+  if(q.kind === "needs"){ for(const id of SAMPLE.needs){ if(!live()) return; await press(st.querySelector(`[data-opt="${id}"]`)); } }
+  if(q.kind === "zip"){ const f = $("#f-zip"); f.focus({preventScroll:true}); for(const ch of SAMPLE.zip){ if(!live()) return; f.value += ch; f.dispatchEvent(new Event("input")); await wait(170); } await wait(700); }
+  if(q.kind === "count"){ for(let i = (S.size || 1); i < SAMPLE.size; i++){ if(!live()) return; await press(st.querySelector("[data-inc]")); } await wait(300); }
+  if(q.kind === "multi"){ for(const id of SAMPLE.who){ if(!live()) return; await press(st.querySelector(`[data-opt="${id}"]`)); } }
+  if(q.kind === "single"){ if(!live()) return; await press(st.querySelector(`[data-opt="${SAMPLE[q.id]}"]`)); return; }
+  if(q.kind === "review") await wait(1400);
+  if(!live()) return;
+  const c = st.querySelector("[data-continue]"); if(c && !c.disabled) await press(c);
+}
+
+/* ═════════════ BUILDING ═════════════ */
+async function buildPlan(){
+  autoTok++;
+  const m = matches();
+  const town = S.inArea ? S.town : "Massachusetts";
+  const steps = [
+    ["Reading your answers", `${S.done.size} answers`],
+    [`Looking for programs near ${town}`, `${DATA.length} checked`],
+    ["Comparing what each one asks for", `${m.length} might fit`],
+    ["Putting your next steps in order", `${Math.min(3, planSteps(m).length)} to start`],
+  ];
+  const b = $("#bld");
+  b.classList.remove("exit");
+  b.innerHTML = `<p class="mono">One moment</p><h2>${rise(S.name ? `Putting your plan together, ${S.name}.` : "Putting your plan together.", 0, 60)}</h2>
+    <ol>${steps.map(([t, c]) => `<li><svg class="dd" viewBox="0 0 28 28" style="filter:none"><circle class="ring" cx="14" cy="14" r="11" pathLength="1"/><path class="ck" pathLength="1" stroke-width="2.6" d="M7 14.5 L12 19 L21 8.5"/></svg><span>${esc(t)}</span><span class="ct">${esc(c)}</span></li>`).join("")}</ol>
+    <p class="fine">Nothing is sent to any agency. This only reads the list our team checked.</p>`;
+  // simple crossfade from the conversation
+  views.chat.style.transition = "opacity .5s"; views.chat.style.opacity = 0;
+  await wait(500); views.chat.style.opacity = ""; views.chat.style.transition = "";
+  show("build");
+  const lis = $$("#bld li");
+  for(const li of lis){ li.classList.add("on"); await wait(760); li.classList.remove("on"); li.classList.add("ok"); await wait(120); }
+  await wait(450);
+  b.classList.add("exit");
+  await wait(550);
+  renderPlan();
+  show("plan");
+}
+
+/* ═════════════ PLAN ═════════════ */
+const DAY = new Intl.DateTimeFormat("en-US", {weekday:"long", month:"long", day:"numeric"});
+function renderPlan(){
+  const m = matches();
+  const steps = planSteps(m);
+  const stepIds = new Set(steps.map(s => s.p.id));
+  const rest = m.filter(r => !stepIds.has(r.p.id));
+  const needs = [...S.needs];
+  const town = S.inArea ? S.town : "you";
+  const nm = S.name;
+  const docs = []; const seenDoc = new Set();
+  steps.forEach(s => (s.p.docs || []).forEach(d => { const k = d.toLowerCase(); if(!seenDoc.has(k) && docs.length < 8){ seenDoc.add(k); docs.push({d, from:s.p.n}); } }));
+
+  const stepHtml = steps.map((s, i) => {
+    const p = s.p;
+    const bring = (p.docs || []).slice(0, 3);
+    const more = (p.docs || []).length - bring.length;
+    return `<li class="step${s.urgent ? " urgent" : ""}" style="--i:${i}" data-step="${p.id}">
+      <div class="num"><svg class="dd" viewBox="0 0 100 100"><path pathLength="1" d="M52 8 C78 6 95 27 93 51 C91 76 71 94 47 92 C21 90 6 70 8 46 C10 23 30 7 58 11"/></svg>${i + 1}</div>
+      <div>
+        <p class="kick mono">${s.urgent ? `<span class="urg">Today</span>` : "This week"}<span>${FIT[s.fit]}</span></p>
+        <h3>${esc(p.n)}<svg class="dd strike" viewBox="0 0 200 14" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" stroke-width="3" d="M2 8 C50 3 130 11 198 5"/></svg></h3>
+        <p class="prov">${esc(p.p)}</p>
+      </div>
+      <div class="body">
+        <dl>
+          <dt>What it is</dt><dd>${esc(p.d)}</dd>
+          <dt>Why it's here</dt><dd>${esc(s.why)}</dd>
+          ${bring.length ? `<dt>Bring</dt><dd><div class="bring">${bring.map(d => `<span>${esc(shortDoc(d))}</span>`).join("")}${more > 0 ? `<span>+${more} more</span>` : ""}</div></dd>` : ""}
+        </dl>
+        <div class="acts">
+          ${p.tel ? `<span class="phone"><b>${esc(p.tel)}</b><button data-copy="${esc(p.tel)}">Copy</button></span>` : ""}
+          ${p.url ? `<a class="txt-btn" href="${esc(p.url)}" target="_blank" rel="noopener">Program website ↗</a>` : ""}
+        </div>
+        <details class="say"><summary><svg class="dd" viewBox="0 0 14 14" style="filter:none"><path d="M5 3 L9 7 L5 11"/></svg>What to say when you call</summary>
+          <blockquote>"Hi${nm ? `, my name is ${esc(nm)}` : ""}. I'm calling about ${esc(p.n)}. I'd like to find out if my household can apply, and what I should bring."</blockquote></details>
+        <button class="done-btn" data-done aria-pressed="false"><i><svg viewBox="0 0 16 16"><path pathLength="1" d="M3 8.5 L6.5 12 L13 4"/></svg></i>Mark as done</button>
+      </div>
+    </li>`;
+  }).join("");
+
+  const groups = needs.map(n => {
+    const rows = rest.filter(r => r.need === n);
+    if(!rows.length) return "";
+    return `<div class="group"><h3>${dd(n, "sm")}${esc(NEED[n].label)}</h3><ul class="prog-list">${rows.map(r => `<li><span class="nm">${esc(r.p.n)}</span><span class="fit ${r.fit}">${FIT[r.fit]}</span><span class="ds">${esc(r.p.d)}</span><span class="mt"><span>${esc(r.p.p)}</span>${r.p.tel ? `<span>${esc(r.p.tel)}</span>` : ""}${r.p.url ? `<a href="${esc(r.p.url)}" target="_blank" rel="noopener">Website ↗</a>` : ""}</span></li>`).join("")}</ul></div>`;
+  }).join("");
+
+  const needWords = list(needs.map(n => NEED[n].label.toLowerCase()));
+  const sharpen = !S.income ? `<section class="sharpen">${dd("idea")}<div><b>One more answer would sharpen this.</b><p>A rough monthly income lets us say more about ${m.filter(r => r.fit === "info").length || "several"} programs marked "Need more info".</p></div><button class="btn quiet" data-edit="income">Add income</button></section>` : "";
+
+  views.plan.innerHTML = `<div class="plan">
+    <aside class="p-rail">
+      <a class="mark" href="#" data-home><svg aria-hidden="true"><use href="#i-door"/></svg>OpenDoor</a>
+      <nav aria-label="Your plan">
+        <a href="#p-steps" class="cur">Start here <small>${steps.length}</small></a>
+        <a href="#p-programs">Places that might help <small>${rest.length}</small></a>
+        <a href="#p-papers">Papers to gather <small>${docs.length}</small></a>
+        <a href="#" data-edit="review">Your answers</a>
+      </nav>
+      <div class="bottom">
+        <p class="crisis">In danger? Call <b>911</b>. Crisis support: call or text <b>988</b>.</p>
+        <p>Nothing here is saved or sent. Close the page and it's gone.</p>
+      </div>
+    </aside>
+    <main class="p-main"><div class="p-sheet">
+      <header class="p-head">
+        <div>
+          <p class="mono">${esc(DAY.format(new Date()))}${S.inArea ? ` · ${esc(S.town)}, MA` : ""}</p>
+          <h1>${rise(nm ? `Here's your plan, |${nm}.|` : "Here's your plan.", 250, 70)}</h1>
+          <p class="lede">We found <b>${m.length} place${m.length === 1 ? "" : "s"}</b> near ${esc(town)} that might help with ${esc(needWords)}. Start with ${steps.length === 1 ? "this one" : `these ${steps.length}`}${steps.some(s => s.urgent) ? ", the first one today" : " this week"}. The rest can wait.</p>
+        </div>
+        <div class="pdoor" aria-live="polite">
+          <div class="frame"><div class="light"></div><div class="leaf"><div id="pleaf"></div></div><svg class="dd" viewBox="0 0 120 150" aria-hidden="true"><path stroke-width="2.4" d="M10 148 L12 8 C44 4 78 4 110 7 L108 148"/><path d="M2 148 C40 146 80 149 118 147"/></svg></div>
+          <p id="pdoorL">0 of ${steps.length} done</p>
+        </div>
+      </header>
+
+      <section class="p-sec" id="p-steps"><header><h2>Start here</h2><p>In this order. Each one takes a phone call or a short form.</p></header><ol class="steps">${stepHtml || `<li class="lg-empty">We didn't find a close match. Try adding another need.</li>`}</ol></section>
+
+      ${groups ? `<section class="p-sec" id="p-programs"><header><h2>Also worth a look</h2><p>When you have a moment. Grouped by what you told us.</p></header><div class="groups">${groups}</div></section>` : ""}
+
+      ${docs.length ? `<section class="p-sec" id="p-papers"><header><h2>Papers to gather</h2><p>What the programs above ask for. Tick them off as you find them.</p></header><ul class="papers">${docs.map((d, i) => `<li><label><input type="checkbox" id="doc-${i}"><span>${esc(d.d)}<small>For ${esc(d.from)}</small></span></label></li>`).join("")}</ul></section>` : ""}
+
+      ${sharpen}
+      <p class="fineprint">Each label is a first look based on your answers and what each program publishes. It isn't a decision. Only the program can tell you if you qualify. Program details come from a list our team checked by hand, with a link to each source.</p>
+    </div></main>
+  </div>`;
+
+  // interactions
+  const total = steps.length;
+  const updDoor = () => {
+    const done = $$(".step.done", views.plan).length;
+    $("#pleaf").style.setProperty("--o", total ? (done / total) * 78 : 0);
+    $("#pdoorL").textContent = done === total && total ? "All done. Nicely done." : `${done} of ${total} done`;
+  };
+  setTimeout(() => $("#pleaf") && $("#pleaf").style.setProperty("--o", 8), 900);
+  views.plan.querySelectorAll("[data-done]").forEach(b => b.addEventListener("click", () => {
+    const li = b.closest(".step"); const on = li.classList.toggle("done");
+    b.setAttribute("aria-pressed", on); b.lastChild.textContent = on ? "Done" : "Mark as done";
+    updDoor(); if(on) toast("Marked as done");
+  }));
+  views.plan.querySelectorAll("[data-copy]").forEach(b => b.addEventListener("click", async () => {
+    const t = b.dataset.copy;
+    try { await navigator.clipboard.writeText(t); toast("Number copied"); }
+    catch { const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Number selected. Copy it from here."); }
+  }));
+  const links = $$(".p-rail nav a[href^='#p-']", views.plan);
+  links.forEach(a => a.addEventListener("click", e => { e.preventDefault(); const t = $(a.getAttribute("href")); t && window.scrollTo({top: t.getBoundingClientRect().top + scrollY - 24, behavior: RM ? "auto" : "smooth"}); }));
+  if("IntersectionObserver" in window){
+    const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ links.forEach(a => a.classList.toggle("cur", a.getAttribute("href") === "#" + e.target.id)); } }), {rootMargin:"-40% 0px -55% 0px"});
+    $$(".p-sec", views.plan).forEach(s => io.observe(s));
+  }
+}
+function shortDoc(d){ const s = d.split(/[(:;,]| for | showing /)[0].trim(); return s.length > 48 ? s.slice(0, 46) + "…" : s; }
+
+/* ═════════════ Global wiring ═════════════ */
+document.addEventListener("click", e => {
+  const t = e.target.closest("button, a"); if(!t) return;
+  if(t.matches("[data-start]")) return startFlow(t);
+  if(t.matches("[data-sample]")) return startFlow(t, {sample:true});
+  if(t.matches("[data-need]")) return startFlow(t, {needs:[t.dataset.need]});
+  if(t.matches("[data-phrase]")) return startFlow(t, {typed:t.dataset.phrase});
+  if(t.matches("[data-rel]")){ S.needs.add(t.dataset.rel); t.classList.add("added"); t.textContent = "✓ " + NEED[t.dataset.rel].label; t.disabled = true; renderLedger(); renderTranscript(); progress(); return; }
+  if(t.matches("#lgToggle")){ const l = $("#ledger"); const o = l.classList.toggle("open"); t.setAttribute("aria-expanded", o); return; }
+  if(t.matches("[data-edit]")){ e.preventDefault(); return edit(t.dataset.edit); }
+  if(t.matches("[data-home]")){ e.preventDefault(); autoTok++; auto = false; show("land"); return; }
+  if(t.matches("[data-restart]")){ autoTok++; auto = false; S = fresh(); shownIds = new Set(); lastCount = 0; $("#autobar").hidden = true; $("#transcript").innerHTML = ""; $("#navline").innerHTML = ""; renderLedger(); cur = "name"; renderQ(); return; }
+  if(t.matches("[data-leave]")){ autoTok++; auto = false; S = fresh(); setTimeout(() => show("land"), 50); return; }
+  if(t.matches("#takeover")){ autoTok++; auto = false; $("#autobar").hidden = true; return; }
+  if(t.matches("[data-jump]")){
+    t.closest("details").open = false;
+    const j = t.dataset.jump;
+    autoTok++; auto = false;
+    if(j === "land") return show("land");
+    if(j === "chat") return startFlow(null);
+    if(j === "sample") return startFlow(null, {sample:true});
+    if(j === "plan"){
+      S = fresh(); S.name = SAMPLE.name; SAMPLE.needs.forEach(n => S.needs.add(n)); S.zip = SAMPLE.zip; S.town = ZIPS[SAMPLE.zip]; S.inArea = true;
+      S.size = SAMPLE.size; SAMPLE.who.forEach(w => S.who.add(w)); S.shutoff = SAMPLE.shutoff; S.housing = SAMPLE.housing; S.income = SAMPLE.income;
+      ["name","needs","zip","size","who","shutoff","housing","income"].forEach(id => S.done.add(id));
+      renderPlan(); show("plan"); return;
+    }
+  }
+});
+
+initLanding();
+renderLedger();
+})();
+</script>
+
+</body>
+</html>

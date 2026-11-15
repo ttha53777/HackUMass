@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "sync:fixture": "node scripts/sync-fixture.mjs"
+    "sync:fixture": "node scripts/sync-fixture.mjs",
+    "sync:programs": "node scripts/sync-programs.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
