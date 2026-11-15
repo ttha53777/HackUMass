@@ -30,6 +30,8 @@ export type Sheet =
   | { type: "bank" }
   /** The form helper on one program's form. */
   | { type: "form"; id: string }
+  /** The Filler (v2), full screen: the practice form for now. */
+  | { type: "filler" }
   | { type: "chat" };
 
 type HubController = {

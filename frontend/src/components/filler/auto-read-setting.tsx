@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 
-import { Doodle } from "@/components/hub/icons";
+import { useHub } from "@/components/hub/hub-state";
+import { Arrow, Doodle } from "@/components/hub/icons";
 import { Switch } from "@/components/hub/paper-sheets";
 
 import { ConsentDialog } from "./consent-dialog";
@@ -11,6 +12,7 @@ import { useFiller } from "./filler-context";
 /** "Read my papers automatically": off by default; turning it on shows the notice first. */
 export function AutoReadSetting() {
   const filler = useFiller();
+  const { openSheet } = useHub();
   const [asking, setAsking] = useState(false);
   const on = !!filler.state?.auto_read.on;
   const papers = filler.state?.papers ?? [];
@@ -51,6 +53,9 @@ export function AutoReadSetting() {
         </span>
         <span>Kept for this visit only</span>
       </div>
+      <button className="txt-btn fl-try" type="button" onClick={() => openSheet({ type: "filler" })}>
+        Watch it fill a practice form <Arrow />
+      </button>
       {filler.error ? <p className="fl-error" role="alert">{filler.error}</p> : null}
       <ConsentDialog
         open={asking}

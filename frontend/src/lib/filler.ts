@@ -106,3 +106,69 @@ export function kindHint(kinds: string[]): string | null {
   for (const k of kinds) if (HINTS[k]) return HINTS[k];
   return null;
 }
+
+// -- fill runs (phase 3-4) ------------------------------------------------------------
+
+export type FillerRunStatus =
+  | "preparing" | "ready" | "filling" | "needs_answer" | "paused" | "needs_you"
+  | "review" | "verifying" | "done" | "stopped" | "failed";
+export const RUN_ACTIVE: FillerRunStatus[] = ["preparing", "ready", "filling", "needs_answer", "paused", "needs_you", "review", "verifying"];
+/** The person may click and type in the live view. */
+export const RUN_INTERACTIVE: FillerRunStatus[] = ["needs_you", "review"];
+
+export type PlanRow = { label: string; how: "fill" | "ask" | "skip" | "yours"; key?: string; source?: string | null };
+
+export type FillerRun = {
+  run_id: string;
+  status: FillerRunStatus;
+  message: string | null;
+  question: { key: string; label: string; text: string } | null;
+  handoff: { reason: string; text: string } | null;
+  filled: { key: string; label: string }[];
+  outcome: { status: "submitted" | "not_submitted"; confirmation: string | null } | null;
+  plan: PlanRow[] | null;
+  first_type_seconds: number | null;
+  used_model: boolean;
+  seconds_left: number;
+};
+
+/** Events on the live WebSocket. */
+export type LiveEvent =
+  | { type: "frame"; data: string; width: number; height: number }
+  | { type: "cursor"; x: number; y: number; kind: "move" | "click" }
+  | { type: "step"; caption: string; field_key?: string }
+  | { type: "status"; status: FillerRunStatus; message?: string }
+  | { type: "checklist"; filled: string[] }
+  | { type: "question"; key: string; label: string; text: string }
+  | { type: "handoff"; reason: string; text: string }
+  | { type: "plan"; rows: PlanRow[] }
+  | { type: "end" };
+
+const runs = (sessionId: string) => `${base(sessionId)}/runs`;
+
+export function startFillerRun(sessionId: string, prepare = true): Promise<FillerRun> {
+  return apiRequest(runs(sessionId), json("POST", { prepare }));
+}
+
+export function getFillerRun(sessionId: string, runId: string): Promise<FillerRun> {
+  return apiRequest(`${runs(sessionId)}/${encodeURIComponent(runId)}`);
+}
+
+export function answerFillerRun(sessionId: string, runId: string, body: { value?: string; skip?: boolean }): Promise<FillerRun> {
+  return apiRequest(`${runs(sessionId)}/${encodeURIComponent(runId)}/answer`, json("POST", body));
+}
+
+export type RunControl = "go" | "pause" | "resume" | "take" | "return" | "done";
+export function controlFillerRun(sessionId: string, runId: string, action: RunControl): Promise<FillerRun> {
+  return apiRequest(`${runs(sessionId)}/${encodeURIComponent(runId)}/control`, json("POST", { action }));
+}
+
+export function stopFillerRun(sessionId: string, runId: string): Promise<FillerRun> {
+  return apiRequest(`${runs(sessionId)}/${encodeURIComponent(runId)}/stop`, { method: "POST" });
+}
+
+/** Same origin: Next.js forwards /api (WebSocket upgrades included) to the backend. */
+export function liveUrl(sessionId: string, runId: string): string {
+  const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
+  return `${scheme}//${window.location.host}/api${runs(sessionId)}/${encodeURIComponent(runId)}/live`;
+}

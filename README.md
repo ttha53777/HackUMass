@@ -149,6 +149,8 @@ Phases 3 and 3.5, filling a form. `POST /sessions/{id}/filler/runs` fills the pr
 | `POST /{run_id}/stop` | Stop and release the browser. Nothing is sent. |
 | `WS /{run_id}/live` | Frames, cursor, steps, questions, hand-offs; the person's clicks and keys during a hand-off or the review. |
 
+Phase 4, the viewer. On Papers, **Watch it fill a practice form** opens the Filler full screen (`frontend/src/components/filler/filler-stage.tsx`): the live browser with the agent's cursor on the left; on the right the pre-flight card (what it will fill and from which paper, what it will ask, what is the person's), one question at a time, the hand-off banner with **Hand back**, the field checklist and a caption per action. **Pause**, **Take over** and **Stop** are always there. During a hand-off and at the review the person clicks, scrolls and types right in the live view; the review outlines every filled field, and the person presses the form's own Submit, then **I've sent it**. The stream is the run's WebSocket, through the same `/api` rewrite.
+
 Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. These dev routes answer requests from this machine only.
 
 | Call | Purpose |
@@ -258,7 +260,7 @@ backend/app/execution/             browser assistant: gate, agent loop, computer
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
 backend/app/filler/                Form-Fill Agent v2: consent, paper reading, cloud browser,
                                    live stream, agent loop
-frontend/src/components/filler/    Filler UI: auto-read setting, consent notice, review card
+frontend/src/components/filler/    Filler UI: auto-read setting, consent notice, review card, live viewer stage
 backend/app/api/filler_routes.py   Filler dev routes and live viewer (mounted only when enabled)
 backend/scripts/spikes/            Phase 0 spikes: Gemini Computer Use, Steel, real forms
 backend/app/api/views.py           builds the client snapshot from graph state
