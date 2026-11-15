@@ -322,3 +322,28 @@ def test_confirmed_excludes_details_from_papers_no_longer_consented():
     assert "employer" in state.confirmed()
     paper.consent = None  # as if revoked without the cleanup
     assert "employer" not in state.confirmed()
+
+
+def test_turning_auto_read_on_reads_the_papers_already_saved(client, reader):
+    """Papers added before the setting was on are read when it is turned on (not only new uploads)."""
+    sid = new_session(client)
+    upload(client, sid, PAY_STUB)
+    upload(client, sid, LEASE)
+    assert reader.requests == []  # off: nothing read
+    client.put(url(sid, "/auto-read"), json={"on": True})
+    state = settled(client, sid)
+    assert len(reader.requests) == 2
+    assert all(p["status"] == "done" and p["can_read"] for p in state["papers"])
+    assert {"monthly_income", "monthly_rent"} <= set(details(state))
+
+
+def test_the_same_file_is_never_added_or_read_twice(client, reader):
+    """A second tab, or a reload, sends the device's papers again: they map to the same paper."""
+    sid = new_session(client)
+    client.put(url(sid, "/auto-read"), json={"on": True})
+    first = upload(client, sid, PAY_STUB)
+    settled(client, sid)
+    again = upload(client, sid, PAY_STUB, name="pay-stub-copy.pdf")
+    state = settled(client, sid)
+    assert again == first and len(state["papers"]) == 1
+    assert len(reader.requests) == 1

@@ -101,7 +101,15 @@ export function forgetDetail(sessionId: string, key: string): Promise<FillerStat
 
 /** The Filler reads PDFs and photos; the wallet's kinds map to its paper kinds as a hint. */
 export const FILLER_TYPES = new Set(["application/pdf", "image/png", "image/jpeg"]);
-const HINTS: Record<string, string> = { income: "pay_stub", member_income: "pay_stub", id: "state_id", dob: "state_id", lease: "lease" };
+const HINTS: Record<string, string> = {
+  income: "pay_stub",
+  member_income: "pay_stub",
+  id: "state_id",
+  dob: "household_list",
+  lease: "lease",
+  heat: "utility_bill",
+  address: "address_letter",
+};
 export function kindHint(kinds: string[]): string | null {
   for (const k of kinds) if (HINTS[k]) return HINTS[k];
   return null;

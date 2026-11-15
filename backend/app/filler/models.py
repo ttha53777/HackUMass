@@ -16,9 +16,11 @@ Scope = Literal["identity", "contact", "income", "household", "housing"]
 SCOPES: tuple[Scope, ...] = ("identity", "contact", "income", "household", "housing")
 NOTICE_VERSION = "2026-11-15"
 
-PaperKind = Literal["pay_stub", "state_id", "lease", "other"]
-PAPER_KINDS: tuple[PaperKind, ...] = ("pay_stub", "state_id", "lease", "other")
-KIND_LABEL = {"pay_stub": "pay stub", "state_id": "ID", "lease": "lease", "other": "paper"}
+PaperKind = Literal["pay_stub", "state_id", "lease", "utility_bill", "household_list", "address_letter", "other"]
+PAPER_KINDS: tuple[PaperKind, ...] = ("pay_stub", "state_id", "lease", "utility_bill", "household_list",
+                                      "address_letter", "other")
+KIND_LABEL = {"pay_stub": "pay stub", "state_id": "ID", "lease": "lease", "utility_bill": "utility bill",
+              "household_list": "household list", "address_letter": "proof of address", "other": "paper"}
 
 PaperStatus = Literal["waiting", "queued", "reading", "done", "failed"]
 DetailStatus = Literal["proposed", "confirmed"]
@@ -129,8 +131,9 @@ CATALOGUE: dict[str, DetailSpec] = {
     "city": DetailSpec("city", "contact", _text(60), "city or town"),
     "state": DetailSpec("state", "contact", _state, "two-letter US state code"),
     "zip": DetailSpec("ZIP code", "contact", _zip, "5-digit ZIP code"),
-    "phone": DetailSpec("phone number", "contact", _phone, "the person's phone number"),
-    "email": DetailSpec("email", "contact", _email, "the person's email address"),
+    "phone": DetailSpec("phone number", "contact", _phone,
+                        "the person's own phone number (never an employer's, landlord's, agency's or company's)"),
+    "email": DetailSpec("email", "contact", _email, "the person's own email address"),
     "employer": DetailSpec("employer", "income", _text(80), "employer's name"),
     "monthly_income": DetailSpec("monthly income", "income", _money(0, 1_000_000),
                                  "gross pay per month in dollars, converted from the pay period shown"),
@@ -147,6 +150,9 @@ KIND_KEYS: dict[str, tuple[str, ...]] = {
     "state_id": ("full_name", "first_name", "last_name", "date_of_birth", "street_address", "city", "state", "zip"),
     "lease": ("full_name", "first_name", "last_name", "street_address", "city", "state", "zip",
               "monthly_rent", "landlord_name", "household_size"),
+    "utility_bill": ("full_name", "first_name", "last_name", "street_address", "city", "state", "zip", "phone", "email"),
+    "household_list": ("household_size", "street_address", "city", "state", "zip"),
+    "address_letter": ("full_name", "first_name", "last_name", "street_address", "city", "state", "zip"),
     "other": (),
 }
 
@@ -195,6 +201,7 @@ class Paper:
     found: int = 0
     message: str | None = None
     data: bytes | None = field(default=None, repr=False)  # dropped as soon as it has been read
+    digest: str = field(default="", repr=False)  # sha256 of the file: the same file is never added twice
 
     def view(self) -> dict[str, Any]:
         return {

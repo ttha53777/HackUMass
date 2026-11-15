@@ -41,7 +41,7 @@ export function AutoReadSetting() {
               </>
             ) : (
               <>
-                <b>Off.</b> Nothing is read unless you switch on a single paper below.
+                <b>Off.</b> Nothing is read unless you switch on a single paper below. Turning this on reads the papers you already saved too.
               </>
             )}
           </p>
@@ -90,7 +90,7 @@ export function AutoReadSetting() {
       <ConsentDialog
         open={asking}
         title="Read your papers automatically?"
-        lead="Each paper you add will be read straight away for the details below, so the Filler is ready when you start a form."
+        lead="Your saved papers, and each one you add, will be read straight away for the details below, so the Filler is ready when you start a form."
         confirmLabel="Read my papers"
         onCancel={() => setAsking(false)}
         onConfirm={(scopes) => {

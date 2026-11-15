@@ -15,6 +15,7 @@ when the session itself is gone. Nothing is saved between sessions.
 
 from __future__ import annotations
 
+import hashlib
 import secrets
 import time
 from dataclasses import dataclass, field
@@ -52,9 +53,14 @@ class FillerSession:
     # -- papers ------------------------------------------------------------------
 
     def add_paper(self, mime: str, pages: int, data: bytes, kind_hint: str | None) -> Paper:
+        """Add a paper, or return the one already here with the same file (a second tab, a reload)."""
+        digest = hashlib.sha256(data).hexdigest()
+        for existing in self.papers.values():
+            if existing.digest == digest:
+                return existing
         if len(self.papers) >= MAX_PAPERS:
             raise ConsentError(f"You can add up to {MAX_PAPERS} papers. Remove one first.")
-        paper = Paper(id=secrets.token_urlsafe(9), mime=mime, pages=pages, kind_hint=kind_hint, data=data)
+        paper = Paper(id=secrets.token_urlsafe(9), mime=mime, pages=pages, kind_hint=kind_hint, data=data, digest=digest)
         if self.auto_read.on and self.auto_read.consent is not None:
             paper.consent = Consent(self.auto_read.consent.scopes, self.auto_read.consent.notice_version)
             self.auto_consented.add(paper.id)
@@ -92,12 +98,23 @@ class FillerSession:
         paper.status, paper.found, paper.message = "waiting", 0, None
         return paper
 
-    def set_auto_read(self, on: bool, scopes: frozenset[str], notice_version: str) -> list[Paper]:
-        """Turn auto-read on or off. Returns the papers whose consent was taken back."""
+    def set_auto_read(self, on: bool, scopes: frozenset[str], notice_version: str) -> tuple[list[Paper], list[Paper]]:
+        """Turn auto-read on or off. Returns (papers now to read, papers whose consent was taken back).
+
+        On covers the papers already here too: every paper without its own consent gets the
+        auto-read consent (the notice says so), so it is read now, not only future uploads."""
         taken: list[Paper] = []
+        granted: list[Paper] = []
         if on:
             self.auto_read = AutoRead(True, Consent(scopes, notice_version))
-            return taken
+            for paper in self.papers.values():
+                if paper.consent is None:
+                    paper.consent = Consent(scopes, notice_version)
+                    self.auto_consented.add(paper.id)
+                    granted.append(paper)
+                elif paper.id in self.auto_consented:  # scopes changed: follow them
+                    paper.consent = Consent(scopes, notice_version)
+            return granted, taken
         self.auto_read = AutoRead(False, None)
         for paper_id in list(self.auto_consented):
             paper = self.papers.get(paper_id)
@@ -105,7 +122,7 @@ class FillerSession:
                 self.revoke(paper_id)
                 taken.append(paper)
         self.auto_consented.clear()
-        return taken
+        return granted, taken
 
     def may_read(self, paper: Paper, consent: Consent | None) -> bool:
         """True while `consent` is still the paper's live consent (not revoked or replaced)."""

@@ -113,8 +113,11 @@ async def set_auto_read(session_id: str, request: Request, body: AutoReadIn = Bo
         scopes = scopes_from(body.scopes)
     except ConsentError as exc:
         raise ApiError(422, "bad_scopes", str(exc)) from exc
-    for paper in state.set_auto_read(body.on, scopes, body.notice_version):
+    granted, taken = state.set_auto_read(body.on, scopes, body.notice_version)
+    for paper in taken:
         _jobs(request).cancel(paper.id)
+    for paper in granted:  # papers already here are read now
+        _jobs(request).schedule(state, paper)
     return _out(state)
 
 
@@ -133,7 +136,7 @@ async def add_paper(session_id: str, request: Request, file: UploadFile = File(.
         raise ApiError(409, "too_many_papers", str(exc)) from exc
     finally:
         del data
-    if paper.consent is not None:  # auto-read is on: read it now
+    if paper.consent is not None and paper.status == "waiting":  # auto-read is on and it's new: read it now
         _jobs(request).schedule(state, paper)
     return JSONResponse({**state.view(), "paper_id": paper.id}, status_code=201, headers=NO_STORE)
 
