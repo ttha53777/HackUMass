@@ -312,3 +312,39 @@ def test_unclaimed_readings_expire(monkeypatch):
     ref = inbox.put(read_document("x.txt", b"Household size: 2", "dob").extraction)
     clock[0] += documents.INBOX_TTL_SECONDS + 1
     assert inbox.pop(ref) is None
+
+
+# --- another member's income adds to the household's (Rosa's benefit letter) ----
+
+
+@pytest.mark.parametrize("order", [("pay-stub", "benefit-letter"), ("benefit-letter", "pay-stub")])
+def test_a_benefit_letter_adds_to_the_wages_in_either_order(client, order):
+    kinds = {"pay-stub": "income", "benefit-letter": "member_income"}
+    sid = start(client, income=False)
+    for name in order:
+        snap = upload(client, sid, f"{name}.pdf", paper(name), kinds[name]).json()
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert profile.facts["monthly_income"].value == 2290 and not profile.facts["monthly_income"].confirmed
+    assert not any(c.field == "monthly_income" for c in profile.conflicts)  # added, not compared
+    assert "Rosa" not in str(snap["identity"]) and "Rosa" not in str(client.app.state.sessions.values(sid))
+    income_rows = [r for review in snap["pending_reviews"] for r in review["rows"] if r["field"] == "monthly_income"]
+    assert [r["value"] for r in income_rows] == [2290]  # one card carries the household total
+
+
+def test_the_household_total_meets_what_was_typed(client):
+    sid = start(client)  # typed $1,240
+    upload(client, sid, "pay-stub.pdf", paper("pay-stub"), "income")
+    snap = upload(client, sid, "benefit-letter.pdf", paper("benefit-letter"), "member_income").json()
+    profile = client.app.state.sessions.values(sid)["profile"]
+    conflict = next(c for c in profile.conflicts if c.field == "monthly_income")
+    assert sorted(c.value for c in conflict.candidates) == [1240, 2290]
+    assert snap["pending_question"]["id"] == "confirm_monthly_income"
+
+
+def test_two_wage_papers_are_never_added():
+    from app.agents.user_intelligence import household_income
+
+    a = read_document("a.txt", b"Gross monthly pay: $1,000", "income").extraction
+    b = read_document("b.txt", b"Gross monthly pay: $1,100", "income").extraction
+    fact, included = household_income(b, [a, b])
+    assert fact.value == 1100 and included == set()

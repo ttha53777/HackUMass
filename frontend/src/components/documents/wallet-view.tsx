@@ -160,21 +160,23 @@ export function WalletView() {
     [details, readPaper, whenIdle],
   );
 
-  const readable = (row: Row) => !!row.paper && isReadable(row.paper) && READABLE_KINDS.has(row.kind);
 
   /** "Build my profile from my papers": read every readable paper in turn, then show the review cards. */
   const readAll = async () => {
-    // One read per file: a lease that also counts as proof of address is read as a lease.
-    const seen = new Set<string>();
-    const queue = rows.filter((r) => readable(r) && !seen.has(r.paper!.id) && !!seen.add(r.paper!.id)).slice(0, 8);
+    // Every readable file once, as its own first readable kind (a lease that also
+    // counts as proof of address is read as a lease). Papers no application lists,
+    // like a household member's benefit letter, are read too.
+    const queue = papers
+      .filter(isReadable)
+      .map((paper) => ({ paper, kind: paper.kinds.find((k) => READABLE_KINDS.has(k)) }))
+      .filter((q): q is { paper: Paper; kind: string } => !!q.kind)
+      .slice(0, 8);
     if (!queue.length) return toast("Add a PDF of a pay stub, lease, bill or ID first.");
     let problem: string | null = null;
     setReadingAll({ done: 0, total: queue.length });
     try {
-      for (const [i, row] of queue.entries()) {
-        // The file's own first kind (how it was added), not whichever row listed it first.
-        const kind = row.paper!.kinds.find((k) => READABLE_KINDS.has(k)) ?? row.kind;
-        problem = (await readOne(row.paper!, kind)) ?? problem;
+      for (const [i, { paper, kind }] of queue.entries()) {
+        problem = (await readOne(paper, kind)) ?? problem;
         setReadingAll({ done: i + 1, total: queue.length });
       }
     } finally {
@@ -395,7 +397,7 @@ export function WalletView() {
                   <option value="name">Name</option>
                 </select>
               </label>
-              {rows.some(readable) ? (
+              {papers.some((p) => isReadable(p) && p.kinds.some((k) => READABLE_KINDS.has(k))) ? (
                 <button type="button" className={btn("ghost", "sm")} disabled={!!readingAll || working} onClick={() => void readAll()}>
                   <FileSearch aria-hidden className="size-4" />{" "}
                   {readingAll ? `Reading ${readingAll.done + 1 > readingAll.total ? readingAll.total : readingAll.done + 1} of ${readingAll.total}…` : "Build my profile from my papers"}

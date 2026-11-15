@@ -240,6 +240,10 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
         if known_kind and fits:
             reading = read_kind(known_kind, text)
             other = {k: v for k, v in reading.facts.items() if k in allowed or k.startswith("_")}
+            # A kind-specific income line (a benefit letter) fills a gap the shared patterns left.
+            kind_income = other.pop("monthly_income", None)
+            if kind_income is not None and numbers.monthly_income is None:
+                numbers = _in_range(numbers.model_copy(update={"monthly_income": kind_income}))
             identity = reading.identity
             notes += [n for n in reading.notes if n not in notes]
     finally:
