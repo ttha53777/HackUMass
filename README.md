@@ -275,7 +275,7 @@ Where to make changes:
 - **A ZIP code is "outside coverage".** With `PROGRAM_SOURCE=fixtures` only ZIP `00000` is supported; with `curated`, only the Hampshire County ZIPs in `backend/app/data/regions.json`.
 - **`409 session_busy`.** The previous answer is still being processed. Poll `GET /sessions/{id}` until `busy` is false.
 - **`Cannot find name 'LayoutProps'` from `tsc`.** Run `npm run typecheck`, which generates Next.js route types first, instead of calling `tsc` directly.
-- **`404 session_not_found` after a restart.** Sessions live in memory, so restarting the backend clears them. Start a new session.
+- **`404 session_not_found` after a restart.** Sessions live in memory, so restarting the backend clears them. Start a new session, or keep sessions across restarts while developing: `DEV_SESSION_FILE=.dev-sessions.json .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (the `backend` entry in `.claude/launch.json` does this). The file holds answers: it is git-ignored, and must never be set on a shared or deployed server. Delete it to start clean. The browser keeps its session id in `localStorage`, so new tabs reopen the same session.
 
 - **`/api/health` says `llm_mode: off` although `LLM_MODE=live`.** `GEMINI_API_KEY` is missing or empty in `backend/.env`. The app uses its template wording, which gives the same statuses, links and order. Restart the backend after setting the key.
 - **"The bank sandbox didn't respond…" or "…has no copy of this simulated profile yet".** Nessie is unreachable, or the sandbox was never seeded for this key. The built-in simulated persona is used instead. To seed it: `cd backend && .venv/bin/python scripts/seed_nessie.py` (this writes fictional records to the shared sandbox).
@@ -285,6 +285,7 @@ Where to make changes:
 ## OpenDoor UI notes
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
+- Light/dark: follows the system until the sun/moon button (sidebar, mobile header, front door) is used; the choice is kept in `localStorage` (`crn.theme`).
 - Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`. The old `/legacy` UI was retired in Phase 6.
 - Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../interpret` reads what people type in the chat intake; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear in the chat intake's "checking programs" message and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.

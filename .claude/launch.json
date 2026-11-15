@@ -4,13 +4,19 @@
     {
       "name": "backend",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd backend && .venv/bin/uvicorn app.main:app --port 8000 --env-file .env"],
+      "runtimeArgs": [
+        "-c",
+        "cd backend && DEV_SESSION_FILE=.dev-sessions.json .venv/bin/uvicorn app.main:app --port 8000 --env-file .env"
+      ],
       "port": 8000
     },
     {
       "name": "frontend",
       "runtimeExecutable": "sh",
-      "runtimeArgs": ["-c", "cd frontend && npm run dev"],
+      "runtimeArgs": [
+        "-c",
+        "cd frontend && npm run dev"
+      ],
       "port": 3000
     }
   ]

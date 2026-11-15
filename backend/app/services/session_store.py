@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from app.graph import state as state_module
 from app.graph.build import run_config
+from app.services import dev_sessions
 from app.services.llm import get_llm
 from app.services.log_safety import describe_exception
 from app.services.wording import Key, WordingCache, pending_slots, remember, rewrite
@@ -107,11 +108,20 @@ class SessionMeta:
 
 
 class SessionManager:
-    def __init__(self, graph: Any, checkpointer: Any) -> None:
+    def __init__(self, graph: Any, checkpointer: Any, *, session_file: Any = None) -> None:
         self._graph = graph
         self._checkpointer = checkpointer
         self._sessions: dict[str, SessionMeta] = {}
         self._tasks: set[asyncio.Task] = set()
+        # Dev only (services/dev_sessions.py): sessions survive a backend restart.
+        self._session_file = session_file
+        if session_file is not None:
+            for session_id in dev_sessions.load(checkpointer, session_file):
+                self._sessions[session_id] = SessionMeta()
+
+    def _persist(self) -> None:
+        if self._session_file is not None:
+            dev_sessions.save(self._checkpointer, self._session_file)
 
     def create(self) -> str:
         """Start a session and run the graph once so the first question exists."""
@@ -119,6 +129,7 @@ class SessionManager:
         session_id = str(uuid.uuid4())
         self._sessions[session_id] = SessionMeta()
         self._graph.invoke({"session_id": session_id, "run_counts": {}}, run_config(session_id))
+        self._persist()
         return session_id
 
     def get(self, session_id: str) -> SessionMeta | None:
@@ -185,6 +196,7 @@ class SessionManager:
             meta.run_notices.append(("run_failed", RUN_FAILED_MESSAGE))
         finally:
             meta.busy = False
+            self._persist()
 
     def _start_wording(self, session_id: str, meta: SessionMeta) -> None:
         """Reword this run's new template text in the background (live mode only).
@@ -214,8 +226,11 @@ class SessionManager:
             meta.wording_in_flight.difference_update(items)
 
     def _expire_idle(self) -> None:
+        if self._session_file is not None:
+            return  # dev persistence: keep sessions until the file is deleted
         cutoff = time.monotonic() - IDLE_EXPIRY_SECONDS
         for session_id, meta in list(self._sessions.items()):
             if not meta.busy and meta.last_seen < cutoff:
                 del self._sessions[session_id]
                 self._checkpointer.delete_thread(session_id)
+                self._persist()
