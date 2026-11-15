@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUpDown, ClipboardCopy, FileSearch, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
+import { LoopTrace } from "@/components/loop/loop-trace";
 import { docLabel } from "@/components/od/doc-kinds";
 import { btn, Panel, ProgressBar } from "@/components/od/ui";
 import { usePlan } from "@/components/session/plan-state";
@@ -461,6 +462,8 @@ export function WalletView() {
           ))}
         </Panel>
       ) : null}
+
+      <LoopTrace trace={snapshot.trace} className="mt-5" />
 
       {/* Drop anywhere */}
       <AnimatePresence>

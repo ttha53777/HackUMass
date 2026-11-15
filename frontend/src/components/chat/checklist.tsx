@@ -2,13 +2,12 @@
 
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { Check, HelpCircle, Landmark, Loader2, MapPin, Search, type LucideIcon } from "lucide-react";
+import { Check, FileSearch, HelpCircle, Landmark, Loader2, MapPin, Search, type LucideIcon } from "lucide-react";
 
 import { isLive } from "@/lib/derive";
 import type { AgentName, RunStatus, SessionSnapshot } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-const ICONS: LucideIcon[] = [Search, MapPin, Landmark, HelpCircle];
 
 /**
  * The navigator's "working on it" message. Rows appear one by one and each is
@@ -31,15 +30,19 @@ export function Checklist({
   const loc = programs.filter((c) => c.program.track === "local" && isLive(c)).length;
   const zip = snapshot?.profile_summary.find((p) => p.field === "zip")?.display_value;
 
-  const rows: [string, string, AgentName][] = [
-    ["Reading your answers", "Your needs, ZIP and household.", "user_intelligence"],
+  // The Document Agent's row shows only when a paper was read in this session.
+  const papers = (snapshot?.trace ?? []).some((e) => e.node === "document_analysis") || !!snapshot?.agent_statuses.document_analysis;
+  const rows: [string, string, AgentName, LucideIcon][] = [
+    ...(papers ? [["Reading your papers", "Only the details each kind of paper is allowed to give.", "document_analysis", FileSearch] as [string, string, AgentName, LucideIcon]] : []),
+    ["Reading your answers", "Your needs, ZIP and household.", "user_intelligence", Search],
     [
       `Checking ZIP ${zip ?? ""} against service areas`,
       snapshot?.region ? `${snapshot.region.city}, ${snapshot.region.county}. Every fact comes from a provider page.` : "Looking up your area.",
       "program_discovery",
+      MapPin,
     ],
-    ["Comparing with each program's published rules", `${gov} ${gov === 1 ? "benefit" : "benefits"}, ${loc} local ${loc === 1 ? "option" : "options"}.`, "eligibility"],
-    ["Putting your next steps in order", "Most useful first.", "action_planning"],
+    ["Comparing with each program's published rules", `${gov} ${gov === 1 ? "benefit" : "benefits"}, ${loc} local ${loc === 1 ? "option" : "options"}.`, "eligibility", Landmark],
+    ["Putting your next steps in order", "Most useful first.", "action_planning", HelpCircle],
   ];
   const statusOf = (agent: AgentName): RunStatus | undefined => snapshot?.agent_statuses[agent]?.status;
   const finished = (agent: AgentName) => ["completed", "skipped"].includes(statusOf(agent) ?? "");
@@ -54,9 +57,8 @@ export function Checklist({
 
   return (
     <div className="max-w-[520px] overflow-hidden rounded-[18px] border border-line bg-surface shadow-card">
-      {rows.map(([title, detail, agent], i) => {
+      {rows.map(([title, detail, agent, Icon], i) => {
         if (shown <= i) return null;
-        const Icon = ICONS[i];
         const done = finished(agent);
         return (
           <motion.div

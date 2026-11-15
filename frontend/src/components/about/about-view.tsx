@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ConfirmCard, DocumentCard, SandboxCard } from "@/components/evidence/evidence-cards";
+import { LoopTrace } from "@/components/loop/loop-trace";
 import { btn, Panel } from "@/components/od/ui";
 import { useDrawer } from "@/components/program/drawer";
 import { useApp } from "@/components/session/session-provider";
@@ -218,6 +219,7 @@ export function AboutView() {
           ) : null}
           <DocumentCard />
           <SandboxCard />
+          {snapshot ? <LoopTrace trace={snapshot.trace} /> : null}
           <Panel>
             <h2 className="mb-2 text-[15px] font-extrabold">Your privacy</h2>
             <p className="mb-3 text-[12.5px] leading-[1.7] text-muted-foreground">
