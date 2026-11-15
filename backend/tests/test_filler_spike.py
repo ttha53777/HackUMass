@@ -154,8 +154,15 @@ def test_dev_routes_are_absent_unless_enabled(repo, monkeypatch):
 
 playwright_api = pytest.importorskip("playwright.async_api")
 
+from app.filler.consent import FillerSessions  # noqa: E402
+from app.filler.jobs import PaperJobs  # noqa: E402
 from app.filler.runs import SPIKE_PAGE, SpikeRuns  # noqa: E402
 from app.filler.sandbox import LocalBrowser  # noqa: E402
+from app.filler.service import Filler  # noqa: E402
+
+
+def _filler(runs):
+    return Filler(FillerSessions(), PaperJobs(reader=None), runs)
 
 
 async def _grid_points() -> dict[str, dict[str, int]]:
@@ -199,7 +206,7 @@ def points():
 def test_spike_run_streams_live_and_fills_the_form(repo, points):
     """Phase 1 gate: a click and a typed field, visible live at 5 fps or better."""
     runs = SpikeRuns(LocalBrowser(CHANNEL, headless=True), lambda instruction: ScriptedModel(points))
-    with TestClient(create_app(repo, NessieService(None), filler=runs)) as client:
+    with TestClient(create_app(repo, NessieService(None), filler=_filler(runs))) as client:
         started = client.post("/api/filler/dev/spike")
         assert started.status_code == 202
         run_id = started.json()["run_id"]
@@ -237,7 +244,7 @@ def test_stop_releases_the_browser(repo, points):
             return await super().turn(parts, previous)
 
     runs = SpikeRuns(LocalBrowser(CHANNEL, headless=True), lambda instruction: SlowModel(points))
-    with TestClient(create_app(repo, NessieService(None), filler=runs)) as client:
+    with TestClient(create_app(repo, NessieService(None), filler=_filler(runs))) as client:
         run_id = client.post("/api/filler/dev/spike").json()["run_id"]
         for _ in range(100):
             if client.get(f"/api/filler/dev/spike/{run_id}").json()["status"] == "running":

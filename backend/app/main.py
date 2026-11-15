@@ -79,7 +79,7 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
 
 
 def _mount_filler(app: FastAPI, filler: Any) -> None:
-    """Mount the Filler (v2) dev routes when FILLER_ENABLED=1 (or a test passes a SpikeRuns).
+    """Mount the Filler (v2) routes when FILLER_ENABLED=1 (or a test passes a `Filler`).
 
     Separate from the v1 browser agent above; with the flag off nothing from
     `app.filler` beyond its config is imported.
@@ -94,21 +94,31 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
         if not settings.gemini_api_key:
             logger.warning("FILLER_ENABLED is set but GEMINI_API_KEY is not; the Filler is off")
             return
+        from app.filler.consent import FillerSessions
+        from app.filler.extract import GeminiReader
+        from app.filler.jobs import PaperJobs
         from app.filler.loop import GeminiModel
         from app.filler.runs import SpikeRuns
         from app.filler.sandbox import SandboxError, make_browser
+        from app.filler.service import Filler
 
         try:
             browser = make_browser(settings)
         except SandboxError:
             logger.warning("FILLER_PROVIDER=%s is not configured; the Filler is off", settings.provider)
             return
-        filler = SpikeRuns(browser, lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction))
+        filler = Filler(
+            sessions=FillerSessions(),
+            jobs=PaperJobs(GeminiReader(settings.gemini_api_key, settings.read_model)),
+            spike=SpikeRuns(browser, lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction)),
+        )
 
     from app.api.filler_routes import router as filler_router
+    from app.api.filler_routes import session_router as filler_session_router
 
     app.state.filler = filler
     app.include_router(filler_router)
+    app.include_router(filler_session_router)
 
 
 @asynccontextmanager
@@ -127,7 +137,7 @@ def create_app(
     execution: Any = None,
     filler: Any = None,
 ) -> FastAPI:
-    """`execution` (an ExecutionManager) and `filler` (SpikeRuns) are for tests; normally the env decides."""
+    """`execution` (an ExecutionManager) and `filler` (a Filler) are for tests; normally the env decides."""
     app = FastAPI(title="Community Resource Navigator API", version="0.1.0", lifespan=_lifespan)
 
     programs = repository or repository_from_env(os.environ.get("PROGRAM_SOURCE"))

@@ -3,6 +3,7 @@
     FILLER_ENABLED   1 to mount the Filler routes (off by default)
     FILLER_PROVIDER  local (Chrome on this machine) or steel (cloud browser)
     FILLER_MODEL     Gemini Computer Use model id
+    FILLER_READ_MODEL  Gemini model that reads papers (multimodal)
     GEMINI_API_KEY, STEEL_API_KEY, LOCAL_BROWSER_CHANNEL, LOCAL_BROWSER_HEADLESS are shared with v1.
 """
 
@@ -18,6 +19,9 @@ PROVIDERS = ("local", "steel")
 # v1 measured gemini-3.5-flash at 5-135 s per screenshot turn on 2026-11-14; it is
 # the only model that finished a run, so it is the default here too.
 DEFAULT_MODEL = "gemini-3.5-flash"
+# Reads the three sample papers in 1.4-2.2 s with every key right (2026-11-15), and has its
+# own free-tier quota, separate from the computer-use model.
+DEFAULT_READ_MODEL = "gemini-3.5-flash-lite"
 
 VIEWPORT_WIDTH = 1280
 VIEWPORT_HEIGHT = 800
@@ -39,6 +43,7 @@ class FillerSettings:
     enabled: bool
     provider: str
     model: str
+    read_model: str
     gemini_api_key: str
     steel_api_key: str
     local_channel: str | None
@@ -55,6 +60,7 @@ class FillerSettings:
             enabled=_flag("FILLER_ENABLED"),
             provider=provider,
             model=env("FILLER_MODEL", "").strip() or DEFAULT_MODEL,
+            read_model=env("FILLER_READ_MODEL", "").strip() or DEFAULT_READ_MODEL,
             gemini_api_key=env("GEMINI_API_KEY", "").strip(),
             steel_api_key=env("STEEL_API_KEY", "").strip(),
             local_channel=env("LOCAL_BROWSER_CHANNEL", "chrome").strip() or None,

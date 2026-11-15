@@ -1018,3 +1018,28 @@ body:has(.od-hub.touring) div.fixed[role="status"]{bottom:calc(132px + env(safe-
 .od-hub .bk-card[aria-pressed=true] .rd svg{opacity:1;transform:none}
 .od-hub .bk-card.sk{background:linear-gradient(90deg,var(--paper-2) 0%,var(--raised) 40%,var(--paper-2) 70%) 0 0/300% 100%;animation:odh-shim 1.6s linear infinite}
 @media (max-width:480px){.od-hub .bk-grid{grid-template-columns:1fr}.od-hub .bk-card{min-height:0}}
+
+/* Form-Fill Agent v2 ("Filler"): consent notice, paper status, review card */
+.fl-dialog{margin:auto;max-width:min(520px,calc(100vw - 32px));border:0;border-radius:24px;padding:24px;background:var(--raised);color:var(--ink);box-shadow:0 0 0 1px var(--line),0 40px 80px -40px rgba(22,32,27,.6)}
+.fl-dialog::backdrop{background:rgba(22,32,27,.45)}
+.fl-dialog h3{font:400 1.45rem/1.15 var(--display);margin-bottom:8px}
+.fl-dialog p{color:var(--ink-2)}
+.fl-dialog fieldset{border:0;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.fl-dialog legend{font-weight:700;margin-bottom:6px}
+.fl-dialog label{display:flex;gap:10px;align-items:center}
+.fl-dialog input[type=checkbox]{width:18px;height:18px;accent-color:var(--door)}
+.fl-facts{margin:16px 0 0;padding-left:18px;display:grid;gap:4px;font-size:.88rem;color:var(--ink-2)}
+.fl-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}
+.fl-note{font-weight:500;color:var(--ink-3);margin-left:4px}
+.fl-status{color:var(--door);font-weight:600}
+.fl-error{color:var(--alert);font-size:.86rem}
+.fl-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.fl-head .sub{color:var(--ink-2);font-size:.94rem}
+.fl-row{grid-template-columns:minmax(0,1fr) auto;align-items:center}
+.fl-row .fl-label{display:block;text-transform:uppercase;letter-spacing:.06em;font-size:.72rem}
+.fl-row-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.fl-row-actions .txt-btn{font-size:.86rem}
+.fl-snippet{display:block;font-style:italic;margin-top:2px;overflow-wrap:anywhere}
+.fl-edit{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:4px 0}
+.fl-edit input{font:inherit;padding:.45em .7em;border-radius:10px;border:1.5px solid var(--line-2);background:var(--paper);color:var(--ink);min-width:0;flex:1 1 160px}
+@media (max-width:560px){.fl-row{grid-template-columns:1fr}.fl-row-actions{justify-content:flex-start}}

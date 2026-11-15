@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 
 import { DETAIL_LABEL, DETAIL_ORDER, type Detail } from "@/components/documents/details-store";
 import { helperReads } from "@/components/documents/paper-store";
+import { AutoReadSetting } from "@/components/filler/auto-read-setting";
+import { DetailsReview } from "@/components/filler/details-review";
+import { useFiller } from "@/components/filler/filler-context";
+import { FillerPaperStatus, FillerPaperSwitch } from "@/components/filler/paper-switch";
 import { docLabel } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
@@ -80,6 +84,8 @@ export function PapersView() {
   const { plan } = usePlan();
   const { openSheet } = useHub();
   const papers = usePapersHub();
+  const filler = useFiller();
+  const v2 = filler.enabled === true; // the Filler (v2) replaces the v1 helper's switches and details
   const [pack, setPack] = useState<string | null>(null);
   const steps = useMemo(() => (s ? hubSteps(s, plan) : []), [s, plan]);
   if (!s) return null;
@@ -110,6 +116,7 @@ export function PapersView() {
           </h1>
           <p className="lede">Save each one once. Show it at the counter, or let the helper use it.</p>
         </div>
+        {v2 ? <AutoReadSetting /> : (
         <div className={papers.helper ? "helper on" : "helper"}>
           <div className="hh">
             <span className="hi">
@@ -138,6 +145,7 @@ export function PapersView() {
             </span>
           </div>
         </div>
+        )}
       </section>
 
       <section className="pv-s">
@@ -178,9 +186,12 @@ export function PapersView() {
                     <h4>{label(d.kind)}</h4>
                     {paper ? <p className="pm">{paper.name}</p> : <p className="pm">No copy saved. Bring the paper itself.</p>}
                     <p className="used">{n ? <>Used in <b>{n}</b> step{n === 1 ? "" : "s"}</> : "Not needed by an open step right now"}</p>
+                    {paper && v2 ? <FillerPaperStatus paper={paper} /> : null}
                   </div>
                   <div className="pfoot">
-                    {paper ? (
+                    {paper && v2 ? (
+                      <FillerPaperSwitch paper={paper} label={label(d.kind)} />
+                    ) : paper ? (
                       <label>
                         <Switch
                           small
@@ -300,7 +311,9 @@ export function PapersView() {
         </section>
       ) : null}
 
-      {details.length ? (
+      {v2 ? <DetailsReview /> : null}
+
+      {!v2 && details.length ? (
         <section className="pv-s">
           <div className="panel2">
             <h3>Your details</h3>

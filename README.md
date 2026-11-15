@@ -122,9 +122,23 @@ Programs the assistant can fill are listed in `backend/app/data/automation/`. A 
 
 Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
-### Form-Fill Agent v2 ("Filler", phase 1, optional)
+### Form-Fill Agent v2 ("Filler", optional)
 
-A new agent built beside the browser assistant above, in `backend/app/filler/`. Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. Mounted only when `FILLER_ENABLED=1` and `GEMINI_API_KEY` is set, and answers requests from this machine only.
+A new agent built beside the browser assistant above, in `backend/app/filler/`. Mounted only when `FILLER_ENABLED=1` and `GEMINI_API_KEY` is set; the Papers page then shows its controls instead of the v1 helper's.
+
+Phase 2, papers and details. A paper is read only with consent: the session's **Read my papers automatically** setting (each upload is read at once) or that paper's own **Filler reads** switch. One Gemini call reads it into details (name, address, income, rent...), each with its page and the words it came from; SSN-like and long numbers are masked first. The file is dropped after reading. Details are typed into a form only after the person confirms them (**All correct**). Everything lives in memory for the session; nothing is kept after it.
+
+| Call (under `/sessions/{id}/filler`) | Purpose |
+|---|---|
+| `GET /state` | Auto-read setting, papers and their status, details, how many are unconfirmed. |
+| `PUT /auto-read` | `{"on": true, "scopes": [...]}`. Off takes back the consent it gave and drops those details. |
+| `POST /papers` | Multipart `file` (PDF, PNG or JPEG, 10 MB, 15 pages) and an optional `kind` hint. Read at once if auto-read is on. |
+| `DELETE /papers/{paper_id}` | Forget the paper and what was read from it. |
+| `PUT /consents/{paper_id}` / `DELETE` | The paper's own switch on (read it) or off (drop what was read). |
+| `POST /details/confirm` | `{}` confirms every detail; `{"edits": {"phone": "..."}}` sets values (all or nothing). |
+| `DELETE /details/{key}` | Forget one detail. |
+
+Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. These dev routes answer requests from this machine only.
 
 | Call | Purpose |
 |---|---|
@@ -134,7 +148,7 @@ A new agent built beside the browser assistant above, in `backend/app/filler/`. 
 | `WS /filler/dev/spike/{run_id}/live` | Live events: `frame`, `cursor`, `step`, `status`, `end`. |
 | `GET /filler/dev/viewer` | A bare page that starts a run and shows it live. Open `http://localhost:8000/api/filler/dev/viewer`. |
 
-Live check against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py`.
+Live checks against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py` (the browser) and `scripts/spikes/filler_phase2.py` (reading three fictional sample papers).
 
 Try it with the backend running:
 
@@ -162,6 +176,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `FILLER_ENABLED` | No | `1` mounts the Filler phase 1 dev routes (needs `GEMINI_API_KEY`). Off by default. |
 | `FILLER_PROVIDER` | No | Filler browser: `local` (default, Chrome on this machine) or `steel` (needs `STEEL_API_KEY`). |
 | `FILLER_MODEL` | No | Filler's Gemini Computer Use model ID. Default `gemini-3.5-flash`. |
+| `FILLER_READ_MODEL` | No | Gemini model that reads papers. Default `gemini-3.5-flash-lite` (1-2 s a paper). |
 | `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome; empty uses Playwright's Chromium (`.venv/bin/playwright install chromium`). |
 | `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. |
 | `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
@@ -230,7 +245,9 @@ backend/app/api/practice_routes.py serves the practice application form at /prac
 backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
                                    run manager, fill sheet, outcome check, practice form
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
-backend/app/filler/                Form-Fill Agent v2: cloud browser, live stream, agent loop
+backend/app/filler/                Form-Fill Agent v2: consent, paper reading, cloud browser,
+                                   live stream, agent loop
+frontend/src/components/filler/    Filler UI: auto-read setting, consent notice, review card
 backend/app/api/filler_routes.py   Filler dev routes and live viewer (mounted only when enabled)
 backend/scripts/spikes/            Phase 0 spikes: Gemini Computer Use, Steel, real forms
 backend/app/api/views.py           builds the client snapshot from graph state
