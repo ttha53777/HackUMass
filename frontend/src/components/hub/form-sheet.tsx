@@ -156,7 +156,13 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
     }
   }, [run, active, key, refresh, setStage, id, toast, papers, st]);
 
-  const confirmed = useMemo(() => new Map(papers.details.filter((d) => d.confirmed).map((d) => [d.key as string, d.value])), [papers.details]);
+  // Only details whose paper still lets the helper read it ("Helper reads" on the Papers page).
+  const confirmed = useMemo(() => new Map(papers.allowedDetails.map((d) => [d.key as string, d.value])), [papers.allowedDetails]);
+  // Shown, not used: held back by their paper's switch. Names and paper titles only, never values.
+  const held = papers.heldBack.filter((d) => d.key in DETAIL_LABEL && d.key !== "first_name" && d.key !== "last_name");
+  const heldNote = held.length
+    ? `Not using ${held.map((d) => KEY_LABEL[d.key].toLowerCase()).join(", ")} from ${[...new Set(held.map((d) => d.sourceTitle ?? "a paper"))].join(" or ")}: "Helper reads" is off for ${held.length === 1 ? "that paper" : "those papers"}.`
+    : null;
   const fromDevice = (ready?.from_device_needed ?? []).filter((k) => papers.helper && confirmed.has(k));
   const askLater = [...(ready?.from_device_needed ?? []).filter((k) => !fromDevice.includes(k)), ...(ready?.will_ask ?? []), ...(ready?.unconfirmed ?? [])];
   const blocked = (ready?.blocked_by.length ?? 0) > 0;
@@ -215,6 +221,7 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
           ) : (
             <p className="sp-n">No confirmed details yet. It will ask you for them as it goes.</p>
           )}
+          {heldNote ? <p className="sp-n">{heldNote}</p> : null}
           <p className="mono">Never uses: ID number · Social Security number · bank passwords</p>
           <div className="drow">
             <button
@@ -266,6 +273,7 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
           ) : !ready ? (
             <p className="sp-n">Checking what this form needs…</p>
           ) : null}
+          {papers.helper && heldNote ? <p className="sp-n">{heldNote} Turn it on from Papers to use them.</p> : null}
           {blocked ? (
             <div className="banner urgent" role="alert">
               <Doodle id="warn" />

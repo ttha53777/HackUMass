@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 
 import { useDetails, type Detail } from "@/components/documents/details-store";
 import { READABLE_KINDS } from "@/components/documents/info-panel";
-import { DEMO_BASE, demoName, isReadable, loadDemoManifest, MAX_BYTES, usePapers, type DemoPaper, type Paper } from "@/components/documents/paper-store";
+import { DEMO_BASE, demoName, helperReads, isReadable, loadDemoManifest, MAX_BYTES, usePapers, type DemoPaper, type Paper } from "@/components/documents/paper-store";
 import { docLabel } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
@@ -56,6 +56,13 @@ type PapersController = {
   papers: Paper[];
   loaded: boolean;
   details: Detail[];
+  /**
+   * Confirmed details the form helper may use (when it is on): all but those read from a
+   * paper whose "Helper reads" switch is off.
+   */
+  allowedDetails: Detail[];
+  /** Confirmed details held back only because their paper's switch is off. */
+  heldBack: Detail[];
   /** The saved file that counts as this kind, if any. */
   paperFor: (kind: string) => Paper | undefined;
   /** Keep a file as this kind (replacing an earlier one), and count the kind as ready. */
@@ -72,7 +79,8 @@ type PapersController = {
   /** The form helper may use saved papers and details to fill forms (device setting). */
   helper: boolean;
   setHelper: (on: boolean) => void;
-  setHelperRead: (paper: Paper, on: boolean) => Promise<void>;
+  /** "Helper reads" for one card: this file read as this kind. Other kinds of the same file keep their own setting. */
+  setHelperRead: (paper: Paper, kind: string, on: boolean) => Promise<void>;
   confirmDetail: (detail: Detail, value?: string) => Promise<void>;
   log: HelperLogEntry[];
   addLog: (entry: HelperLogEntry) => void;
@@ -164,7 +172,7 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       const review = (latest.current.snapshot?.pending_reviews ?? []).find((r) => !before.has(r.document_id) && !r.simulated);
       let otherPerson: string | null = null;
       if (identity.length) {
-        const saved = await details.saveReadings(identity, title ?? `your ${docLabel(kind, []).toLowerCase()}`);
+        const saved = await details.saveReadings(identity, title ?? `your ${docLabel(kind, []).toLowerCase()}`, paper.id, kind);
         otherPerson = saved.otherPerson;
       }
       return { error: null, reviewId: review?.document_id ?? null, identity: otherPerson ? 0 : identity.length, otherPerson };
@@ -218,13 +226,38 @@ export function PapersProvider({ children }: { children: ReactNode }) {
     for (const d of details.details) await details.remove(d);
   }, [store, details]);
 
-  const setHelperRead = useCallback((paper: Paper, on: boolean) => store.update(paper, { helperOff: !on }), [store]);
+  const setHelperRead = useCallback(
+    (paper: Paper, kind: string, on: boolean) => {
+      // Move the older whole-file setting onto every kind first, so only this card changes.
+      const current = new Set(paper.helperOff ? paper.kinds : (paper.helperOffKinds ?? []));
+      if (on) current.delete(kind);
+      else current.add(kind);
+      return store.update(paper, { helperOff: false, helperOffKinds: [...current] });
+    },
+    [store],
+  );
+
+  // A detail is off-limits when the paper it came from is still saved and switched off.
+  // Typed details, older details with no paper on record, and details whose paper was removed stay usable.
+  const { allowedDetails, heldBack } = useMemo(() => {
+    const byId = new Map(store.papers.map((p) => [p.id, p]));
+    const confirmed = details.details.filter((d) => d.confirmed);
+    const blocked = confirmed.filter((d) => {
+      const paper = d.paperId ? byId.get(d.paperId) : undefined;
+      if (!paper) return false;
+      // Read as a known kind: that card's switch decides. Kind not on record: held back only if every card is off.
+      return d.paperKind ? !helperReads(paper, d.paperKind) : paper.kinds.every((k) => !helperReads(paper, k));
+    });
+    return { allowedDetails: confirmed.filter((d) => !blocked.includes(d)), heldBack: blocked };
+  }, [store.papers, details.details]);
 
   const value = useMemo<PapersController>(
     () => ({
       papers: store.papers,
       loaded: store.loaded,
       details: details.details,
+      allowedDetails,
+      heldBack,
       paperFor,
       keep,
       read,
@@ -241,7 +274,7 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       addLog,
       clearAll,
     }),
-    [store.papers, store.loaded, details, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead, log, addLog, clearAll],
+    [store.papers, store.loaded, details, allowedDetails, heldBack, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead, log, addLog, clearAll],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

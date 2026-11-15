@@ -20,6 +20,13 @@ export type Detail = {
   source: string;
   /** Which paper it came from, for the card ("your lease"). */
   sourceTitle: string | null;
+  /**
+   * The saved paper (paper-store id) it was read from, so that paper's "Helper reads" switch
+   * can hold it back. Null when the person typed it; missing on details saved before this existed.
+   */
+  paperId?: string | null;
+  /** The kind the paper was read as, so a per-kind "Helper reads" switch can hold it back. */
+  paperKind?: string | null;
   confirmed: boolean;
   /** A later paper read a different value for a detail already confirmed. */
   other: { value: string; sourceTitle: string | null } | null;
@@ -120,7 +127,7 @@ export function useDetails(sessionId: string | null) {
    * is never overwritten: a different reading is kept beside it to choose from.
    */
   const saveReadings = useCallback(
-    async (readings: IdentityReading[], sourceTitle: string | null): Promise<SaveOutcome> => {
+    async (readings: IdentityReading[], sourceTitle: string | null, paperId: string | null = null, paperKind: string | null = null): Promise<SaveOutcome> => {
       if (!sessionId) return { added: 0, otherPerson: null };
       const current = await listDetails(sessionId);
       const byKey = new Map(current.map((d) => [d.key, d]));
@@ -146,6 +153,8 @@ export function useDetails(sessionId: string | null) {
           value: r.value,
           source: r.source,
           sourceTitle,
+          paperId,
+          paperKind,
           confirmed: false,
           other: null,
           updatedAt: now,
@@ -161,10 +170,13 @@ export function useDetails(sessionId: string | null) {
   const confirm = useCallback(
     async (detail: Detail, value?: string) => {
       const next = value ?? detail.value;
+      const typed = value !== undefined && !same(value, detail.value);
       await putDetail({
         ...detail,
         value: next,
-        source: value !== undefined && !same(value, detail.value) ? "typed" : detail.source,
+        source: typed ? "typed" : detail.source,
+        // A value the person typed is theirs, not the paper's: no paper switch holds it back.
+        paperId: typed ? null : (detail.paperId ?? null),
         confirmed: true,
         other: null,
         updatedAt: new Date().toISOString(),

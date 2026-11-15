@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import { DETAIL_LABEL, DETAIL_ORDER } from "@/components/documents/details-store";
-import { ACCEPT, MAX_BYTES, type DemoPaper, type Paper } from "@/components/documents/paper-store";
+import { ACCEPT, helperReads, MAX_BYTES, type DemoPaper, type Paper } from "@/components/documents/paper-store";
 import { docLabel } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useToast } from "@/components/shell/toast";
@@ -305,9 +305,15 @@ export function PaperSheet({ s, kind }: { s: SessionSnapshot; kind: string }) {
             <div className="hrw">
               <div>
                 <b>Form helper can read this</b>
-                <small>{papers.helper ? "Used when the helper fills a form. You check every line." : "The form helper is off. Turn it on from the Papers page."}</small>
+                <small>
+                  {!helperReads(paper, kind)
+                    ? "Off. Details read from this paper won't be used to fill forms."
+                    : papers.helper
+                      ? "Used when the helper fills a form. You check every line."
+                      : "Allowed. Used once you turn the form helper on from the Papers page."}
+                </small>
               </div>
-              <Switch on={papers.helper && !paper.helperOff} label="Form helper can read this paper" disabled={!papers.helper} onChange={(on) => void papers.setHelperRead(paper, on)} />
+              <Switch on={helperReads(paper, kind)} label="Form helper can read this paper" onChange={(on) => void papers.setHelperRead(paper, kind, on)} />
             </div>
           </>
         ) : (
