@@ -79,21 +79,32 @@ export function FillerProvider({ children }: { children: ReactNode }) {
     setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
   }, []);
 
-  // Is the Filler here? Load this session's state and links.
+  // Is the Filler here? Load this session's state and links. Asked again whenever the tab
+  // comes back into view: a backend restarted with the Filler on must not leave an open tab
+  // stuck on the old helper.
   useEffect(() => {
     if (!sessionId) return;
     let live = true;
     // eslint-disable-next-line react-hooks/set-state-in-effect -- tab storage is only readable after mount
     setLinks(readLinks(sessionId));
-    getFillerState(sessionId)
-      .then((s) => {
-        if (!live) return;
-        setEnabled(s !== null);
-        if (s) setState(s);
-      })
-      .catch(() => live && setEnabled(false));
+    const probe = () =>
+      getFillerState(sessionId)
+        .then((s) => {
+          if (!live) return;
+          setEnabled(s !== null);
+          if (s) setState(s);
+        })
+        .catch(() => live && setEnabled(false));
+    void probe();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void probe();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
     return () => {
       live = false;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
     };
   }, [sessionId]);
 
