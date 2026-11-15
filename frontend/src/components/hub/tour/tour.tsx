@@ -185,7 +185,7 @@ export function Tour() {
       await E.tap('.drawer [data-tour="connect"]', { after: 200 });
       say(1, "It reads 90 days of transactions, works out her monthly income, and tests it against each program's limit.");
       const skip = await E.waitFor(".drawer .af-skip", 10000);
-      await E.sleep(1100);
+      await E.sleep(600);
       await E.tap(skip, { after: 200 });
       const flowDone = await E.waitFor('.drawer [data-tour="flow-done"]', 10000);
       await E.show(flowDone);
@@ -221,9 +221,20 @@ export function Tour() {
       // signature (Your turn) or at the review: either way the last step is Maya's.
       const t0 = Date.now();
       let mine: HTMLElement | null = null;
+      let ticks = false;
       while (Date.now() - t0 < 20000) {
         mine = document.querySelector<HTMLElement>(".drawer .fl-banner");
         if (mine) break;
+        // Once fields start landing, point at the checklist ticking off beside the live view.
+        const check = document.querySelector<HTMLElement>(".drawer .fl-check");
+        if (!ticks && Date.now() - t0 > 2500 && check?.querySelector("li.done")) {
+          ticks = true;
+          say(2, "Each field ticks off as it lands, with the paper it came from. She can pause or take over any time.");
+          E.clearAnn();
+          E.annotate(check, "ticks off as it fills", { pad: 6 });
+          await E.point(check, { fx: 0.3, fy: 0.2 });
+          continue;
+        }
         const skip = document.querySelector<HTMLElement>(".drawer .fl-question .txt-btn");
         if (skip) await E.tap(skip, { after: 300 });
         else await E.sleep(300);

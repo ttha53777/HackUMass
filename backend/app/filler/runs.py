@@ -550,9 +550,13 @@ class FillRuns:
         kwargs = {} if self._type_delay_ms is None else {"type_delay_ms": self._type_delay_ms}
         run.computer = Computer(page, stream, allowed_hosts=hosts, **kwargs)
 
-        def typed(_key: str) -> None:
+        def typed(key: str) -> None:
             if run.first_type_seconds is None and run.fill_started is not None:
                 run.first_type_seconds = time.monotonic() - run.fill_started
+            # Shown live in the checklist, so a run paused at a hand-off still shows what is filled.
+            # Replaced by the exact list when the fill ends.
+            if key not in run.filled:
+                run.filled.append(key)
 
         fast_kwargs = {} if self._dwell is None else {"dwell": self._dwell}
         fast = FastFiller(run.computer, stream, sheet, run, allowed_hosts=hosts, askable=askable, curated=curated,
