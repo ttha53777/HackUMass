@@ -311,17 +311,6 @@ export function PapersView() {
         </section>
       ) : null}
 
-      <p className="priv" style={{ marginTop: 36 }}>
-        <span>
-          <Doodle id="lock" />
-          Papers stay on this device. Remove one and it is gone.
-        </span>
-        <span>
-          <Doodle id="eye" />
-          Sent to be read only when you ask, then deleted from our server.
-        </span>
-      </p>
-
       <HubSheets s={s} />
       <Spotlight />
     </>
