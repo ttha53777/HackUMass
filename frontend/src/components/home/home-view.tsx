@@ -35,6 +35,7 @@ import { plural } from "@/lib/format";
 import type { ProgramCard } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
+import { PaperReviews } from "@/components/documents/paper-review";
 import { ConfirmCard } from "@/components/evidence/evidence-cards";
 
 import { SharpenCard } from "./sharpen-card";
@@ -423,7 +424,11 @@ export function HomeView() {
           </section>
         </div>
 
-        {snapshot.pending_question?.origin === "conflict" ? <ConfirmCard /> : <SharpenCard />}
+        <div className="flex min-w-0 flex-col gap-4">
+          {/* Papers the Document Agent read, waiting for the person's say-so. */}
+          <PaperReviews />
+          {snapshot.pending_question?.origin === "conflict" ? <ConfirmCard /> : <SharpenCard />}
+        </div>
       </div>
 
       <Disclaimer className="mt-4" />
