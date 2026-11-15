@@ -50,7 +50,7 @@ def test_fallback_without_a_key_is_simulated_and_labelled():
 
 def test_every_seeded_persona_is_labelled_simulated():
     personas = NessieService(None).personas()
-    assert len(personas) == 3
+    assert len(personas) == 4
     assert all(p.label.startswith("Simulated") for p in personas)
 
 
@@ -137,7 +137,7 @@ def status(snapshot, program_id):
 
 def test_personas_route(client):
     body = client.get("/api/nessie/personas").json()
-    assert {p["id"] for p in body} == {"retired-fixed-income", "part-time-irregular", "two-earner-family"}
+    assert {p["id"] for p in body} == {"retired-fixed-income", "part-time-irregular", "two-earner-family", "between-jobs"}
     assert all("Simulated" in p["label"] for p in body)
 
 
@@ -172,7 +172,7 @@ def test_offer_then_deposit_income_waits_for_confirmation(client):
     assert status(snap, "fixture-food-benefit") == "possibly_eligible"
     question = snap["pending_question"]
     assert question["id"] == "confirm_monthly_income"
-    assert "$1,400 a month in deposits" in question["prompt"]
+    assert "$1,400 a month from paychecks and benefits" in question["prompt"]
     income = next(i for i in snap["profile_summary"] if i["field"] == "monthly_income")
     assert income["provenance"] == "nessie_sandbox"
 

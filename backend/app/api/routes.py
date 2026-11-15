@@ -25,7 +25,13 @@ from app.api.schemas import (
 )
 from app.api.views import build_snapshot
 from app.graph.answers import AnswerError, normalize_answer, validate_answer
-from app.graph.questions import evidence_from_source, get_spec, spec_for_field
+from app.graph.questions import (
+    BANK_SOURCE_PREFIX,
+    bank_review_fields,
+    evidence_from_source,
+    get_spec,
+    spec_for_field,
+)
 from app.graph.state import EvidenceRequest, IntakeState, Profile, ReviewDecision
 from app.services.documents import MAX_BYTES, DocumentRejected, read_document
 from app.services.conversation import interpret
@@ -333,12 +339,19 @@ async def submit_review(request: Request, session_id: str, body: ReviewIn) -> JS
     if meta.busy:
         raise ApiError(409, "session_busy", "Still working on your last answer. Try again in a moment.")
     values = manager.values(session_id)
-    document = next((d for d in values.get("documents") or [] if d.document_id == body.document_id), None)
-    if document is None:
-        raise ApiError(422, "validation_error", "We couldn't find that paper. Try reading it again.")
     profile = values.get("profile") or Profile()
-    source = f"doc:{document.document_id}"
-    waiting = {f for f in document.extracted_facts if evidence_from_source(profile, f, source) is not None}
+    if body.document_id.startswith(BANK_SOURCE_PREFIX):
+        # The simulated bank profile's card: only the connected persona's readings.
+        summary = values.get("financial_summary")
+        if summary is None or body.document_id != f"{BANK_SOURCE_PREFIX}{summary.persona_id}":
+            raise ApiError(422, "validation_error", "That simulated bank profile isn't connected any more.")
+        waiting = set(bank_review_fields(profile, body.document_id))
+    else:
+        document = next((d for d in values.get("documents") or [] if d.document_id == body.document_id), None)
+        if document is None:
+            raise ApiError(422, "validation_error", "We couldn't find that paper. Try reading it again.")
+        source = f"doc:{document.document_id}"
+        waiting = {f for f in document.extracted_facts if evidence_from_source(profile, f, source) is not None}
     unknown = (set(body.accept) | set(body.edits)) - waiting
     if unknown:
         raise ApiError(422, "validation_error", "Some of those details aren't on this paper's card any more.")

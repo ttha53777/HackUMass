@@ -21,6 +21,7 @@ from typing import Any, Callable
 
 from app.graph.state import (
     EligibilityAssessment,
+    FinancialSummary,
     IntakeState,
     Option,
     Profile,
@@ -599,6 +600,51 @@ def evidence_from_source(profile: Profile, field: str, source: str):
     return None
 
 
+BANK_SOURCE_PREFIX = "bank:"
+
+# Fields the simulated bank profile can fill (services/nessie.bank_facts), in
+# the order its review card lists them.
+BANK_FIELDS: tuple[str, ...] = (
+    "monthly_income",
+    "housing_status",
+    "housing_need",
+    "heat_included_in_rent",
+    "eversource_customer",
+    "utility_urgency",
+    "situation",
+)
+
+
+def bank_review_fields(profile: Profile, source: str) -> list[str]:
+    """Fields with a bank reading from `source` ("bank:<persona>") still waiting for the person."""
+    fields = []
+    for field in BANK_FIELDS:
+        fact = evidence_from_source(profile, field, source)
+        if fact is not None and not fact.confirmed and fact.provenance == "nessie_sandbox":
+            fields.append(field)
+    return fields
+
+
+def bank_card_shown(profile: Profile, source: str) -> bool:
+    """The bank gets one review card once it says more than the income alone.
+    Income on its own keeps the single `confirm_monthly_income` question."""
+    return any(f != "monthly_income" for f in bank_review_fields(profile, source))
+
+
+def priority_question_ids(summary: FinancialSummary | None) -> frozenset[str]:
+    """Follow-ups the bank's income type makes worth asking first. Order only, never a fact:
+    Social Security can mean 60+ or a disability, and benefits like SNAP never arrive as deposits."""
+    if summary is None:
+        return frozenset()
+    ids: set[str] = set()
+    kinds = {s.kind for s in summary.income_sources}
+    if "social_security" in summary.benefit_signals:
+        ids |= {"age_60_plus", "benefits_held"}
+    if "benefit" in kinds and "wages" not in kinds:
+        ids.add("benefits_held")
+    return frozenset(ids)
+
+
 def _source_phrase(fact, source_labels: dict[str, str]) -> str:
     """ "Your pay stub shows", "The simulated bank profile shows". """
     label = source_labels.get(fact.source or "")
@@ -610,7 +656,7 @@ def _source_phrase(fact, source_labels: dict[str, str]) -> str:
 
 def _describe(field: str, fact) -> str:
     if field == "monthly_income":
-        noun = "in deposits" if fact.provenance == "nessie_sandbox" else "in household income"
+        noun = "from paychecks and benefits" if fact.provenance == "nessie_sandbox" else "in household income"
         return f"about ${float(fact.value):,.0f} a month {noun}"
     return f"a household of {fact.value}"
 
@@ -626,6 +672,9 @@ def confirmation_question(
         evidence = unconfirmed_evidence(profile, field)
         if evidence is None or evidence.provenance not in _EVIDENCE_SOURCE:
             continue
+        source = evidence.source or ""
+        if source.startswith(BANK_SOURCE_PREFIX) and bank_card_shown(profile, source):
+            continue  # settled on the bank's review card instead
         if not _budget_left(question_id, intake, followup=False, counted=False):
             continue
         labels = source_labels or {}
@@ -677,11 +726,12 @@ def next_awaiting_question(
     *,
     has_summary: bool = False,
     source_labels: dict[str, str] | None = None,
+    priority: frozenset[str] = frozenset(),
 ) -> Question | None:
     """After results: confirm evidence first, then a follow-up, then the evidence offer."""
     return (
         confirmation_question(profile, intake, source_labels)
-        or next_followup_question(profile, intake, programs, assessments)
+        or next_followup_question(profile, intake, programs, assessments, priority)
         or evidence_offer_question(profile, intake, programs, has_summary)
     )
 
@@ -770,11 +820,13 @@ def open_questions(
     intake: IntakeState,
     programs: list[Program],
     assessments: dict[str, EligibilityAssessment],
+    priority: frozenset[str] = frozenset(),
 ) -> list[OpenQuestion]:
     """Unanswered follow-ups, most useful first.
 
     A question is open when an assessment reports its field as missing and the
-    person has neither answered nor skipped it. Ranked by how many programs it
+    person has neither answered nor skipped it. Questions in `priority` (from
+    `priority_question_ids`) come first; then ranked by how many programs it
     affects (programs in the person's first need count double), then by
     registry order, so the order is stable.
     """
@@ -801,7 +853,8 @@ def open_questions(
                     2 if first_need in program.categories else 1
                 )
     ranked = sorted(
-        found.values(), key=lambda e: (-weight[e[0].id], order.get(e[0].id, 999))
+        found.values(),
+        key=lambda e: (e[0].id not in priority, -weight[e[0].id], order.get(e[0].id, 999)),
     )
     return [OpenQuestion(question=q, affects=ids) for q, ids in ranked]
 
@@ -811,9 +864,10 @@ def next_followup_question(
     intake: IntakeState,
     programs: list[Program],
     assessments: dict[str, EligibilityAssessment],
+    priority: frozenset[str] = frozenset(),
 ) -> Question | None:
     """The head of the open-question list: the one question worth asking next."""
-    for item in open_questions(profile, intake, programs, assessments):
+    for item in open_questions(profile, intake, programs, assessments, priority):
         if _budget_left(item.question.id, intake, followup=True):
             return item.question
     return None

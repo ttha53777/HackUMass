@@ -212,6 +212,8 @@ class PendingReview(BaseModel):
     title: str  # e.g. "your pay stub": from the kind, never the file name
     rows: list[ReviewRow] = Field(default_factory=list)
     notes: list[str] = Field(default_factory=list)
+    # True for the simulated bank profile's card (document_id "bank:<persona>", kind "bank").
+    simulated: bool = False
 
 
 class TraceEventView(BaseModel):

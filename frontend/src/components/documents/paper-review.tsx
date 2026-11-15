@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { AlertTriangle, FileCheck2, Pencil } from "lucide-react";
+import { AlertTriangle, FileCheck2, Landmark, Pencil } from "lucide-react";
 import { useState } from "react";
 
 import { btn } from "@/components/od/ui";
@@ -55,7 +55,7 @@ export function PaperReview({ review }: { review: PendingReview }) {
         edits: parsed,
       });
       await whenIdle();
-      toast(error ?? (ticked.size ? "Thanks. We'll use what you confirmed." : "Okay, we won't use anything from that paper."));
+      toast(error ?? (ticked.size ? "Thanks. We'll use what you confirmed." : `Okay, we won't use anything from ${review.simulated ? review.title : "that paper"}.`));
     } finally {
       setSending(false);
     }
@@ -67,15 +67,22 @@ export function PaperReview({ review }: { review: PendingReview }) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0 }}
-      aria-label={`What we read from ${review.title}`}
+      aria-label={review.simulated ? `What ${review.title} suggests` : `What we read from ${review.title}`}
       className="rounded-[16px] border border-line bg-surface p-4 shadow-card"
     >
       <div className="mb-2 flex items-center gap-2.5">
         <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-brand-soft text-brand-text">
-          <FileCheck2 aria-hidden className="size-4" />
+          {review.simulated ? <Landmark aria-hidden className="size-4" /> : <FileCheck2 aria-hidden className="size-4" />}
         </span>
         <div className="min-w-0">
-          <h3 className="text-[14.5px] font-extrabold">Here&apos;s what we read from {review.title}</h3>
+          <h3 className="flex flex-wrap items-center gap-2 text-[14.5px] font-extrabold">
+            {review.simulated ? <>Here&apos;s what {review.title} suggests</> : <>Here&apos;s what we read from {review.title}</>}
+            {review.simulated ? (
+              <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.8px] text-muted-foreground">
+                Simulated
+              </span>
+            ) : null}
+          </h3>
           <p className="text-[12px] text-muted-foreground">Untick anything that&apos;s wrong. We use nothing until you say so.</p>
         </div>
       </div>

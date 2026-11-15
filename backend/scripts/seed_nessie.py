@@ -70,10 +70,11 @@ def main() -> None:
                     "status": bill["status"], "payee": bill["payee"],
                     "payment_amount": bill["payment_amount"], "payment_date": bill["payment_date"],
                 }))
-            for month, total in zip(("2026-08-28", "2026-09-28", "2026-10-28"), persona["purchases_total"]):
+            for purchase in persona.get("purchases", []):
                 created_id(client.post(f"/accounts/{account}/purchases", json={
-                    "merchant_id": merchant, "medium": "balance", "amount": total,
-                    "purchase_date": month, "description": "Monthly spending (simulated)",
+                    "merchant_id": merchant, "medium": "balance", "amount": purchase["amount"],
+                    "purchase_date": purchase["purchase_date"], "status": purchase["status"],
+                    "description": purchase["description"],
                 }))
             print(f"seeded {persona['id']}")
 

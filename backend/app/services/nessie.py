@@ -21,13 +21,13 @@ import logging
 import os
 import time
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
 import httpx
 
-from app.graph.state import BillLine, FinancialSummary, IncomeSource, SpendLine
+from app.graph.state import BillLine, Fact, FinancialSummary, IncomeSource, SpendLine
 
 logger = logging.getLogger(__name__)
 # httpx logs each request URL at INFO, and Nessie URLs carry the API key.
@@ -54,7 +54,9 @@ NOTICE_NOT_SEEDED = (
     "The bank sandbox has no copy of this simulated profile yet, so we used the built-in one."
 )
 
-_UTILITY_WORDS = ("electric", "gas", "oil", "heat", "water", "utility", "power", "energy")
+_UTILITY_WORDS = ("electric", "gas", "oil", "heat", "water", "utility", "power", "energy", "eversource")
+# A utility payee that sells heating fuel (not electricity alone).
+_HEATING_WORDS = ("oil", "gas", "heat", "propane", "kerosene")
 
 # Plain keyword buckets for the bank connector. Labels shown to the person are ours,
 # never the raw transaction description.
@@ -237,6 +239,77 @@ def aggregate(
         caveats=caveats,
         **lines,
     )
+
+
+# --------------------------------------------------------------------------
+# Bank signals -> unconfirmed profile facts
+# --------------------------------------------------------------------------
+
+# Profile field -> the needs that make it worth filling from the bank.
+BANK_FIELD_NEEDS: dict[str, frozenset[str]] = {
+    "housing_status": frozenset({"housing", "utilities"}),
+    "housing_need": frozenset({"housing"}),
+    "heat_included_in_rent": frozenset({"utilities"}),
+    "eversource_customer": frozenset({"utilities"}),
+    "utility_urgency": frozenset({"utilities"}),
+    "situation": frozenset({"employment"}),
+}
+
+
+def countable_monthly_income(summary: FinancialSummary) -> float:
+    """Wages and benefit deposits, the part that looks like income. Other deposits
+    (transfers, refunds) are left out; they are not income."""
+    return round(sum(s.avg_monthly for s in summary.income_sources if s.kind in ("wages", "benefit")), 2)
+
+
+def bank_income(summary: FinancialSummary) -> float:
+    """Countable income, or all deposits when no deposit could be classified."""
+    if any(s.kind in ("wages", "benefit") for s in summary.income_sources):
+        return countable_monthly_income(summary)
+    return summary.avg_monthly_deposits
+
+
+def bank_signals(summary: FinancialSummary) -> dict[str, Any]:
+    """Field -> the value the bank points to, before the needs filter."""
+    rent = [b for b in summary.bills if b.category == "rent"]
+    utilities = [b for b in summary.bills if b.category == "utilities"]
+    out: dict[str, Any] = {}
+    if rent:
+        out["housing_status"] = "renting"
+        if any(b.status == "overdue" for b in rent):
+            out["housing_need"] = "behind"
+        # Heat paid to its own supplier is not part of the rent.
+        if any(any(w in b.payee.lower() for w in _HEATING_WORDS) for b in utilities):
+            out["heat_included_in_rent"] = False  # the stored value of "I pay for heat myself"
+    if any("eversource" in b.payee.lower() for b in utilities):
+        out["eversource_customer"] = "yes"
+    # "Behind" at most: an overdue bill is never a shut-off notice.
+    if any(b.status == "overdue" for b in utilities):
+        out["utility_urgency"] = "behind"
+    if "unemployment" in summary.benefit_signals:
+        out["situation"] = "looking_for_work"
+    return out
+
+
+def bank_facts(summary: FinancialSummary, needs: list[str] | set[str] | None, now: datetime) -> dict[str, Fact]:
+    """Unconfirmed facts the simulated bank profile points to. Pure.
+
+    Income is always read. Every other fact is read only when it bears on a need
+    the person picked. Each is `nessie_sandbox`, unconfirmed and sourced to
+    `bank:<persona>`, so it counts as weak until the person confirms it.
+    """
+    chosen = set(needs or [])
+    source = f"bank:{summary.persona_id}"
+
+    def fact(value: Any, period: str | None = None) -> Fact:
+        return Fact(value=value, provenance="nessie_sandbox", updated_at=now,
+                    period=period, confirmed=False, source=source)
+
+    facts = {"monthly_income": fact(bank_income(summary), "month")}
+    for field, value in bank_signals(summary).items():
+        if BANK_FIELD_NEEDS[field] & chosen:
+            facts[field] = fact(value)
+    return facts
 
 
 class NessieService:
