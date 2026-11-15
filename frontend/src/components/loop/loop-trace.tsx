@@ -12,7 +12,8 @@ import { agentLabel, describe, loopsBack, runs, speaker, trigger } from "./templ
 
 const SHOWN_RUNS = 3;
 
-const CHIP: Record<string, string> = {
+/** Chip colour per agent; shared with the live agent-flow panel. */
+export const CHIP: Record<string, string> = {
   administrator: "bg-ink text-surface",
   document_analysis: "bg-sky text-sky-ink",
   user_intelligence: "bg-brand-soft text-brand-text",
