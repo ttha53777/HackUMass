@@ -72,6 +72,22 @@ class AutomationRecord(BaseModel):
     # A disabled record is validated but never offered. Real-site records ship
     # disabled until the team agrees (plan section 7) and spike S3 passes.
     enabled: bool = True
+    # Fill-sheet keys (execution/fields.CATALOGUE) the form asks for, required
+    # and optional. Drives the "Before we start" readiness check. Empty: not
+    # recorded yet, so readiness can't say what's needed in advance.
+    fields: list[str] = Field(default_factory=list)
+    fields_optional: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _fields_are_known(self) -> AutomationRecord:
+        from app.execution.fields import CATALOGUE  # fields imports nothing from here
+
+        unknown = [k for k in (*self.fields, *self.fields_optional) if k not in CATALOGUE]
+        if unknown:
+            raise ValueError(f"unknown fill-sheet keys: {unknown}")
+        if set(self.fields) & set(self.fields_optional):
+            raise ValueError("a key is both required and optional")
+        return self
 
     @model_validator(mode="after")
     def _real_sites_are_pinned(self) -> AutomationRecord:
@@ -131,8 +147,9 @@ class RunView(BaseModel):
 class StartRunIn(BaseModel):
     program_id: str
     consent: Literal[True]
-    # Confirmed identity details from the person's device (fill-sheet keys), for
-    # this run only: never stored in graph state or logged. Used from Phase 5.
+    # Confirmed identity details from the person's device (fill-sheet keys, see
+    # fields.DEVICE_KEYS), for this run only: checked with clean_answer, put in
+    # the run's FieldStore, never stored in graph state or logged.
     details: dict[str, str] = Field(default_factory=dict, max_length=12)
 
 

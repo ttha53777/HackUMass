@@ -56,6 +56,16 @@ CATALOGUE: dict[str, FieldSpec] = {
 
 # Keys filled from what the person already told us; the rest are asked during a run.
 FROM_PROFILE = ("zip", "household_size", "monthly_income", "city", "state")
+# Keys the person's device may supply (confirmed on its "My details" card). The
+# profile owns household size and income: a device value never replaces those,
+# and never replaces a key the profile already filled.
+DEVICE_KEYS = frozenset({
+    "first_name", "last_name", "full_name", "date_of_birth", "street_address",
+    "city", "state", "zip", "phone", "email",
+})
+# Fill-sheet key -> the profile field it comes from (city and state follow the ZIP).
+PROFILE_FIELD = {"zip": "zip", "city": "zip", "state": "zip",
+                 "household_size": "household_size", "monthly_income": "monthly_income"}
 
 ASK_REASON = "The form asks for this. We use it only to fill in this application and forget it when you're done."
 MAX_ANSWER_LENGTH = 120
@@ -158,3 +168,60 @@ def sheet_lines(store: FieldStore) -> list[str]:
         f"{{{{{spec.key}}}}} = {spec.label} ({'known' if spec.key in known else 'not known yet: call ask_user'})"
         for spec in CATALOGUE.values()
     ]
+
+
+def add_device_details(store: FieldStore, details: dict[str, str]) -> list[str]:
+    """Put the person's confirmed device details into one run's store.
+
+    Only DEVICE_KEYS, only where the profile hasn't filled the key, each checked
+    like a typed answer. Raises InvalidAnswer (naming the field, never the value).
+    Returns the keys added.
+    """
+    added: list[str] = []
+    for key, raw in details.items():
+        if key not in DEVICE_KEYS:
+            raise InvalidAnswer("We can't use that detail for this form.")
+        if key in store.known():
+            continue  # the profile's own value stands
+        try:
+            value = clean_answer(key, raw)
+        except InvalidAnswer as exc:
+            raise InvalidAnswer(f"{CATALOGUE[key].label}: {exc}") from None
+        store.put(key, value)
+        added.append(key)
+    return added
+
+
+@dataclass(frozen=True)
+class Readiness:
+    """What a form needs and where each key will come from. Keys only, never values."""
+
+    from_profile: list[str]
+    from_device_needed: list[str]
+    will_ask: list[str]
+    unconfirmed: list[str]
+    blocked_by: list[str]
+
+
+def readiness(profile: Profile, store: FieldStore, required: list[str], optional: list[str]) -> Readiness:
+    """Sort a form's keys by source. `store` is store_from_profile(profile, ...).
+
+    * from_profile: already filled from confirmed, undisputed answers;
+    * from_device_needed: identity details the person's device may hold;
+    * will_ask: anything else, asked during the run;
+    * unconfirmed: profile-owned keys we have only an unconfirmed reading for;
+    * blocked_by: profile fields in conflict that this form needs (start is refused).
+    """
+    known = store.known()
+    disputed = {c.field for c in profile.conflicts}
+    wanted = [*required, *optional]
+    from_profile = [k for k in wanted if k in known]
+    missing = [k for k in wanted if k not in known]
+    blocked = sorted({PROFILE_FIELD[k] for k in required if k in PROFILE_FIELD and PROFILE_FIELD[k] in disputed})
+    unconfirmed = [
+        k for k in missing
+        if k in PROFILE_FIELD and PROFILE_FIELD[k] in profile.facts and PROFILE_FIELD[k] not in disputed
+    ]
+    from_device = [k for k in missing if k in DEVICE_KEYS and k not in unconfirmed]
+    will_ask = [k for k in missing if k not in DEVICE_KEYS and k not in unconfirmed]
+    return Readiness(from_profile, from_device, will_ask, unconfirmed, blocked)
