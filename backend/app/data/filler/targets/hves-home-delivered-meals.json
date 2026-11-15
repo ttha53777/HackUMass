@@ -2,7 +2,9 @@
   "program_id": "hves-home-delivered-meals",
   "mode": "stop_before_submit",
   "start_url": "https://fd7.formdesk.com/highland/Referral/?get=1&sidn=4b35f8374ab24be48b89a122e3924375",
-  "allowed_hosts": ["fd7.formdesk.com"],
-  "enabled": false,
-  "note": "Highland Valley Elder Services referral (Formdesk): plain HTML, no CAPTCHA (probed by v1 on 2026-11-14). Fill-and-stop only: the run ends at the first submit or attestation and nothing is sent. Disabled until the team signs off on fill-and-stop on a real site and the form is checked from Steel."
+  "allowed_hosts": [
+    "fd7.formdesk.com"
+  ],
+  "enabled": true,
+  "note": "Highland Valley Elder Services referral (Formdesk): plain HTML, no CAPTCHA. Fill-and-stop only: the run ends at the first submit or attestation, and the browser aborts every request that could send data (any POST, beacon or second navigation), so nothing reaches the agency. Only the 'Consumer Being Referred' section is filled; referrer, emergency contact and physician sections are left to the person. Enabled 2026-11-15 at the owner's request after a read-only check through Steel and 5 rehearsals."
 }

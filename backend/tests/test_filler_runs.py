@@ -359,3 +359,36 @@ def test_curated_maps_refuse_unknown_keys(tmp_path):
     assert load_map("missing", tmp_path) == {}
     with pytest.raises(ValueError):
         load_map("bad", tmp_path)
+
+
+
+from app.filler.dom_map import map_fields, section_kind  # noqa: E402
+
+
+@pytest.mark.parametrize("heading,kind", [
+    ("Name of Consumer Being Referred:", "person"),
+    ("Your contact details", "person"),
+    ("Primary Emergency Contact/Caregiver:", "other"),
+    ("Primary Care Physician:", "other"),
+    ("Your emergency contact", "other"),
+    ("Referred by", "other"),
+    ("", "unknown"),
+])
+def test_sections_say_whose_details_they_ask_for(heading, kind):
+    assert section_kind(heading) == kind
+
+
+def test_a_referral_form_fills_only_the_persons_section_and_one_field_per_detail():
+    def f(fid, label, section):
+        return Field(fid, Element(tag="input", type="text", text=label, editable=True), label, "", "", "",
+                     "", False, False, 0, 0, 0, section)
+
+    fields = [
+        f("r1", "City", ""), f("r2", "Phone", ""),  # the referrer, above the first heading
+        f("c1", "Name", "Name of Consumer Being Referred:"), f("c2", "City", "Name of Consumer Being Referred:"),
+        f("c3", "Phone", "Name of Consumer Being Referred:"), f("c4", "Cell", "Name of Consumer Being Referred:"),
+        f("e1", "City", "Primary Emergency Contact/Caregiver:"), f("e2", "Home Phone", "Primary Emergency Contact/Caregiver:"),
+        f("p1", "Phone", "Primary Care Physician:"),
+    ]
+    mapping = asyncio.run(map_fields(fields, curated={}, mapper=None, keys=["full_name", "city", "phone"]))
+    assert mapping.keys == {"c1": "full_name", "c2": "city", "c3": "phone"}  # Cell loses to Phone; nobody else's fields

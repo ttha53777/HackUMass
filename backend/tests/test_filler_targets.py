@@ -30,11 +30,13 @@ REAL = "hves-stand-in"
 REAL_URL = "https://forms.filler.test/referral"
 
 
-def test_shipped_targets_validate_and_real_sites_ship_disabled():
+def test_shipped_targets_validate_and_real_sites_are_fill_and_stop_on_their_own_hosts():
     targets = all_targets()
     assert targets and all(t.program_id for t in targets.values())
     real = [t for t in targets.values() if t.mode == "stop_before_submit"]
-    assert real and not any(t.enabled for t in real)  # off until the team signs off
+    assert real
+    for t in real:  # a real site is always pinned: https start page on its own allowed hosts
+        assert t.start_url.startswith("https://") and t.allowed_hosts
     assert set(enabled_targets()) == {pid for pid, t in targets.items() if t.enabled}
 
 
@@ -64,16 +66,28 @@ def client(repo, monkeypatch):
     # The stand-in "real" site: the allowlist route serves the practice page at forms.filler.test.
     original = runs_module._allowlist
 
-    def standin(hosts):
-        inner = original(hosts)
+    def standin(hosts, on_blocked=None):
+        inner = original(hosts, on_blocked)
+
+        class Served:
+            """The real guard decides; where it would let a request through, serve the stand-in."""
+
+            def __init__(self, route):
+                self._route, self.request = route, route.request
+
+            async def continue_(self):
+                if self.request.url.startswith(REAL_URL):
+                    await self._route.fulfill(status=200, content_type="text/html; charset=utf-8", body=PRACTICE_PAGE)
+                elif "forms.filler.test" in self.request.url:
+                    await self._route.abort("blockedbyclient")
+                else:
+                    await self._route.continue_()
+
+            async def abort(self, reason):
+                await self._route.abort(reason)
 
         async def handle(route):
-            if route.request.url.startswith(REAL_URL):
-                await route.fulfill(status=200, content_type="text/html; charset=utf-8", body=PRACTICE_PAGE)
-            elif "forms.filler.test" in route.request.url:
-                await route.abort("blockedbyclient")
-            else:
-                await inner(route)
+            await inner(Served(route))
 
         return handle
 
@@ -268,3 +282,31 @@ def test_a_fillable_pdf_is_filled_live_and_written_back(client):
     assert not values.get("s1_sig[0]")  # signatures are never typed for the person
     other = client.post("/api/sessions").json()["session_id"]
     assert client.get(f"/api/sessions/{other}/filler/runs/{view['run_id']}/pdf").status_code == 404
+
+
+def test_nothing_can_be_sent_from_a_real_site(client):
+    """A POST (a page save, an auto-save) and a second navigation are aborted and counted."""
+    sid = session_with_details(client)
+    base = f"/api/sessions/{sid}/filler/runs"
+    view = client.post(base, json={"program_id": REAL, "prepare": True}).json()
+    url = f"{base}/{view['run_id']}"
+    run = client.app.state.filler.runs.get(sid, view["run_id"])
+    wait_for(client, url, {"ready"})
+
+    async def try_to_send():
+        page = run.computer.page
+        sent = await page.evaluate("""() => fetch("https://forms.filler.test/save", {method: "POST", body: "x"})
+            .then(() => "sent", () => "blocked")""")
+        await page.evaluate("() => navigator.sendBeacon('https://forms.filler.test/beacon', 'x')")
+        try:
+            await page.goto(REAL_URL + "?page=2", timeout=5000)
+            moved = True
+        except Exception:
+            moved = False
+        return sent, moved
+
+    sent, moved = client.portal.call(try_to_send)
+    assert sent == "blocked" and moved is False
+    time.sleep(0.3)
+    assert client.get(url).json()["blocked_sends"] >= 2
+    client.post(f"{url}/stop")

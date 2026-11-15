@@ -25,7 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 
-from app.filler.computer import Computer
+from app.filler.computer import Computer, js
 from app.filler.consent import FillerSession, FillerSessions
 from app.filler.dom_map import FieldMapper
 from app.filler.dom_map import load_map
@@ -256,6 +256,7 @@ class FillRun:
     pdf_form: PdfForm | None = None  # a fillable PDF instead of a web form
     pdf_result: bytes | None = field(default=None, repr=False)
     result_recorded: bool = False
+    blocked_sends: int = 0  # real sites: requests stopped because they would have sent data
     _go: bool = False
     _wake: asyncio.Event = field(default_factory=asyncio.Event)
     _answered: bool = False
@@ -282,8 +283,12 @@ class FillRun:
             "mode": self.mode,
             "result_recorded": self.result_recorded,
             "pdf_ready": self.pdf_result is not None,
+            "blocked_sends": self.blocked_sends,
             "seconds_left": max(0, int(RUN_SECONDS - (time.monotonic() - self.started_at))),
         }
+
+    def count_blocked(self) -> None:
+        self.blocked_sends += 1
 
     @property
     def mode(self) -> str:
@@ -533,7 +538,7 @@ class FillRuns:
             await page.goto(PDF_URL, wait_until="domcontentloaded")
         elif run.real_site and target is not None:
             hosts = frozenset(h.lower() for h in target.allowed_hosts)
-            await page.route("**/*", _allowlist(hosts))
+            await page.route("**/*", _allowlist(hosts, run.count_blocked))
             await page.goto(str(target.start_url), wait_until="domcontentloaded", timeout=30_000)
         else:
             hosts = PRACTICE_HOSTS
@@ -565,6 +570,9 @@ class FillRuns:
         try:
             reached = await fast.run() if self._fast else "stuck"  # the page's own HTML; no model turns
             run.filled = list(fast.typed_keys)
+            if reached != "review" and run.real_site and run.blocked_sends:
+                # The form would have to send something to move on: that is the stop point.
+                raise StopPoint
             if reached != "review":
                 # The fast path couldn't move this page on: Gemini Computer Use takes over from here.
                 run.model_turns_used = True
@@ -596,7 +604,7 @@ class FillRuns:
             while not run._done:
                 await run._sleep_until_woken()
             run._set("verifying", "Making your PDF")
-            values = await page.evaluate(READ_VALUES)
+            values = await js(page, READ_VALUES) or {}
             form = run.pdf_form
             run.pdf_result = await asyncio.to_thread(fill_pdf, form.data, form.fields, values)
             run.outcome = {"status": "pdf_ready", "confirmation": None}
@@ -622,14 +630,33 @@ class FillRuns:
             run._set("done", "The form wasn't sent.")
 
 
-def _allowlist(hosts: frozenset[str]) -> Callable[[Any], Any]:
-    """A real site: its own hosts load; a navigation anywhere else is aborted. CDN assets and
-    CAPTCHA frames load (the gate hands a CAPTCHA to the person)."""
+def _allowlist(hosts: frozenset[str], on_blocked: Callable[[], None] | None = None) -> Callable[[Any], Any]:
+    """A real site, fill-and-stop: nothing may leave the browser.
+
+    The form's own hosts load, plus CDN assets and CAPTCHA frames (GET only). Aborted:
+    every request that could send data (any method but GET/HEAD: a POST of a page, an
+    auto-save, a beacon), every navigation after the form's first load (a GET form submit,
+    a Next that loads a new page), and any navigation off the allowed hosts. Each abort is
+    counted, so a run can tell that the form would have sent something to move on.
+    """
+    loaded = {"done": False}
 
     async def handle(route: Any) -> None:
         request = route.request
         url = request.url
-        if url.startswith(("data:", "blob:", "about:")) or host_allowed(url, hosts):
+        if url.startswith(("data:", "blob:", "about:")):
+            await route.continue_()
+            return
+        sends = request.method not in ("GET", "HEAD") or request.resource_type in ("ping", "beacon")
+        main_nav = request.is_navigation_request() and request.frame.parent_frame is None
+        if sends or (main_nav and loaded["done"]):
+            if on_blocked is not None:
+                on_blocked()
+            await route.abort("blockedbyclient")
+            return
+        if host_allowed(url, hosts):
+            if main_nav:
+                loaded["done"] = True
             await route.continue_()
         elif any(c in url for c in CAPTCHA_HOSTS):
             await route.continue_()

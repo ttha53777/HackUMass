@@ -13,6 +13,7 @@ hosts the run allows. Phase 3 adds the full gate in front of `execute`.
 from __future__ import annotations
 
 import asyncio
+import json
 import logging
 from typing import Any
 from urllib.parse import urlsplit
@@ -158,6 +159,17 @@ _SCROLL_TO = r"""
 """
 
 
+async def js(page: Any, fn: str, arg: Any = None) -> Any:
+    """Call an in-page function with its argument and result passed as JSON strings.
+
+    Some real pages (a Formdesk form, 2026-11-15) break Playwright's own object passing in
+    both directions: arguments arrive as null and returned objects come back as null.
+    Strings always survive, so everything goes through JSON."""
+    wrapper = f"(s) => {{ const r = ({fn})(s === null ? null : JSON.parse(s)); return r === undefined ? null : JSON.stringify(r); }}"
+    text = await page.evaluate(wrapper, None if arg is None else json.dumps(arg))
+    return json.loads(text) if isinstance(text, str) else None
+
+
 def _element(raw: dict[str, Any] | None) -> Element | None:
     if not raw:
         return None
@@ -193,7 +205,7 @@ class Computer:
         """A short name for the control at a grid point, for captions. Never a field's value."""
         px, py = to_pixels(x, y, self._width, self._height)
         try:
-            return str(await self.page.evaluate(_LABEL_AT, {"x": px, "y": py}) or "")
+            return str(await js(self.page, _LABEL_AT, {"x": px, "y": py}) or "")
         except Exception:
             return ""
 
@@ -202,8 +214,8 @@ class Computer:
         page = self.page
         args = action.args
         point = to_pixels(args["x"], args["y"], self._width, self._height) if "x" in args and "y" in args else None
-        target = await page.evaluate(_DESCRIBE, {"x": point[0], "y": point[1]}) if point else None
-        focused = await page.evaluate(_DESCRIBE, None)
+        target = await js(page, _DESCRIBE, {"x": point[0], "y": point[1]}) if point else None
+        focused = await js(page, _DESCRIBE, None)
         frames = tuple(
             f"{urlsplit(f.url).hostname or ''}{urlsplit(f.url).path}"
             for f in page.frames if f.url and not f.url.startswith("about:")
@@ -215,7 +227,7 @@ class Computer:
         person's typing would (native setter, then input and change events, so frameworks see
         it), and mark it for the review highlight. A <select> picks the option by label."""
         try:
-            result = await self.page.evaluate(_FILL_AT, {"selector": selector, "value": value})
+            result = await js(self.page, _FILL_AT, {"selector": selector, "value": value})
         except Exception as exc:
             logger.info("filler fill_at failed (%s)", exc.__class__.__name__)
             return {"error": "The field did not take the value."}
@@ -224,7 +236,7 @@ class Computer:
     async def scroll_to(self, selector: str) -> tuple[float, float] | None:
         """Scroll an element into view and return its centre, in one round trip."""
         try:
-            box = await self.page.evaluate(_SCROLL_TO, selector)
+            box = await js(self.page, _SCROLL_TO, selector)
         except Exception:
             return None
         return (box["x"], box["y"]) if box else None
@@ -234,7 +246,7 @@ class Computer:
         or replace the text. The field is marked for the review highlight."""
         page = self.page
         try:
-            picked = await page.evaluate(_SELECT, value)
+            picked = await js(page, _SELECT, value)
             if picked == "no_match":
                 return {"error": "No option matches."}
             if picked != "selected":
@@ -263,7 +275,7 @@ class Computer:
     async def highlight_filled(self) -> int:
         """Outline every field the agent filled (the review step). Returns how many."""
         try:
-            return int(await self.page.evaluate(_HIGHLIGHT))
+            return int(await js(self.page, _HIGHLIGHT))
         except Exception:
             return 0
 
@@ -293,7 +305,7 @@ class Computer:
             elif name == "type":
                 if value is None:
                     return {"error": "Nothing to type."}
-                picked = await page.evaluate(_SELECT, value)
+                picked = await js(page, _SELECT, value)
                 if picked == "no_match":
                     return {"error": "No option in this dropdown matches that detail. Leave it, or call request_handoff."}
                 if picked != "selected":
