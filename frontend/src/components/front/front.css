@@ -566,11 +566,11 @@ button.stop:hover{transform:scale(1.18) rotate(-8deg)}
 .chip[aria-pressed="true"]{background:var(--wash);box-shadow:inset 0 0 0 1.5px var(--door);color:var(--door)}
 .own-box{margin:26px auto 0;max-width:600px;display:grid;gap:12px;text-align:left;opacity:0;animation:od-fadeup .6s var(--e-out) .5s forwards}
 .own-box label{text-align:center;font-size:1rem;color:var(--ink-2)}
-.own-field{display:flex;align-items:center;gap:6px;padding:6px 6px 6px 20px;border-radius:999px;background:var(--raised);box-shadow:inset 0 0 0 1.5px var(--line-2);transition:box-shadow .25s}
+.own-field{display:flex;align-items:flex-end;gap:6px;padding:6px 6px 6px 20px;border-radius:28px;background:var(--raised);box-shadow:inset 0 0 0 1.5px var(--line-2);transition:box-shadow .25s}
 .own-field:hover{box-shadow:inset 0 0 0 1.5px var(--ink-3)}
 .own-field:focus-within{box-shadow:inset 0 0 0 2px var(--door),0 10px 26px -18px rgba(22,32,27,.45)}
-.own-field input{font-size:1.08rem;flex:1;min-width:0;border:0;background:transparent;padding:.75em 0;font-size:1.05rem;outline:none}
-.own-field input::placeholder{color:var(--ink-3)}
+.own-field textarea{display:block;flex:1;min-width:0;border:0;background:transparent;padding:.68em 0;font:inherit;font-size:1.05rem;line-height:1.45;color:inherit;outline:none;resize:none;overflow:hidden}
+.own-field textarea::placeholder{color:var(--ink-3)}
 .own-field .btn{flex:none;padding:.72em 1.25em;font-size:.95rem}
 #ownOut{text-align:center}
 #ownOut:empty{display:none}

@@ -96,6 +96,8 @@ export const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** The example played for you: Maya, in Amherst. */
 export const SAMPLE = {
   name: "Maya",
+  /** What she types on the needs step, instead of clicking cards. */
+  says: "I'm a single mom with a little boy. I work part time at a grocery store and I'm behind on my electric bill. We need help with food and heat.",
   needs: ["food", "utilities"],
   zip: "01002",
   size: 2,

@@ -106,8 +106,9 @@ const Tick = () => (
 );
 
 /** Sets a controlled input's value as if typed, so React sees it. */
-function typeInto(input: HTMLInputElement, value: string) {
-  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+function typeInto(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+  const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+  Object.getOwnPropertyDescriptor(proto, "value")!.set!.call(input, value);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
@@ -135,6 +136,14 @@ export function QuestionView(p: QuestionProps) {
   const [size, setSize] = useState(p.initial.size ?? 1);
   const [picked, setPicked] = useState<string[]>(p.initial.picked ?? []);
   const committed = useRef(false);
+  // The words box grows to show everything typed, instead of scrolling one line sideways.
+  const ownRef = useRef<HTMLTextAreaElement>(null);
+  useLayoutEffect(() => {
+    const el = ownRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [own]);
 
   const firstWord = (v: string) => (v.trim().split(/\s+/)[0] || "").slice(0, 24);
   const nm = firstWord(nameDraft);
@@ -323,6 +332,19 @@ export function QuestionView(p: QuestionProps) {
         await wait(ms);
       }
     };
+    /** Types a sentence like a person: an uneven rhythm, a breath after commas and full stops, the caret kept in view. */
+    const typeNatural = async (input: HTMLTextAreaElement | null, text: string) => {
+      if (!input) return;
+      input.focus({ preventScroll: true });
+      for (const ch of text) {
+        if (!live) return;
+        typeInto(input, input.value + ch);
+        input.setSelectionRange(input.value.length, input.value.length);
+        const base = 34 + Math.random() * 26;
+        await wait(ch === "." ? base + 260 : ch === "," ? base + 140 : ch === " " ? base + 12 : base);
+      }
+    };
+    const pressed = (el: HTMLElement | null) => el?.getAttribute("aria-pressed") === "true";
     void (async () => {
       await wait(1300);
       if (!live) return;
@@ -330,17 +352,36 @@ export function QuestionView(p: QuestionProps) {
         await typeOut($("#f-name"), SAMPLE.name, 110);
         await wait(700);
       }
-      if (kind === "needs") for (const id of SAMPLE.needs) await press($(`[data-opt="${id}"]`));
+      if (kind === "needs") {
+        // Maya says it in her own words; the reading ticks the cards for her.
+        await typeNatural($("#f-own"), SAMPLE.says);
+        await wait(550);
+        await press($("[data-own]"));
+        for (let t = 0; t < 60 && live && $<HTMLButtonElement>("[data-own]")?.disabled; t++) await wait(150);
+        await wait(1100);
+        // If the reading missed one of her needs, tick it by hand.
+        for (const id of SAMPLE.needs) {
+          const card = $(`[data-opt="${id}"]`);
+          if (!pressed(card)) await press(card);
+        }
+      }
       if (kind === "zip") {
         $<HTMLInputElement>("#f-zip")?.focus({ preventScroll: true });
         await typeOut($("#f-zip"), SAMPLE.zip, 170);
         await wait(700);
       }
       if (kind === "count") {
-        for (let i = 1; i < SAMPLE.size; i++) await press($("[data-inc]"));
+        // Her words may already have set the count, so step to it rather than from 1.
+        const now = () => Number($("#cnt")?.textContent) || 1;
+        for (let i = 0; i < 10 && live && now() < SAMPLE.size; i++) await press($("[data-inc]"));
+        for (let i = 0; i < 10 && live && now() > SAMPLE.size; i++) await press($("[data-dec]"));
         await wait(300);
       }
-      if (kind === "multi") for (const id of SAMPLE.who) await press($(`[data-opt="${id}"]`));
+      if (kind === "multi")
+        for (const id of SAMPLE.who) {
+          const opt = $(`[data-opt="${id}"]`);
+          if (!pressed(opt)) await press(opt);
+        }
       if (kind === "single") {
         if (p.samplePick) await press($(`[data-opt="${p.samplePick}"]`));
         else await press($("[data-skip]"));
@@ -446,14 +487,16 @@ export function QuestionView(p: QuestionProps) {
             {UI.ownPh}
           </label>
           <div className="own-field">
-            <input
+            <textarea
               id="f-own"
+              ref={ownRef}
+              rows={1}
               maxLength={300}
               placeholder={UI.ownPh}
               value={own}
               onChange={(e) => setOwn(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   void addOwn();
                 }
