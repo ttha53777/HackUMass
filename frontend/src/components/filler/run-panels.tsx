@@ -52,56 +52,77 @@ export function FieldChecklist({ plan, filled }: { plan: PlanRow[]; filled: Set<
   );
 }
 
-/** Before anything is typed: what we'll fill, ask and leave to the person; unconfirmed details in one tap. */
+type Row = PlanRow & { value?: string; checked?: boolean };
+
+/**
+ * Before anything is typed: each field of the first page with the value we'll put in it and
+ * the paper it came from, what we'll ask, and what is the person's. Details found on papers
+ * are used only once checked; when some aren't, the main button is the one-tap check itself
+ * ("Looks right, start filling"), so it can't be skipped by accident.
+ */
 export function PreflightCard({ run, onStart, onCancel, busy }: { run: FillerRun; onStart: () => void; onCancel: () => void; busy: boolean }) {
   const filler = useFiller();
-  const plan = run.plan ?? [];
-  const fill = plan.filter((r) => r.how === "fill");
-  const ask = plan.filter((r) => r.how === "ask");
-  const yours = plan.filter((r) => r.how === "yours");
+  const [confirming, setConfirming] = useState(false);
+  const found = new Map((filler.state?.details ?? []).map((d) => [d.key, d]));
+  // The plan was made when the form opened; details read or confirmed since then count too.
+  const rows: Row[] = (run.plan ?? []).map((r) => {
+    const d = r.key ? found.get(r.key) : undefined;
+    if (!d || r.how === "yours") return r;
+    return { ...r, how: "fill", value: d.value, source: d.source_label ?? r.source ?? null, checked: d.status === "confirmed" };
+  });
+  const fill = rows.filter((r) => r.how === "fill");
+  const ask = rows.filter((r) => r.how === "ask");
+  const yours = rows.filter((r) => r.how === "yours");
+  const toCheck = fill.filter((r) => !r.checked).length;
   const unconfirmed = filler.state?.unconfirmed ?? 0;
+
+  const start = async () => {
+    if (unconfirmed) {
+      setConfirming(true);
+      await filler.confirmAll(); // the one tap: these look right
+      setConfirming(false);
+    }
+    onStart();
+  };
+
   return (
     <div className="fl-pre">
       <h4>Ready when you are</h4>
       <p>
-        This form&apos;s first page has {fill.length + ask.length + yours.length} things to fill. Watch the helper do it on the
-        left. You can pause or take over at any moment, and you press Send yourself.
+        Watch the helper fill the form on the left. You can pause or take over at any moment, and you press Send yourself.
       </p>
-      {fill.length ? <Group title={`We'll fill ${fill.length}`} rows={fill} /> : null}
-      {ask.length ? <Group title={`We'll ask you ${ask.length}`} rows={ask} /> : null}
-      {yours.length ? <Group title="Yours to do" rows={yours} /> : null}
-      {unconfirmed ? (
-        <div className="fl-confirm">
-          <p>
-            <b>{unconfirmed} detail{unconfirmed === 1 ? "" : "s"} from your papers not checked yet.</b> Only checked details are
-            used.
-          </p>
-          <button className="btn quiet sm" type="button" onClick={() => void filler.confirmAll()}>
-            <Tick className="mi" /> All correct
-          </button>
-        </div>
+      {fill.length ? <Group title={`We'll fill ${fill.length}`} rows={fill} open /> : null}
+      {ask.length ? <Group title={`We'll ask you ${ask.length}`} rows={ask} open /> : null}
+      {yours.length ? <Group title="Yours to do" rows={yours} open={yours.length <= 4} /> : null}
+      {toCheck || unconfirmed ? (
+        <p className="fl-confirm">
+          <b>Check these values.</b> They were read from your papers and haven&apos;t been checked yet. Starting means they
+          look right to you. Something wrong? Press Not now and fix it under Details found on your papers.
+        </p>
       ) : null}
       <div className="fl-actions">
         <button className="btn quiet sm" type="button" onClick={onCancel}>
           Not now
         </button>
-        <button className="btn" type="button" disabled={busy} onClick={onStart}>
-          Start filling
+        <button className="btn" type="button" disabled={busy || confirming} onClick={() => void start()}>
+          {unconfirmed ? "Looks right, start filling" : "Start filling"}
         </button>
       </div>
     </div>
   );
 }
 
-function Group({ title, rows }: { title: string; rows: PlanRow[] }) {
+function Group({ title, rows, open }: { title: string; rows: Row[]; open: boolean }) {
   return (
-    <details className="fl-group" open={rows.length <= 6}>
+    <details className="fl-group" open={open}>
       <summary>{title}</summary>
       <ul>
         {rows.map((r, i) => (
           <li key={`${i}-${r.label}`}>
             {r.label}
+            {r.value ? <b className="fl-val"> {r.value}</b> : null}
             {r.source ? <small> · from {r.source}</small> : null}
+            {r.value && !r.checked ? <small className="fl-tocheck"> · to check</small> : null}
           </li>
         ))}
       </ul>
@@ -112,7 +133,10 @@ function Group({ title, rows }: { title: string; rows: PlanRow[] }) {
 /** The agent's one question, worded by us. */
 export function QuestionBox({ run, onAnswer, busy }: { run: FillerRun; onAnswer: (body: { value?: string; skip?: boolean }) => Promise<boolean>; busy: boolean }) {
   const [value, setValue] = useState("");
+  const filler = useFiller();
   if (!run.question) return null;
+  const key = run.question.key;
+  const known = (filler.state?.details ?? []).find((d) => d.key === key);
   return (
     <form
       className="fl-question"
@@ -122,6 +146,12 @@ export function QuestionBox({ run, onAnswer, busy }: { run: FillerRun; onAnswer:
       }}
     >
       <label htmlFor="fl-answer">{run.question.text}</label>
+      {known ? (
+        <button className="btn sm fl-use" type="button" disabled={busy} onClick={() => void onAnswer({ value: known.value })}>
+          Use {known.value}
+          {known.source_label ? ` (from ${known.source_label})` : ""}
+        </button>
+      ) : null}
       <p className="fl-quiet">The form needs this and it isn&apos;t on your papers. It&apos;s kept for this visit only.</p>
       <div className="fl-edit">
         <input id="fl-answer" value={value} onChange={(e) => setValue(e.target.value)} autoFocus autoComplete="off" />

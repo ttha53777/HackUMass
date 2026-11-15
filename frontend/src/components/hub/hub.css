@@ -1097,3 +1097,7 @@ body:has(.od-hub.touring) div.fixed[role="status"]{bottom:calc(132px + env(safe-
 .fl-try{justify-self:start;font-size:.9rem;display:inline-flex;gap:.4em;align-items:center}
 .fl-try svg{width:1.2em;height:.8em}
 .fl-tries{display:flex;gap:16px;flex-wrap:wrap}
+.fl-val{font-weight:700;margin-left:4px}
+.fl-tocheck{color:var(--alert)}
+.fl-use{justify-self:start}
+p.fl-confirm{font-size:.9rem;line-height:1.4}
