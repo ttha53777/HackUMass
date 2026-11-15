@@ -26,6 +26,9 @@ export const DOODLES: Record<string, string> = {
   employment: `<path class="f-wash" d="M16 44 L104 44 L104 86 L16 86Z"/><path d="M44 44 L44 34 C44 30 46 28 50 28 L70 28 C74 28 76 30 76 34 L76 44 M16 62 L104 62"/><path class="f-sun wig" d="M52 56 L68 56 L68 68 L52 68Z"/>`,
   taxes: `<path class="f-paper" d="M32 14 L88 14 L88 92 L80 86 L72 92 L64 86 L56 92 L48 86 L40 92 L32 86Z"/><path d="M44 30 L76 30 M44 42 L76 42 M44 54 L64 54"/><path class="f-sun wig" d="M44 68 L76 68 L76 76 L44 76Z"/>`,
   safety: `<path d="M44 48 L44 36 C44 20 76 20 76 36 L76 48"/><path class="f-wash" d="M34 48 L86 48 L86 88 L34 88Z"/><circle class="f-ink" cx="60" cy="64" r="5"/><path d="M60 68 L60 78"/>`,
+  seniors: `<path class="f-wash" d="M24 50 C24 32 56 32 56 50 L56 88 L24 88Z"/><circle class="f-paper" cx="40" cy="24" r="10"/><path class="wig" d="M66 40 L66 88 M66 40 C66 30 82 30 82 40"/><path class="pop f-sun" d="M90 78 C80 70 76 64 76 58 C76 52 84 50 90 57 C96 50 104 52 104 58 C104 64 100 70 90 78Z"/><path d="M14 88 L106 88"/>`,
+  pregnancy_baby: `<g class="wig"><path class="f-wash" d="M46 34 L74 34 L78 46 L78 86 C78 90 76 92 72 92 L48 92 C44 92 42 90 42 86 L42 46Z"/><path class="f-paper" d="M50 22 L70 22 L70 34 L50 34Z"/><path class="f-sun" d="M56 22 C56 10 64 10 64 22"/><path d="M50 56 L60 56 M50 68 L60 68 M50 80 L60 80"/></g>`,
+  disability: `<circle class="f-sun" cx="58" cy="18" r="8"/><path d="M56 30 L54 60 L82 60 L92 84"/><path d="M54 44 L76 44"/><g class="wheel" style="transform-origin:50px 72px"><circle class="f-wash" cx="50" cy="72" r="18"/><path d="M50 60 L50 84 M38 72 L62 72"/></g><path d="M86 84 L100 84"/>`,
   idea: `<path class="f-sun" d="M60 14 C78 14 88 28 86 42 C84 54 74 58 72 70 L48 70 C46 58 36 54 34 42 C32 28 42 14 60 14Z"/><path d="M48 78 L72 78 M50 86 L70 86 M60 4 L60 0 M22 22 L18 18 M98 22 L102 18"/>`,
 };
 

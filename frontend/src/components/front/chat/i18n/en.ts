@@ -102,7 +102,7 @@ export const en: Dict = {
     over: (a) => `More than ${a}`,
   },
   needs: {
-    food: ["Food", "Groceries, meals"],
+    food: ["Food", "Groceries, meals, campus pantry"],
     utilities: ["Heat & utilities", "Heating, electric, fuel"],
     housing: ["Rent & housing", "Rent, repairs, a place to stay"],
     healthcare: ["Medical care", "A clinic, coverage"],
@@ -114,6 +114,9 @@ export const en: Dict = {
     employment: ["Work & training", "Finding a job"],
     taxes: ["Free tax help", "Filing for free"],
     safety: ["Safety at home", "Confidential support"],
+    seniors: ["Caring for an older adult", "Meals, rides, home help"],
+    pregnancy_baby: ["Pregnancy & baby", "WIC, home visits"],
+    disability: ["Disability support", "Rides, benefits help"],
   },
   fit: {
     likely: "Likely a fit",

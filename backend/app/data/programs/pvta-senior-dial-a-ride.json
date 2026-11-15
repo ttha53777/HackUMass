@@ -4,7 +4,8 @@
   "provider": "Pioneer Valley Transit Authority (PVTA)",
   "type": "government",
   "categories": [
-    "transportation"
+    "transportation",
+    "seniors"
   ],
   "service_area": {
     "statewide": false,

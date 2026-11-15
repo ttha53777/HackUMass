@@ -346,6 +346,9 @@ export const RELATED: Record<string, string[]> = {
   transportation: ["employment"],
   taxes: ["employment"],
   phone_internet: ["utilities"],
+  seniors: ["food", "transportation"],
+  pregnancy_baby: ["food", "healthcare"],
+  disability: ["transportation", "healthcare"],
 };
 
 /** The needs option ids the person has chosen (including ones matched from their words). */

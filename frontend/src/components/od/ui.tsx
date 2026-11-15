@@ -14,10 +14,13 @@ import {
   ExternalLink,
   Flame,
   HandHeart,
+  HeartHandshake,
   House,
   Info,
+  Accessibility,
   Landmark,
   Lock,
+  Milk,
   Phone,
   Receipt,
   Scale,
@@ -123,6 +126,9 @@ export const CAT_ICON: Record<string, LucideIcon> = {
   safety: ShieldCheck,
   taxes: Receipt,
   phone_internet: Wifi,
+  seniors: HeartHandshake,
+  pregnancy_baby: Milk,
+  disability: Accessibility,
 };
 
 export const CAT_CLASS: Record<string, string> = {
@@ -138,6 +144,9 @@ export const CAT_CLASS: Record<string, string> = {
   safety: "bg-peach text-peach-ink",
   taxes: "bg-amber text-amber-ink",
   phone_internet: "bg-sky text-sky-ink",
+  seniors: "bg-amber text-amber-ink",
+  pregnancy_baby: "bg-peach text-peach-ink",
+  disability: "bg-lav text-lav-ink",
 };
 
 export function CatIcon({ category, className }: { category: string | undefined; className?: string }) {

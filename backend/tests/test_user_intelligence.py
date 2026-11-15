@@ -111,8 +111,8 @@ def test_skip_withdraws_an_earlier_answer():
 
 def test_other_note_is_kept_verbatim_and_cleared_when_dropped():
     with_note = run(None, question_id="needs", selected_option_ids=["food", "other"],
-                    text="  diapers   for my  baby ")
-    assert with_note["profile"].facts["needs_note"].value == "diapers for my baby"
+                    text="  a winter   coat for  my son ")
+    assert with_note["profile"].facts["needs_note"].value == "a winter coat for my son"
     assert set(with_note["changed_fields"]) == {"needs", "needs_note"}
 
     without = run(with_note["profile"], question_id="needs", selected_option_ids=["food"])

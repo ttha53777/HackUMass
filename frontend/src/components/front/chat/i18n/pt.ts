@@ -113,6 +113,9 @@ export const pt: Dict = {
     employment: ["Trabalho e cursos", "Encontrar emprego"],
     taxes: ["Ajuda grátis com impostos", "Declarar de graça"],
     safety: ["Segurança em casa", "Apoio confidencial"],
+    seniors: ["Cuidar de um idoso", "Refeições, transporte, ajuda em casa"],
+    pregnancy_baby: ["Gravidez e bebê", "WIC, visitas em casa"],
+    disability: ["Apoio para deficiência", "Transporte, ajuda com benefícios"],
   },
   fit: {
     likely: "Provavelmente se aplica",

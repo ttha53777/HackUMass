@@ -110,6 +110,9 @@ export const zh: Dict = {
     employment: ["工作和培训", "找工作"],
     taxes: ["免费报税", "免费报税服务"],
     safety: ["家庭安全", "保密支持"],
+    seniors: ["照顾老年人", "送餐、交通、居家帮助"],
+    pregnancy_baby: ["怀孕和婴儿", "WIC、家访"],
+    disability: ["残障支持", "交通、福利申请帮助"],
   },
   fit: {
     likely: "很可能符合",

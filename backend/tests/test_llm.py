@@ -319,7 +319,11 @@ def test_off_mode_never_marks_wording_pending(client):
     [
         ("I can't pay my electric bill", ["utilities"]),
         ("behind on rent and might be evicted", ["housing", "legal"]),  # eviction is also a legal-aid need
-        ("need diapers", []),
+        ("need diapers", ["pregnancy_baby"]),
+        ("I need a winter coat", []),  # clothing has no curated programs yet
+        ("my elderly mother lives alone", ["seniors"]),
+        ("I use a wheelchair", ["disability"]),
+        ("the umass campus pantry", ["food"]),
         ("my business is struggling", []),  # "bus" inside a word is not transportation
         ("rides to the doctor", ["healthcare", "transportation"]),
     ],

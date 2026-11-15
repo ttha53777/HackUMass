@@ -195,3 +195,22 @@ def test_curated_records_cover_supported_region():
     for program in programs:
         assert program.type in ("government", "community")
         assert not program.info_url.startswith("https://example.")
+
+
+@pytest.mark.parametrize(("need", "expected"), [
+    ("seniors", {"hves-home-delivered-meals", "pvta-senior-dial-a-ride"}),
+    ("pregnancy_baby", {"capv-wic"}),
+    ("disability", {"pvta-ada-paratransit"}),
+])
+def test_added_needs_find_curated_programs(need, expected):
+    discovery = make_discovery(ProgramsRepository(CURATED_DIR))
+    out = discovery(state_for(zip="01002", needs=[need]))
+    assert out["coverage"] == "supported"
+    assert expected <= {p.id for p in out["programs"]}
+
+
+def test_every_needs_option_is_a_category_with_a_curated_program():
+    """Every need offered in the picker has at least one curated record behind it."""
+    categories = {c for p in load_programs(CURATED_DIR / "programs")[0] for c in p.categories}
+    options = {o.id for o in REGISTRY["needs"].question.options} - {"other"}
+    assert options <= categories, options - categories

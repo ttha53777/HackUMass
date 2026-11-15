@@ -16,6 +16,9 @@ const NEED_LABEL: Record<string, string> = {
   safety: "Safety",
   taxes: "Tax help",
   phone_internet: "Phone & internet",
+  seniors: "Older adults",
+  pregnancy_baby: "Pregnancy & baby",
+  disability: "Disability support",
 };
 
 /** Needs present among these cards, in a fixed order. */

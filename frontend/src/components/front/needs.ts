@@ -3,7 +3,7 @@
 export type NeedCopy = { id: string; label: string; hint: string; primary?: boolean };
 
 export const NEEDS: NeedCopy[] = [
-  { id: "food", label: "Food", hint: "Groceries, meals", primary: true },
+  { id: "food", label: "Food", hint: "Groceries, meals, campus pantry", primary: true },
   { id: "utilities", label: "Heat & utilities", hint: "Heating, electric, fuel", primary: true },
   { id: "housing", label: "Rent & housing", hint: "Rent, repairs, a place to stay", primary: true },
   { id: "healthcare", label: "Medical care", hint: "A clinic, coverage", primary: true },
@@ -15,6 +15,9 @@ export const NEEDS: NeedCopy[] = [
   { id: "employment", label: "Work & training", hint: "Finding a job" },
   { id: "taxes", label: "Free tax help", hint: "Filing for free" },
   { id: "safety", label: "Safety at home", hint: "Confidential support" },
+  { id: "seniors", label: "Caring for an older adult", hint: "Meals, rides, home help" },
+  { id: "pregnancy_baby", label: "Pregnancy & baby", hint: "WIC, home visits" },
+  { id: "disability", label: "Disability support", hint: "Rides, benefits help" },
 ];
 
 export const NEED: Record<string, NeedCopy> = Object.fromEntries(NEEDS.map((n) => [n.id, n]));

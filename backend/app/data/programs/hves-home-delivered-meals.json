@@ -4,7 +4,8 @@
   "provider": "Highland Valley Elder Services",
   "type": "community",
   "categories": [
-    "food"
+    "food",
+    "seniors"
   ],
   "service_area": {
     "statewide": false,

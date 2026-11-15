@@ -20,7 +20,8 @@ from app.services.llm import get_llm
 # short and literal so every match is easy to explain.
 KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
     "needs": {
-        "food": ("food", "grocer", "hungry", "hunger", "meal", "pantry", r"snap\b", r"ebt\b", r"eat(ing)?\b"),
+        "food": ("food", "grocer", "hungry", "hunger", "meal", "pantry", r"snap\b", r"ebt\b", r"eat(ing)?\b",
+                 "campus", r"umass\b", "tuition", "textbook"),
         "utilities": ("electric", "heat", "utilit", "power bill", "gas bill", r"oil\b",
                       "energy", "water bill", "shutoff", "shut off", "light bill"),
         "housing": (r"rent(al|ing)?\b", "evict", "housing", "homeless", "landlord", "apartment", "shelter",
@@ -42,6 +43,13 @@ KEYWORDS: dict[str, dict[str, tuple[str, ...]]] = {
         "taxes": (r"tax(es)?\b", "tax return", "refund", r"irs\b", r"w-?2\b", "file my taxes"),
         "phone_internet": ("phone bill", "cell ?phone", "internet", "wifi", "wi-fi", "broadband", "data plan",
                            "lifeline"),
+        "seniors": ("elderly", "senior", "older adult", r"aging\b", "caregiv", "nursing home",
+                    r"(my|our) (mom|mother|dad|father|grandma|grandmother|grandpa|grandfather|parents?)\b[^.]{0,30}\b(older|age|care|help|alone)",
+                    r"meals on wheels"),
+        "pregnancy_baby": ("pregnan", "expecting", "newborn", r"bab(y|ies)\b", "infant", "diaper", "formula",
+                           r"wic\b", "prenatal"),
+        "disability": ("disab", "wheelchair", r"ssdi?\b", r"blind\b", r"deaf\b", "mobility",
+                       "paratransit", "chronic illness"),
     },
     "housing_status": {
         "renting": (r"rent(ing|er)?\b", "lease", "landlord", "apartment"),

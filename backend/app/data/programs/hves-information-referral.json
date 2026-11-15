@@ -4,7 +4,8 @@
   "provider": "Highland Valley Elder Services",
   "type": "community",
   "categories": [
-    "transportation"
+    "transportation",
+    "seniors"
   ],
   "service_area": {
     "statewide": false,

@@ -61,6 +61,9 @@ export const RELATED: Record<string, string[]> = {
   employment: ["childcare", "transportation"],
   taxes: ["employment"],
   safety: ["housing", "mental_health"],
+  seniors: ["food", "transportation", "healthcare"],
+  pregnancy_baby: ["food", "healthcare", "childcare"],
+  disability: ["transportation", "healthcare"],
 };
 
 /**
@@ -68,13 +71,16 @@ export const RELATED: Record<string, string[]> = {
  * rate-limited). The server's reading (`/interpret`) is preferred.
  */
 export const KEYWORDS: [RegExp, string][] = [
-  [/food|grocer|hungry|eat|meal|pantry|snap|ebt|payday/i, "food"],
+  [/food|grocer|hungry|eat|meal|pantry|snap|ebt|payday|campus|umass|tuition|textbook/i, "food"],
   [/heat|electric|gas\b|oil|fuel|shut.?off|utility|utilities|propane|cold/i, "utilities"],
   [/rent|evict|housing|landlord|apartment|homeless|place to stay|mortgage/i, "housing"],
   [/doctor|clinic|sick|medic|prescription|health insurance|dentist/i, "healthcare"],
   [/bus|ride|car\b|transport|get to|appointment/i, "transportation"],
   [/phone|internet|wi-?fi|hotspot|cut off/i, "phone_internet"],
-  [/child ?care|daycare|kid|preschool|baby|toddler/i, "childcare"],
+  [/child ?care|daycare|kid|preschool|toddler/i, "childcare"],
+  [/elderly|senior|older adult|aging|caregiv|nursing home|meals on wheels/i, "seniors"],
+  [/pregnan|expecting|newborn|baby|babies|infant|diaper|formula|\bwic\b|prenatal/i, "pregnancy_baby"],
+  [/disab|wheelchair|\bssdi?\b|paratransit|mobility/i, "disability"],
   [/talk|lonely|anxious|depress|stress|sad|overwhelm|mom\b|a hand/i, "mental_health"],
   [/lawyer|legal|court|immigra|visa/i, "legal"],
   [/job|work|laid off|unemploy|career|training/i, "employment"],
