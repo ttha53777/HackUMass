@@ -229,6 +229,9 @@ class SessionSnapshot(BaseModel):
     session_id: str
     phase: WorkflowPhase
     busy: bool = False
+    # Live mode: plain-language wording is still being written in the background.
+    # Answering stays open; re-read the snapshot shortly to pick it up.
+    wording_pending: bool = False
     pending_question: Question | None = None
     # Every follow-up the person may answer now, most useful first. The head
     # equals pending_question while the session is waiting on one.

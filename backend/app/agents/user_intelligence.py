@@ -204,9 +204,14 @@ def _merge_evidence(profile: Profile, field: str, previous: Fact, incoming: Fact
     _drop_conflict(profile, field)
     if disagree:
         profile.conflicts.append(Conflict(field=field, candidates=candidates))
-    # The newest reading is the stored value, unconfirmed either way.
-    profile.facts[field] = incoming
-    return [field] if disagree or open_conflict or not _same_fact(previous, incoming) else []
+    # The newest reading is the stored value, unconfirmed either way. When the
+    # readings agree, a paper's reading is kept over the bank's: it is the one
+    # the person can review, and it survives disconnecting the bank.
+    stored = incoming
+    if not disagree and not (incoming.source or "").startswith("doc:"):
+        stored = next((c for c in reversed(candidates) if (c.source or "").startswith("doc:")), incoming)
+    profile.facts[field] = stored
+    return [field] if disagree or open_conflict or not _same_fact(previous, stored) else []
 
 
 def apply_evidence_facts(profile: Profile, facts: dict[str, Fact]) -> list[str]:
@@ -349,6 +354,41 @@ def apply_review(
     return changed
 
 
+def forget_bank_evidence(profile: Profile) -> list[str]:
+    """The person disconnected the simulated bank: drop everything read from it.
+
+    An unconfirmed bank figure is removed. A figure the person confirmed is their
+    own answer now (provenance "user_reported") and stays. A conflict loses its
+    bank side. If two or more readings are left it stays open; if one is left it
+    closes: the person's own answer is confirmed again, a paper's reading stays
+    as unconfirmed evidence (still waiting on its review card).
+    """
+    changed: list[str] = []
+    for name, fact in list(profile.facts.items()):
+        if fact.provenance == "nessie_sandbox" and not fact.confirmed:
+            del profile.facts[name]
+            changed.append(name)
+    for conflict in list(profile.conflicts):
+        if not any(c.provenance == "nessie_sandbox" for c in conflict.candidates):
+            continue
+        field = conflict.field
+        remaining = [c for c in conflict.candidates if c.provenance != "nessie_sandbox"]
+        if len(remaining) > 1:
+            conflict.candidates = remaining
+            if field not in profile.facts:
+                user = next((c for c in remaining if c.provenance == "user_reported"), None)
+                profile.facts[field] = (user or remaining[-1]).model_copy(update={"confirmed": False})
+        else:
+            _drop_conflict(profile, field)
+            if remaining:
+                only = remaining[0]
+                profile.facts[field] = only.model_copy(
+                    update={"confirmed": only.provenance == "user_reported"})
+        if field not in changed:
+            changed.append(field)
+    return changed
+
+
 # --------------------------------------------------------------------------
 # Graph node
 # --------------------------------------------------------------------------
@@ -401,6 +441,11 @@ def make_user_intelligence(nessie: NessieService | None = None, inbox: Any = Non
                 update["errors"] = list(state.get("errors") or []) + [
                     SafeError(code=code, message=message, agent="user_intelligence", at=now)
                 ]
+
+        if evidence is not None and evidence.kind == "nessie_disconnect":
+            update["consents"] = {**(state.get("consents") or {}), "nessie": False}
+            update["financial_summary"] = None
+            changed += forget_bank_evidence(profile)
 
         documents = list(state.get("documents") or [])
         queue = state.get("document_queue") or []

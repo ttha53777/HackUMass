@@ -44,6 +44,7 @@ from app.graph.state import (
     Program,
 )
 from app.services.session_store import SessionMeta
+from app.services.wording import apply_wording
 
 UNSUPPORTED_MESSAGE = (
     "We don't have verified programs for that ZIP code yet. "
@@ -140,6 +141,8 @@ def build_snapshot(
     region_for: Callable[[str], dict[str, str] | None] = lambda _zip: None,
     automation_modes: dict[str, str] | None = None,
 ) -> SessionSnapshot:
+    # Plain-language rewrites (live mode), only where one exists for the exact text in state.
+    values = apply_wording(values, meta.wording)
     intake: IntakeState = values.get("intake") or IntakeState()
     profile: Profile = values.get("profile") or Profile()
     dirty: DirtyFlags = values.get("dirty") or DirtyFlags()
@@ -234,6 +237,7 @@ def build_snapshot(
         session_id=session_id,
         phase=values.get("workflow_phase") or "intake",
         busy=meta.busy,
+        wording_pending=meta.wording_pending,
         pending_question=values.get("pending_question"),
         open_questions=[OpenQuestionView(question=item.question, affects=item.affects) for item in open_items],
         last_change=LastChange(**meta.last_change) if meta.last_change else None,

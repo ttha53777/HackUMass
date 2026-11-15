@@ -8,9 +8,9 @@ exactly as if no model existed.
 
 `LLM_MODE=off` never imports the Gemini SDK.
 
-Budget: one batched call per specialist run. A call gets CALL_TIMEOUT_SECONDS;
-a fast failure is retried once, a timeout is not, so two model-using specialists
-stay well inside the 45 s run limit (foundation plan B.5).
+Budget: rewording is one batched call after a graph run, in the background
+(services/wording.py), so it never delays a run. A call gets CALL_TIMEOUT_SECONDS;
+a fast failure is retried once, a timeout is not.
 
 Privacy: prompts and responses are never logged; only the error class is.
 """

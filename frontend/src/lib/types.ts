@@ -309,6 +309,8 @@ export type SessionSnapshot = {
   phase: WorkflowPhase;
   /** A graph run is active; keep polling. */
   busy: boolean;
+  /** Plain-language wording is still being written; answering stays open. Re-read shortly. */
+  wording_pending: boolean;
   pending_question: Question | null;
   /** Every follow-up that may be answered now, most useful first. Head equals pending_question. */
   open_questions: OpenQuestionView[];

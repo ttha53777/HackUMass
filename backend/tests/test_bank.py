@@ -109,5 +109,40 @@ def test_disconnect_keeps_a_confirmed_income(client):
     answer(client, sid, question_id="needs", selected_option_ids=["food"])  # the session still works
 
 
+def _cards(snap):
+    return {c["program"]["id"]: c for c in snap["programs"]}
+
+
+def test_disconnect_reassesses_what_used_the_bank_income(client):
+    """Regression: disconnecting used to leave results computed from the deleted income."""
+    sid = to_results(client)  # income skipped: only the bank supplies it
+    evidence(client, sid, persona_id="part-time-irregular", consent=True)
+    before = _cards(client.get(f"/api/sessions/{sid}").json())
+
+    client.post(f"/api/sessions/{sid}/evidence/nessie/disconnect")
+    after = client.get(f"/api/sessions/{sid}").json()
+    cards = _cards(after)
+    assert not any(c["stale"] for c in cards.values()) and not after["plan_stale"]
+    food = cards["fixture-food-benefit"]["assessment"]
+    assert food["status"] != before["fixture-food-benefit"]["assessment"]["status"]
+    assert food["status"] == "insufficient_information"
+
+
+def test_disconnect_closes_a_conflict_with_the_bank(client):
+    sid = to_results(client, income=500)  # far from the persona's deposits
+    evidence(client, sid, persona_id="part-time-irregular", consent=True)
+    values = client.app.state.sessions.values(sid)
+    assert [c.field for c in values["profile"].conflicts] == ["monthly_income"]
+
+    client.post(f"/api/sessions/{sid}/evidence/nessie/disconnect")
+    values = client.app.state.sessions.values(sid)
+    income = values["profile"].facts["monthly_income"]
+    assert values["profile"].conflicts == []
+    assert income.value == 500 and income.provenance == "user_reported" and income.confirmed
+    assert values["consents"]["nessie"] is False
+    pending = client.get(f"/api/sessions/{sid}").json()["pending_question"]
+    assert pending is None or "deposits" not in pending["prompt"]
+
+
 def test_disconnect_unknown_session(client):
     assert client.post("/api/sessions/nope/evidence/nessie/disconnect").status_code == 404

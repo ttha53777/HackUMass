@@ -6,6 +6,7 @@ export const snapshotFixture: SessionSnapshot = {
   "session_id": "00000000-0000-4000-8000-000000000001",
   "phase": "awaiting_user",
   "busy": false,
+  "wording_pending": false,
   "pending_question": {
     "id": "benefits_held",
     "prompt": "Do you already get any of these?",
