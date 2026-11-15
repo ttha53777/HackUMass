@@ -13,6 +13,7 @@ import { NAME_EVENT, readName } from "@/lib/device-state";
 import { cn } from "@/lib/utils";
 
 import { NAV } from "./nav";
+import { ThemeToggle } from "./theme-toggle";
 
 function Logo() {
   return (
@@ -58,8 +59,9 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-line bg-surface px-4 pb-[22px] pt-7 min-[751px]:flex min-[1101px]:w-[248px]">
-        <div className="mb-[34px] px-3">
+        <div className="mb-[34px] flex items-center justify-between gap-2 pl-3">
           <Logo />
+          <ThemeToggle className="shrink-0" />
         </div>
         <p className="mx-3.5 mb-3 text-[10px] font-extrabold uppercase tracking-[2px] text-faint">Your plan</p>
         <nav aria-label="Main" className="flex flex-col gap-1">
@@ -116,7 +118,10 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-10 flex items-center justify-between gap-2.5 border-b border-line bg-surface px-4 py-3 min-[751px]:hidden">
           <Logo />
-          {zip ? <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-muted-foreground">ZIP {zip}</span> : null}
+          <div className="flex items-center gap-2">
+            {zip ? <span className="rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-bold text-muted-foreground">ZIP {zip}</span> : null}
+            <ThemeToggle />
+          </div>
         </header>
         <main className="mx-auto w-full max-w-[1320px] flex-1 px-4 pb-24 pt-7 min-[751px]:px-[max(16px,min(40px,4vw))] min-[751px]:pb-5">
           {children}
