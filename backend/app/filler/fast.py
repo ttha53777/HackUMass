@@ -149,18 +149,18 @@ class FastFiller:
         self.stream.step(f"Typing your {entry.label}{source}", key)
         if self.on_typed:
             self.on_typed(key)
-        await self._click(f)
-        if not await self.computer.put(entry.value):
+        point = await self.computer.scroll_to(f.selector)
+        if point:
+            await self.computer.show_cursor(*point)
+        if not await self.computer.fill_at(f.selector, entry.value):
             if key not in self.typed_keys:
                 self.typed_keys.append(key)
             self.stream.publish({"type": "checklist", "filled": list(self.typed_keys)})
         await asyncio.sleep(self.dwell)
 
     async def _click(self, f: Field) -> None:
-        locator = self.page.locator(f.selector)
-        await locator.scroll_into_view_if_needed(timeout=3000)
-        box = await locator.bounding_box()
-        x, y = (box["x"] + box["width"] / 2, box["y"] + box["height"] / 2) if box else (f.x, f.y)
+        point = await self.computer.scroll_to(f.selector)
+        x, y = point if point else (f.x, f.y)
         await self.computer.glide_click(x, y)
 
     async def _persons_part(self, fields: list[Field]) -> None:

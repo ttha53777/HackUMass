@@ -31,7 +31,9 @@ SESSION_SECONDS = 15 * 60  # Steel's free tier caps a session at 15 minutes
 # Live stream.
 SCREENCAST_QUALITY = 60  # JPEG
 TYPE_DELAY_MS = 35  # per character, so typing is visible to the person watching
-CURSOR_STEPS = 12  # mouse.move steps, so the cursor glides instead of jumping
+# mouse.move steps. Each step is a round trip to the browser (about 100-200 ms to Steel), and
+# the viewer animates the cursor dot itself, so one step is enough.
+CURSOR_STEPS = 1
 
 
 def _flag(name: str) -> bool:

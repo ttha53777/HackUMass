@@ -124,6 +124,40 @@ _HIGHLIGHT = r"""
 """
 
 
+_FILL_AT = r"""
+({ selector, value }) => {
+  const el = document.querySelector(selector);
+  if (!el) return "missing";
+  el.focus();
+  if (el.tagName === "SELECT") {
+    const norm = (s) => (s || "").trim().toLowerCase();
+    const opt = Array.from(el.options).find((o) => norm(o.label) === norm(value) || norm(o.value) === norm(value));
+    if (!opt) return "no_match";
+    el.value = opt.value;
+  } else {
+    const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    const setter = Object.getOwnPropertyDescriptor(proto, "value")?.set;
+    if (setter) setter.call(el, value); else el.value = value;
+  }
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  el.setAttribute("data-filler-filled", "1");
+  return "ok";
+}
+"""
+
+_SCROLL_TO = r"""
+(selector) => {
+  const el = document.querySelector(selector);
+  if (!el) return null;
+  const r0 = el.getBoundingClientRect();
+  if (r0.top < 0 || r0.bottom > innerHeight) el.scrollIntoView({ block: "center" });
+  const r = el.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}
+"""
+
+
 def _element(raw: dict[str, Any] | None) -> Element | None:
     if not raw:
         return None
@@ -176,6 +210,25 @@ class Computer:
         )
         return PageFacts(url=page.url, target=_element(target), focused=_element(focused), frame_hosts=frames)
 
+    async def fill_at(self, selector: str, value: str) -> dict[str, Any]:
+        """The fast path's one round trip per field: focus the field, set its value the way a
+        person's typing would (native setter, then input and change events, so frameworks see
+        it), and mark it for the review highlight. A <select> picks the option by label."""
+        try:
+            result = await self.page.evaluate(_FILL_AT, {"selector": selector, "value": value})
+        except Exception as exc:
+            logger.info("filler fill_at failed (%s)", exc.__class__.__name__)
+            return {"error": "The field did not take the value."}
+        return {} if result == "ok" else {"error": "No option matches." if result == "no_match" else "The field did not take the value."}
+
+    async def scroll_to(self, selector: str) -> tuple[float, float] | None:
+        """Scroll an element into view and return its centre, in one round trip."""
+        try:
+            box = await self.page.evaluate(_SCROLL_TO, selector)
+        except Exception:
+            return None
+        return (box["x"], box["y"]) if box else None
+
     async def put(self, value: str) -> dict[str, Any]:
         """Fill the focused field in one step (the fast path): pick a dropdown option by label,
         or replace the text. The field is marked for the review highlight."""
@@ -193,6 +246,12 @@ class Computer:
             logger.info("filler put failed (%s)", exc.__class__.__name__)
             return {"error": "The field did not take the value."}
         return {}
+
+    async def show_cursor(self, x: float, y: float) -> None:
+        """Move the cursor to a point (one round trip) and show a click there, without clicking."""
+        px, py = int(x), int(y)
+        await self._glide(px, py)
+        self._stream.cursor(px, py, "click")
 
     async def glide_click(self, x: float, y: float) -> None:
         """Move the cursor visibly to a viewport point and click it."""
