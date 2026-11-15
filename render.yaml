@@ -1,0 +1,39 @@
+# Render Blueprint for the FastAPI backend (the Next.js frontend is on Vercel).
+# Sessions live in memory (InMemorySaver), so run exactly ONE instance that stays up:
+# a restart or a free-plan spin-down forgets every session.
+services:
+  - type: web
+    name: resource-navigator-api
+    runtime: python
+    rootDir: backend
+    plan: starter # "free" works but sleeps after 15 idle minutes and loses sessions
+    numInstances: 1
+    # Editable install keeps the non-JSON data files (practice forms) reachable.
+    # The browser extra brings the playwright package Steel connects with (no local browsers).
+    buildCommand: pip install -e ".[browser]"
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips '*'
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      # Values are entered in the Render dashboard when the Blueprint is created.
+      - key: PROGRAM_SOURCE # curated | fixtures
+        sync: false
+      - key: LLM_MODE # live | off
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: NESSIE_API_KEY
+        sync: false
+      - key: STEEL_API_KEY
+        sync: false
+      - key: BROWSER_PROVIDER # off | steel (never local on a server)
+        sync: false
+      - key: FORM_AGENT_ENGINE # manifest | gemini_map | computer_use
+        sync: false
+      - key: FILLER_ENABLED # 1 to turn the Filler on
+        sync: false
+      - key: FILLER_PROVIDER # steel (never local on a server)
+        sync: false
+      - key: PRACTICE_BASE_URL # this service's public URL, so the cloud browser can open the practice forms
+        sync: false
