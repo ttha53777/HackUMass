@@ -339,6 +339,9 @@ def test_the_household_total_meets_what_was_typed(client):
     conflict = next(c for c in profile.conflicts if c.field == "monthly_income")
     assert sorted(c.value for c in conflict.candidates) == [1240, 2290]
     assert snap["pending_question"]["id"] == "confirm_monthly_income"
+    assert "Your pay stub and benefit letter show about $2,290" in snap["pending_question"]["prompt"]
+    card = next(r for r in snap["pending_reviews"] if any(x["field"] == "monthly_income" for x in r["rows"]))
+    assert any("household's total" in n for n in card["notes"])
 
 
 def test_two_wage_papers_are_never_added():

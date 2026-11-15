@@ -30,6 +30,7 @@ from app.graph.answers import display_value
 from app.graph.questions import (
     evidence_from_source,
     get_spec,
+    income_is_summed,
     open_questions,
     paper_title,
     question_for_field,
@@ -83,9 +84,18 @@ NOTE_TEXT = {
 }
 
 
+def _notes(document: DocumentExtraction, carries_summed_income: bool) -> list[str]:
+    """The paper's own notes, plus "added up" on whichever card carries the summed income."""
+    notes = list(document.notes)
+    if carries_summed_income and "income_adds_to_household" not in notes:
+        notes.append("income_adds_to_household")
+    return notes
+
+
 def pending_reviews(documents: list[DocumentExtraction], profile: Profile) -> list[PendingReview]:
     """One card per paper that still has readings waiting for the person."""
     disputed = {c.field for c in profile.conflicts}
+    summed = income_is_summed(documents)
     reviews: list[PendingReview] = []
     for document in documents:
         source = f"doc:{document.document_id}"
@@ -109,7 +119,8 @@ def pending_reviews(documents: list[DocumentExtraction], profile: Profile) -> li
                 kind=document.kind,
                 title=paper_title(document.kind),
                 rows=rows,
-                notes=[NOTE_TEXT[n] for n in document.notes if n in NOTE_TEXT],
+                notes=[NOTE_TEXT[n] for n in _notes(document, summed and any(r.field == "monthly_income" for r in rows))
+                       if n in NOTE_TEXT],
             ))
     return reviews
 

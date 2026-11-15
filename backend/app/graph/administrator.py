@@ -31,7 +31,9 @@ from langgraph.types import Command
 
 from app.graph import trace
 from app.graph.questions import (
+    SUMMED_INCOME_TITLE,
     get_spec,
+    income_is_summed,
     next_awaiting_question,
     next_core_question,
     paper_title,
@@ -133,7 +135,13 @@ def _absorb_application(state: SessionState, dirty: DirtyFlags, update: dict[str
 
 def source_labels(state: SessionState) -> dict[str, str]:
     """Fact.source -> how to name it to the person, e.g. "doc:ab12" -> "your pay stub"."""
-    labels = {f"doc:{d.document_id}": paper_title(d.kind) for d in state.get("documents") or []}
+    documents = state.get("documents") or []
+    labels = {f"doc:{d.document_id}": paper_title(d.kind) for d in documents}
+    if income_is_summed(documents):
+        # The income on file adds up both papers, whichever of them carries it.
+        for d in documents:
+            if d.kind in ("income", "member_income") and "monthly_income" in d.extracted_facts:
+                labels[f"doc:{d.document_id}"] = SUMMED_INCOME_TITLE
     summary = state.get("financial_summary")
     if summary is not None:
         labels[f"bank:{summary.persona_id}"] = "the simulated bank profile"
