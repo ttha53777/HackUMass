@@ -12,6 +12,7 @@ import type {
   SessionSnapshot,
   WebResourcesOut,
 } from "./types";
+import { recordApiCall } from "./api-events";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -31,15 +32,25 @@ export function isApiError(error: unknown, code?: ErrorCode): error is ApiError 
 
 async function request<T = SessionSnapshot>(path: string, init?: RequestInit): Promise<T> {
   // Same-origin: Next.js forwards /api/* to the backend (see next.config.ts).
-  const response = await fetch(`/api${path}`, {
-    ...init,
-    // A FormData body sets its own multipart content type.
-    headers:
-      init?.body instanceof FormData
-        ? init.headers
-        : { "content-type": "application/json", ...init?.headers },
-    cache: "no-store",
-  });
+  const method = init?.method ?? "GET";
+  const started = performance.now();
+  let response: Response;
+  try {
+    response = await fetch(`/api${path}`, {
+      ...init,
+      // A FormData body sets its own multipart content type.
+      headers:
+        init?.body instanceof FormData
+          ? init.headers
+          : { "content-type": "application/json", ...init?.headers },
+      cache: "no-store",
+    });
+  } catch (error) {
+    recordApiCall(method, path, 0, performance.now() - started);
+    throw error;
+  }
+  // Demo "Agents at work" panel: method, route template, status and time only.
+  recordApiCall(method, path, response.status, performance.now() - started);
   if (response.ok) {
     return (await response.json()) as T;
   }
