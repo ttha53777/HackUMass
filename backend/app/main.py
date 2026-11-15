@@ -78,20 +78,56 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
         return error_response(exc.status, exc.code, exc.message)
 
 
+def _mount_filler(app: FastAPI, filler: Any) -> None:
+    """Mount the Filler (v2) dev routes when FILLER_ENABLED=1 (or a test passes a SpikeRuns).
+
+    Separate from the v1 browser agent above; with the flag off nothing from
+    `app.filler` beyond its config is imported.
+    """
+    from app.filler.config import FillerSettings
+
+    app.state.filler = None
+    if filler is None:
+        settings = FillerSettings.from_env()
+        if not settings.enabled:
+            return
+        if not settings.gemini_api_key:
+            logger.warning("FILLER_ENABLED is set but GEMINI_API_KEY is not; the Filler is off")
+            return
+        from app.filler.loop import GeminiModel
+        from app.filler.runs import SpikeRuns
+        from app.filler.sandbox import SandboxError, make_browser
+
+        try:
+            browser = make_browser(settings)
+        except SandboxError:
+            logger.warning("FILLER_PROVIDER=%s is not configured; the Filler is off", settings.provider)
+            return
+        filler = SpikeRuns(browser, lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction))
+
+    from app.api.filler_routes import router as filler_router
+
+    app.state.filler = filler
+    app.include_router(filler_router)
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     yield
     # Release every cloud browser on shutdown.
     if getattr(app.state, "execution", None) is not None:
         await app.state.execution.shutdown()
+    if getattr(app.state, "filler", None) is not None:
+        await app.state.filler.shutdown()
 
 
 def create_app(
     repository: ProgramsRepository | None = None,
     nessie: NessieService | None = None,
     execution: Any = None,
+    filler: Any = None,
 ) -> FastAPI:
-    """`execution` (an ExecutionManager) is for tests; normally BROWSER_PROVIDER decides."""
+    """`execution` (an ExecutionManager) and `filler` (SpikeRuns) are for tests; normally the env decides."""
     app = FastAPI(title="Community Resource Navigator API", version="0.1.0", lifespan=_lifespan)
 
     programs = repository or repository_from_env(os.environ.get("PROGRAM_SOURCE"))
@@ -122,6 +158,7 @@ def create_app(
 
     app.include_router(router)
     _mount_browser_agent(app, execution)
+    _mount_filler(app, filler)
     return app
 
 

@@ -122,6 +122,20 @@ Programs the assistant can fill are listed in `backend/app/data/automation/`. A 
 
 Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
+### Form-Fill Agent v2 ("Filler", phase 1, optional)
+
+A new agent built beside the browser assistant above, in `backend/app/filler/`. Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. Mounted only when `FILLER_ENABLED=1` and `GEMINI_API_KEY` is set, and answers requests from this machine only.
+
+| Call | Purpose |
+|---|---|
+| `POST /filler/dev/spike` | Start a spike run (409 if one is going). |
+| `GET /filler/dev/spike/{run_id}` | Status, frames, peak fps, seconds to first typing, which fields were filled. |
+| `POST /filler/dev/spike/{run_id}/stop` | Stop and release the browser. |
+| `WS /filler/dev/spike/{run_id}/live` | Live events: `frame`, `cursor`, `step`, `status`, `end`. |
+| `GET /filler/dev/viewer` | A bare page that starts a run and shows it live. Open `http://localhost:8000/api/filler/dev/viewer`. |
+
+Live check against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py`.
+
 Try it with the backend running:
 
 ```bash
@@ -145,6 +159,9 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
 | `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-3.5-flash` (`gemini-4-hydrogen` was too slow to finish a run). |
 | `PRACTICE_BASE_URL` | No | Where the browser reaches the backend's practice form. Default `http://127.0.0.1:8000`; a cloud browser needs a public URL (for example a tunnel). |
+| `FILLER_ENABLED` | No | `1` mounts the Filler phase 1 dev routes (needs `GEMINI_API_KEY`). Off by default. |
+| `FILLER_PROVIDER` | No | Filler browser: `local` (default, Chrome on this machine) or `steel` (needs `STEEL_API_KEY`). |
+| `FILLER_MODEL` | No | Filler's Gemini Computer Use model ID. Default `gemini-3.5-flash`. |
 | `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome; empty uses Playwright's Chromium (`.venv/bin/playwright install chromium`). |
 | `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. |
 | `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
@@ -213,6 +230,8 @@ backend/app/api/practice_routes.py serves the practice application form at /prac
 backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
                                    run manager, fill sheet, outcome check, practice form
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
+backend/app/filler/                Form-Fill Agent v2: cloud browser, live stream, agent loop
+backend/app/api/filler_routes.py   Filler dev routes and live viewer (mounted only when enabled)
 backend/scripts/spikes/            Phase 0 spikes: Gemini Computer Use, Steel, real forms
 backend/app/api/views.py           builds the client snapshot from graph state
 backend/app/api/schemas.py         request/response shapes          (contract file)
