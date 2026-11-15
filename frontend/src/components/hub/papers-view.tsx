@@ -84,24 +84,9 @@ function AddAllDemoPapers() {
   const toast = useToast();
   const [status, setStatus] = useState<string | null>(null);
   const run = async () => {
-    const list = await papers.demos(null);
-    if (!list.length) return toast("The demo papers aren't on this server.");
-    let read = 0;
-    let found = 0;
-    for (const [i, d] of list.entries()) {
-      const kind = d.kinds[0];
-      setStatus(`Reading ${i + 1} of ${list.length}: ${d.title.replace(/\s*\(fictional\)\s*$/i, "")}`);
-      const blob = await papers.demoBlob(d);
-      if (!blob) continue;
-      const paper = await papers.keep(blob, kind, { demo: true, name: (blob as File).name, kinds: d.kinds });
-      if (!paper || !papers.canRead(paper, kind)) continue;
-      const outcome = await papers.read(paper, kind);
-      if (outcome.error) continue;
-      read += 1;
-      found += outcome.identity;
-    }
-    setStatus(null);
-    toast(`Read ${read} of ${list.length} demo papers${found ? `, ${found} details for forms` : ""}. Check them below.`);
+    const { read, total, details } = await papers.addDemoHousehold(setStatus);
+    if (!read) return toast("The demo papers aren't on this server.");
+    toast(`Read ${read} of ${total} demo papers${details ? ` and saved ${details} details for forms` : ""}. The form helper is on.`);
   };
   return (
     <button className="btn sm quiet" type="button" disabled={!!status} onClick={() => void run()} aria-live="polite">

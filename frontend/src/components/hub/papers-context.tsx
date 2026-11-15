@@ -86,6 +86,12 @@ type PapersController = {
   addLog: (entry: HelperLogEntry) => void;
   /** Remove every paper and detail of the current session (the demo cleans up with this). */
   clearAll: () => Promise<void>;
+  /**
+   * The fictional demo household's papers, kept and read one after another (in order, so
+   * the trace reads in order), each as its manifest kind. Their details are saved as known
+   * and the helper is turned on, so a form never asks for what the papers hold.
+   */
+  addDemoHousehold: (onProgress?: (text: string | null) => void) => Promise<{ read: number; total: number; details: number }>;
   removeDetail: (detail: Detail) => Promise<void>;
 };
 
@@ -172,7 +178,7 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       const review = (latest.current.snapshot?.pending_reviews ?? []).find((r) => !before.has(r.document_id) && !r.simulated);
       let otherPerson: string | null = null;
       if (identity.length) {
-        const saved = await details.saveReadings(identity, title ?? sourceNoun(kind), paper.id, kind);
+        const saved = await details.saveReadings(identity, title ?? sourceNoun(kind), paper.id, kind, paper.demo);
         otherPerson = saved.otherPerson;
       }
       return { error: null, reviewId: review?.document_id ?? null, identity: otherPerson ? 0 : identity.length, otherPerson };
@@ -220,6 +226,30 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       // ignore: the switch still works for this visit
     }
   }, []);
+
+  const addDemoHousehold = useCallback<PapersController["addDemoHousehold"]>(
+    async (onProgress) => {
+      const list = await loadDemoManifest();
+      let done = 0;
+      let found = 0;
+      for (const [i, d] of list.entries()) {
+        const kind = d.kinds[0];
+        onProgress?.(`Reading ${i + 1} of ${list.length}: ${d.title.replace(/\s*\(fictional\)\s*$/i, "")}`);
+        const blob = await demoBlob(d);
+        if (!blob) continue;
+        const paper = await keep(blob, kind, { demo: true, name: (blob as File).name, kinds: d.kinds });
+        if (!paper || !canRead(paper, kind)) continue;
+        const outcome = await read(paper, kind);
+        if (outcome.error) continue;
+        done += 1;
+        found += outcome.identity;
+      }
+      onProgress?.(null);
+      if (done) setHelper(true);
+      return { read: done, total: list.length, details: found };
+    },
+    [demoBlob, keep, canRead, read, setHelper],
+  );
 
   const clearAll = useCallback(async () => {
     for (const p of store.papers) await store.remove(p.id);
@@ -273,8 +303,9 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       log,
       addLog,
       clearAll,
+      addDemoHousehold,
     }),
-    [store.papers, store.loaded, details, allowedDetails, heldBack, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead, log, addLog, clearAll],
+    [store.papers, store.loaded, details, allowedDetails, heldBack, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead, log, addLog, clearAll, addDemoHousehold],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

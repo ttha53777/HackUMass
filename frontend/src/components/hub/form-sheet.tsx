@@ -69,12 +69,42 @@ function writeRunId(key: string, runId: string | null) {
 }
 
 /**
+ * The demo household's papers, read in place, so the helper fills from them instead of
+ * asking. Shown only while the form needs details this device doesn't hold.
+ */
+function UseDemoHousehold({ missing }: { missing: number }) {
+  const papers = usePapersHub();
+  const toast = useToast();
+  const [status, setStatus] = useState<string | null>(null);
+  return (
+    <div className="banner info" role="note">
+      <Doodle id="docs" />
+      <span style={{ display: "grid", gap: 8 }}>
+        {missing} detail{missing === 1 ? "" : "s"} this form needs {missing === 1 ? "is" : "are"} on the demo household&apos;s papers.
+        <button
+          className="btn sm"
+          type="button"
+          disabled={!!status}
+          style={{ justifySelf: "start" }}
+          onClick={async () => {
+            const { read, details } = await papers.addDemoHousehold(setStatus);
+            toast(read ? `Read ${read} demo papers and saved ${details} details. The helper will use them.` : "The demo papers aren't on this server.");
+          }}
+        >
+          {status ?? "Fill these from the demo household's papers"}
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/**
  * "Fill my form": the browser assistant fills the program's form from what the person already
  * told us (and, with the form helper on, their confirmed details), asks for anything missing, and
  * hands the browser back for every step that must be theirs. It never presses Send.
  */
 export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
-  const { closeSheet } = useHub();
+  const { closeSheet, openSheet } = useHub();
   const { refresh } = useApp();
   const { plan, setStage } = usePlan();
   const papers = usePapersHub();
@@ -182,6 +212,8 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
   const fromDevice = (ready?.from_device_needed ?? []).filter((k) => papers.helper && confirmed.has(k));
   const askLater = [...(ready?.from_device_needed ?? []).filter((k) => !fromDevice.includes(k)), ...(ready?.will_ask ?? []), ...(ready?.unconfirmed ?? [])];
   const blocked = (ready?.blocked_by.length ?? 0) > 0;
+  // Details the form needs that this device doesn't hold (or holds unconfirmed).
+  const missingDevice = (ready?.from_device_needed ?? []).filter((k) => !confirmed.has(k));
 
   const act = async (call: () => Promise<RunView>) => {
     setPending(true);
@@ -245,6 +277,7 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
           ) : (
             <p className="sp-n">No confirmed details yet. It will ask you for them as it goes.</p>
           )}
+          {missingDevice.length ? <UseDemoHousehold missing={missingDevice.length} /> : null}
           {heldNote ? <p className="sp-n">{heldNote}</p> : null}
           <p className="mono">Never uses: ID number · Social Security number · bank passwords</p>
           <div className="drow">
@@ -298,10 +331,18 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
             <p className="sp-n">Checking what this form needs…</p>
           ) : null}
           {papers.helper && heldNote ? <p className="sp-n">{heldNote} Turn it on from Papers to use them.</p> : null}
+          {missingDevice.length ? <UseDemoHousehold missing={missingDevice.length} /> : null}
           {blocked ? (
             <div className="banner urgent" role="alert">
               <Doodle id="warn" />
-              <span>{names(ready!.blocked_by)} doesn&apos;t match yet. Settle it in My answers first so the form gets the right answer.</span>
+              <span style={{ display: "grid", gap: 8 }}>
+                {names(ready!.blocked_by)} doesn&apos;t match yet: your answer and a paper disagree. Settle it so the form gets the right answer, then come back here.
+                {s.pending_reviews.length ? (
+                  <button className="btn sm" type="button" style={{ justifySelf: "start" }} onClick={() => openSheet({ type: "review" })}>
+                    Settle it now <Arrow />
+                  </button>
+                ) : null}
+              </span>
             </div>
           ) : null}
           <div className={mode === "stop_before_submit" ? "banner info" : "banner quiet"}>

@@ -160,9 +160,17 @@ export function useDetails(sessionId: string | null) {
   /**
    * Keep what a paper read. A new detail is saved unconfirmed. A confirmed detail
    * is never overwritten: a different reading is kept beside it to choose from.
+   * `known`: the fictional demo household's own papers, whose details are already
+   * known to be right, so they are saved confirmed and the helper never asks for them.
    */
   const saveReadings = useCallback(
-    async (readings: IdentityReading[], sourceTitle: string | null, paperId: string | null = null, paperKind: string | null = null): Promise<SaveOutcome> => {
+    async (
+      readings: IdentityReading[],
+      sourceTitle: string | null,
+      paperId: string | null = null,
+      paperKind: string | null = null,
+      known = false,
+    ): Promise<SaveOutcome> => {
       if (!sessionId) return { added: 0, otherPerson: null };
       const current = await listDetails(sessionId);
       const byKey = new Map(current.map((d) => [d.key, d]));
@@ -176,7 +184,10 @@ export function useDetails(sessionId: string | null) {
         // A paper for someone else in the household: keep nothing but the flag.
         if (otherPerson) break;
         const existing = byKey.get(r.key);
-        if (existing && same(existing.value, r.value)) continue;
+        if (existing && same(existing.value, r.value)) {
+          if (known && !existing.confirmed) await putDetail({ ...existing, confirmed: true, updatedAt: now });
+          continue;
+        }
         if (existing?.confirmed) {
           await putDetail({ ...existing, other: { value: r.value, sourceTitle }, updatedAt: now });
           continue;
@@ -190,7 +201,7 @@ export function useDetails(sessionId: string | null) {
           sourceTitle,
           paperId,
           paperKind,
-          confirmed: false,
+          confirmed: known,
           other: null,
           updatedAt: now,
         });
