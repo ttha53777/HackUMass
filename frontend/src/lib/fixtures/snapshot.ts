@@ -3317,7 +3317,8 @@ export const snapshotFixture: SessionSnapshot = {
           "in_conflict": true
         }
       ],
-      "notes": []
+      "notes": [],
+      "simulated": false
     }
   ],
   "trace": [
