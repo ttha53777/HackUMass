@@ -10,6 +10,9 @@ import { clearDevice } from "@/lib/device-state";
 import { needsOf, PROVENANCE_LABEL, provenanceOf } from "@/lib/hub-derive";
 import type { AnsweredItem, Question, SessionSnapshot } from "@/lib/types";
 
+import { useFiller } from "@/components/filler/filler-context";
+import { FillerStage } from "@/components/filler/filler-stage";
+
 import { BankSheet } from "./bank-sheet";
 import { ChatSheet } from "./chat-sheet";
 import { Drawer, DrawerHead } from "./drawer";
@@ -29,16 +32,20 @@ const LABEL: Record<Sheet["type"], string> = {
   review: "Check what we read",
   bank: "Connect a bank",
   form: "Fill the form for me",
+  filler: "The Filler, filling your form",
   chat: "Talk it through",
 };
 
 /** The hub's drawers. Only one is open at a time (useHub().sheet). */
 export function HubSheets({ s }: { s: SessionSnapshot }) {
   const { sheet, closeSheet } = useHub();
+  // With the Filler (v2) on, a program's "Fill my form" opens the Filler's full-screen stage.
+  const v2 = useFiller().enabled === true;
+  const card = sheet?.type === "form" ? s.programs.find((c) => c.program.id === sheet.id) : undefined;
   // A new key per drawer and target, so a flow starts fresh (e.g. "Add another").
   const key = sheet ? JSON.stringify(sheet.type === "answers" ? { type: "answers" } : sheet) : "none";
   return (
-    <Drawer open={!!sheet} label={sheet ? LABEL[sheet.type] : "Drawer"} onClose={closeSheet} full={sheet?.type === "counter"} chat={sheet?.type === "chat"}>
+    <Drawer open={!!sheet} label={sheet ? LABEL[sheet.type] : "Drawer"} onClose={closeSheet} full={sheet?.type === "counter" || sheet?.type === "filler" || (sheet?.type === "form" && v2)} chat={sheet?.type === "chat"}>
       <div key={key} style={{ display: "contents" }}>
         {sheet?.type === "needs" ? <NeedsSheet s={s} /> : null}
         {sheet?.type === "answers" ? <AnswersSheet s={s} edit={sheet.edit} /> : null}
@@ -47,8 +54,12 @@ export function HubSheets({ s }: { s: SessionSnapshot }) {
         {sheet?.type === "counter" ? <CounterSheet s={s} kinds={sheet.kinds} /> : null}
         {sheet?.type === "review" ? <ReviewSheet s={s} /> : null}
         {sheet?.type === "bank" ? <BankSheet s={s} /> : null}
-        {sheet?.type === "form" ? <FormSheet s={s} id={sheet.id} /> : null}
+        {sheet?.type === "form" && !v2 ? <FormSheet s={s} id={sheet.id} /> : null}
+        {sheet?.type === "form" && v2 ? (
+          <FillerStage sessionId={s.session_id} programId={sheet.id} programTitle={card?.program.name ?? null} provider={card?.program.provider ?? null} />
+        ) : null}
         {sheet?.type === "chat" ? <ChatSheet s={s} /> : null}
+        {sheet?.type === "filler" ? <FillerStage sessionId={s.session_id} pdfFormId={sheet.pdfFormId ?? null} /> : null}
       </div>
     </Drawer>
   );

@@ -30,7 +30,7 @@ export function isApiError(error: unknown, code?: ErrorCode): error is ApiError 
   return error instanceof ApiError && (code === undefined || error.code === code);
 }
 
-async function request<T = SessionSnapshot>(path: string, init?: RequestInit): Promise<T> {
+export async function apiRequest<T = SessionSnapshot>(path: string, init?: RequestInit): Promise<T> {
   // Same-origin: Next.js forwards /api/* to the backend (see next.config.ts).
   const method = init?.method ?? "GET";
   const started = performance.now();
@@ -66,6 +66,8 @@ async function request<T = SessionSnapshot>(path: string, init?: RequestInit): P
     body.error?.message ?? "Something went wrong. Please try again.",
   );
 }
+
+const request = apiRequest;
 
 export function createSession(): Promise<SessionSnapshot> {
   return request("/sessions", { method: "POST" });

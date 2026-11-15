@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Practice form (Filler spike)</title>
+<style>
+  body { margin: 0; font: 18px/1.4 system-ui, sans-serif; background: #f6f5f1; color: #1d1d1b; }
+  main { max-width: 560px; margin: 64px auto; background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 32px 40px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  p.note { color: #6b6a65; margin: 0 0 24px; font-size: 15px; }
+  label { display: block; font-weight: 600; margin: 16px 0 6px; }
+  input { width: 100%; box-sizing: border-box; font: inherit; padding: 10px 12px; border: 1px solid #bbb; border-radius: 8px; }
+  button { margin-top: 28px; font: inherit; font-weight: 600; padding: 10px 28px; border-radius: 8px; border: 0; background: #2f5d50; color: #fff; }
+  #done { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <section id="step1">
+    <h1>Practice sign-up</h1>
+    <p class="note">A practice form for testing the Filler. Nothing here is sent anywhere.</p>
+    <label for="first_name">First name</label>
+    <input id="first_name" name="first_name" autocomplete="off">
+    <label for="last_name">Last name</label>
+    <input id="last_name" name="last_name" autocomplete="off">
+    <button id="next" type="button" onclick="document.getElementById('step1').style.display='none';document.getElementById('done').style.display='block'">Next</button>
+  </section>
+  <section id="done">
+    <h1>That's the end of the practice</h1>
+    <p class="note">Both fields were filled. Nothing was sent.</p>
+  </section>
+</main>
+</body>
+</html>

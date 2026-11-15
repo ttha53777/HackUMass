@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Filler live view (dev)</title>
+<style>
+  :root { --bg: #f6f5f1; --ink: #1d1d1b; --quiet: #6b6a65; --line: #d9d7d0; --accent: #2f6fde; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1b1b1a; --ink: #eeede8; --quiet: #a3a19a; --line: #3a3936; } }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.4 system-ui, sans-serif; }
+  header { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0 12px 0 0; }
+  button { font: inherit; padding: 6px 14px; border-radius: 8px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
+  #status { color: var(--quiet); }
+  #fps { margin-left: auto; color: var(--quiet); font-variant-numeric: tabular-nums; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; padding: 16px; }
+  @media (max-width: 900px) { .wrap { grid-template-columns: 1fr; } }
+  .screen { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: #000; aspect-ratio: 1280 / 800; }
+  .screen img { width: 100%; height: 100%; display: block; object-fit: contain; }
+  #cursor { position: absolute; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%;
+    background: var(--accent); opacity: .85; box-shadow: 0 0 0 3px #fff8; transition: left .25s ease, top .25s ease; display: none; pointer-events: none; }
+  #cursor.click::after { content: ""; position: absolute; inset: -12px; border-radius: 50%; border: 2px solid var(--accent); animation: ripple .5s ease-out forwards; }
+  @keyframes ripple { from { transform: scale(.4); opacity: 1; } to { transform: scale(1.4); opacity: 0; } }
+  ol { margin: 0; padding-left: 20px; }
+  ol li { margin: 0 0 8px; }
+  aside h2 { font-size: 14px; margin: 0 0 8px; color: var(--quiet); font-weight: 600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Filler live view</h1>
+  <button id="start">Start spike run</button>
+  <button id="stop" disabled>Stop</button>
+  <span id="status">Idle</span>
+  <span id="fps"></span>
+</header>
+<div class="wrap">
+  <div class="screen"><img id="frame" alt="Live view of the browser"><div id="cursor"></div></div>
+  <aside><h2>What the agent is doing</h2><ol id="steps"></ol></aside>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let ws = null, runId = null, frames = [], vw = 1280, vh = 800;
+
+function setStatus(text) { $("status").textContent = text; }
+
+function showCursor(x, y, kind) {
+  const c = $("cursor");
+  c.style.display = "block";
+  c.style.left = (x / vw * 100) + "%";
+  c.style.top = (y / vh * 100) + "%";
+  if (kind === "click") { c.classList.remove("click"); void c.offsetWidth; c.classList.add("click"); }
+}
+
+function onEvent(ev) {
+  if (ev.type === "frame") {
+    vw = ev.width; vh = ev.height;
+    $("frame").src = "data:image/jpeg;base64," + ev.data;
+    const now = performance.now();
+    frames.push(now);
+    frames = frames.filter((t) => now - t < 2000);
+    $("fps").textContent = (frames.length / 2).toFixed(1) + " fps";
+  } else if (ev.type === "cursor") {
+    showCursor(ev.x, ev.y, ev.kind);
+  } else if (ev.type === "step") {
+    const li = document.createElement("li");
+    li.textContent = ev.caption;
+    $("steps").appendChild(li);
+  } else if (ev.type === "status") {
+    setStatus(ev.message ? ev.status + ": " + ev.message : ev.status);
+  } else if (ev.type === "end") {
+    $("stop").disabled = true;
+    $("start").disabled = false;
+    if (runId) fetch("/api/filler/dev/spike/" + runId).then((r) => r.json()).then((v) => {
+      setStatus(v.status + " · peak " + v.peak_fps + " fps · first typing after " + v.first_type_seconds + " s · filled " + JSON.stringify(v.filled));
+    }).catch(() => {});
+  }
+}
+
+$("start").onclick = async () => {
+  $("steps").innerHTML = "";
+  const res = await fetch("/api/filler/dev/spike", { method: "POST" });
+  const body = await res.json();
+  if (!res.ok) { setStatus(body.message || "Couldn't start"); return; }
+  runId = body.run_id;
+  $("start").disabled = true;
+  $("stop").disabled = false;
+  const scheme = location.protocol === "https:" ? "wss:" : "ws:";
+  ws = new WebSocket(scheme + "//" + location.host + "/api/filler/dev/spike/" + runId + "/live");
+  ws.onmessage = (m) => onEvent(JSON.parse(m.data));
+  ws.onclose = () => { ws = null; };
+};
+
+$("stop").onclick = () => { if (runId) fetch("/api/filler/dev/spike/" + runId + "/stop", { method: "POST" }); };
+</script>
+</body>
+</html>

@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import { DETAIL_LABEL, DETAIL_ORDER } from "@/components/documents/details-store";
 import { ACCEPT, helperReads, MAX_BYTES, type DemoPaper, type Paper } from "@/components/documents/paper-store";
+import { useFiller } from "@/components/filler/filler-context";
+import { FillerPaperStatus, FillerPaperSwitch } from "@/components/filler/paper-switch";
 import { docLabel } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useToast } from "@/components/shell/toast";
@@ -93,6 +95,10 @@ export function UploadSheet({ s, kind: askedKind }: { s: SessionSnapshot; kind: 
   const [samples, setSamples] = useState<DemoPaper[]>([]);
   const [outcome, setOutcome] = useState<(ReadOutcome & { readable: boolean }) | null>(null);
   const [drag, setDrag] = useState(false);
+  // With the Filler (v2) on, the old Document Agent read is skipped: a paper is read only
+  // through the Filler's consent (auto-read, or the paper's own switch).
+  const filler = useFiller();
+  const v2 = filler.enabled === true;
   const input = useRef<HTMLInputElement>(null);
   const steps = useMemo(() => hubSteps(s, plan), [s, plan]);
 
@@ -112,6 +118,11 @@ export function UploadSheet({ s, kind: askedKind }: { s: SessionSnapshot; kind: 
     if (file.size > MAX_BYTES) return toast("That file is bigger than 10 MB. Try a smaller photo or PDF.");
     const paper = await papers.keep(file, kind, opts);
     if (!paper) return toast("We couldn't keep that file on this device.");
+    if (v2) {
+      setOutcome({ error: null, reviewId: null, identity: 0, otherPerson: null, readable: true });
+      setStage("done");
+      return;
+    }
     if (!papers.canRead(paper, kind)) {
       setOutcome({ error: null, reviewId: null, identity: 0, otherPerson: null, readable: false });
       setStage("done");
@@ -188,6 +199,13 @@ export function UploadSheet({ s, kind: askedKind }: { s: SessionSnapshot; kind: 
         <DrawerHead eyebrow={<Stepper at={3} labels={L} />} title="Added to your papers" onClose={closeSheet} />
         <div className="dbody">
           <Reuse label={label.charAt(0).toUpperCase() + label.slice(1)} steps={usedIn(kind, steps)} />
+          {v2 ? (
+            <p>
+              {filler.state?.auto_read.on
+                ? "The Filler is reading it now. Check what it finds on Papers before any form uses it."
+                : "Kept on this device and not read. To let the Filler use it, switch on Filler reads for it on Papers, or turn on Read my papers automatically."}
+            </p>
+          ) : null}
           {outcome && !outcome.readable ? <p>Kept on this device. We read PDFs of pay stubs, leases, bills, IDs and household lists; this one is kept as it is.</p> : null}
           {outcome?.identity ? <p>We also read your name and address from it. They stay on this device, and you confirm them on Papers before any form uses them.</p> : null}
           {outcome?.otherPerson ? <p>This paper is for {outcome.otherPerson}, not you, so we didn&apos;t keep its name or address.</p> : null}
@@ -273,6 +291,7 @@ export function PaperSheet({ s, kind }: { s: SessionSnapshot; kind: string }) {
   const papers = usePapersHub();
   const toast = useToast();
   const [reading, setReading] = useState(false);
+  const v2 = useFiller().enabled === true;
   const steps = useMemo(() => hubSteps(s, plan), [s, plan]);
   const paper = papers.paperFor(kind);
   const label = kindLabel(s, kind, plan);
@@ -302,6 +321,18 @@ export function PaperSheet({ s, kind }: { s: SessionSnapshot; kind: string }) {
               <PaperPreview paper={paper} />
             </div>
             <p className="mono">On this device. Sent to be read only when you ask.</p>
+            {v2 ? (
+              <div className="hrw">
+                <div>
+                  <b>The Filler can read this</b>
+                  <small>Read once for the details you allow. You confirm them before any form uses them.</small>
+                  <FillerPaperStatus paper={paper} />
+                </div>
+                <span className="pfoot" style={{ border: 0, padding: 0, margin: 0 }}>
+                  <FillerPaperSwitch paper={paper} label={label} />
+                </span>
+              </div>
+            ) : (
             <div className="hrw">
               <div>
                 <b>Form helper can read this</b>
@@ -315,6 +346,7 @@ export function PaperSheet({ s, kind }: { s: SessionSnapshot; kind: string }) {
               </div>
               <Switch on={helperReads(paper, kind)} label="Form helper can read this paper" onChange={(on) => void papers.setHelperRead(paper, kind, on)} />
             </div>
+            )}
           </>
         ) : (
           <p>You said you have this. No copy is saved on this device, so bring the paper itself.</p>
@@ -338,7 +370,7 @@ export function PaperSheet({ s, kind }: { s: SessionSnapshot; kind: string }) {
               <button className="btn" type="button" onClick={() => openSheet({ type: "counter", kinds: [kind] })}>
                 Show at the counter <Arrow />
               </button>
-              {papers.canRead(paper, kind) ? (
+              {!v2 && papers.canRead(paper, kind) ? (
                 <button className="txt-btn" type="button" disabled={reading} onClick={() => void readIt()}>
                   {reading ? "Reading…" : "Read it for me"}
                 </button>

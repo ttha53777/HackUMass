@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 
 import { paperFontVars } from "@/components/front/paper-fonts";
+import { FillerProvider } from "@/components/filler/filler-context";
 import { HubShell } from "@/components/hub/hub-shell";
 import { HubProvider } from "@/components/hub/hub-state";
 import { PapersProvider } from "@/components/hub/papers-context";
@@ -24,12 +25,14 @@ export default function HubLayout({ children }: { children: ReactNode }) {
         <PlanProvider>
           <AnswerProvider>
             <PapersProvider>
-              <Suspense>
-                <HubProvider>
-                  {children}
-                  <Tour />
-                </HubProvider>
-              </Suspense>
+              <FillerProvider>
+                <Suspense>
+                  <HubProvider>
+                    {children}
+                    <Tour />
+                  </HubProvider>
+                </Suspense>
+              </FillerProvider>
             </PapersProvider>
           </AnswerProvider>
         </PlanProvider>

@@ -123,6 +123,49 @@ Programs the assistant can fill are listed in `backend/app/data/automation/`. A 
 
 Extra error codes: `run_not_found` (404), `run_active` (409), `run_finished` (409), `not_automatable` (422), `browser_unavailable` (503), `too_many_runs` (429).
 
+### Form-Fill Agent v2 ("Filler", optional)
+
+A new agent built beside the browser assistant above, in `backend/app/filler/`. Mounted only when `FILLER_ENABLED=1` and `GEMINI_API_KEY` is set; the Papers page then shows its controls instead of the v1 helper's.
+
+Phase 2, papers and details. A paper is read only with consent: the session's **Read my papers automatically** setting (each upload is read at once) or that paper's own **Filler reads** switch. One Gemini call reads it into details (name, address, income, rent...), each with its page and the words it came from; SSN-like and long numbers are masked first. The file is dropped after reading. Details are typed into a form only after the person confirms them (**All correct**). Everything lives in memory for the session; nothing is kept after it.
+
+| Call (under `/sessions/{id}/filler`) | Purpose |
+|---|---|
+| `GET /state` | Auto-read setting, papers and their status, details, how many are unconfirmed. |
+| `PUT /auto-read` | `{"on": true, "scopes": [...]}`. Off takes back the consent it gave and drops those details. |
+| `POST /papers` | Multipart `file` (PDF, PNG or JPEG, 10 MB, 15 pages) and an optional `kind` hint. Read at once if auto-read is on. |
+| `DELETE /papers/{paper_id}` | Forget the paper and what was read from it. |
+| `PUT /consents/{paper_id}` / `DELETE` | The paper's own switch on (read it) or off (drop what was read). |
+| `POST /details/confirm` | `{}` confirms every detail; `{"edits": {"phone": "..."}}` sets values (all or nothing). |
+| `DELETE /details/{key}` | Forget one detail. |
+
+Phases 3 and 3.5, filling a form. `POST /sessions/{id}/filler/runs` fills the practice form from confirmed details. The fast path reads the page's own HTML: each field's label, `name` and `autocomplete` are matched to a detail by rules, by a hand-checked map in `backend/app/data/filler/` for known forms, or by one text-only model call (labels only, never values). It fills a page in seconds with no model turns: about 6 s for the practice form's 10 fields. Gemini Computer Use takes over only when a page won't move on. Every field and click passes the safety gate (`backend/app/filler/gate.py`): choices, certify boxes, signatures, sign-in, CAPTCHAs and the final Submit always go to the person, who acts in the same live browser. `{"prepare": true}` opens and maps the form before the person presses Start (`{"action": "go"}`).
+
+| Call (under `/sessions/{id}/filler/runs`) | Purpose |
+|---|---|
+| `POST /` | Start; `{"prepare": true}` waits at `ready` with a plan of the first page. 409 if one is going. |
+| `GET /{run_id}` | Status, question, hand-off, filled fields, outcome, plan, seconds to first typing. |
+| `POST /{run_id}/answer` | `{"value": "..."}` or `{"skip": true}`. The answer becomes a confirmed detail. |
+| `POST /{run_id}/control` | `go`, `pause`, `resume`, `take`, `return`, `done` (after the person presses Submit). |
+| `POST /{run_id}/stop` | Stop and release the browser. Nothing is sent. |
+| `WS /{run_id}/live` | Frames, cursor, steps, questions, hand-offs; the person's clicks and keys during a hand-off or the review. |
+
+Phase 4, the viewer. On Papers, **Watch it fill a practice form** opens the Filler full screen (`frontend/src/components/filler/filler-stage.tsx`): the live browser with the agent's cursor on the left; on the right the pre-flight card (what it will fill and from which paper, what it will ask, what is the person's), one question at a time, the hand-off banner with **Hand back**, the field checklist and a caption per action. **Pause**, **Take over** and **Stop** are always there. During a hand-off and at the review the person clicks, scrolls and types right in the live view; the review outlines every filled field, and the person presses the form's own Submit, then **I've sent it**. The stream is the run's WebSocket, through the same `/api` rewrite.
+
+Phase 5, real programs and PDFs. Which programs the Filler can fill is curated in `backend/app/data/filler/targets/<program_id>.json` (`practice`, or `stop_before_submit` with its own `start_url` and `allowed_hosts`); those programs get the plan's **Fill my form** button, which opens the Filler. On a real site the run is fill-and-stop: the first Submit or attestation ends it read-only and nothing is sent; navigation off the allowed hosts is aborted. Real-site records ship with `"enabled": false` until the team signs off and the form is checked from Steel. A finished program run writes its outcome into the plan (`application_result`, as v1 does). On Papers, **Fill a PDF form** takes a blank fillable PDF (`POST /sessions/{id}/filler/pdf-forms`): its fields are filled live as a web page, the person ticks boxes and checks it, and **Make my PDF** writes the values into the real PDF (`GET .../runs/{run_id}/pdf`). Signature fields are left for the person to sign in a PDF app.
+
+Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. These dev routes answer requests from this machine only.
+
+| Call | Purpose |
+|---|---|
+| `POST /filler/dev/spike` | Start a spike run (409 if one is going). |
+| `GET /filler/dev/spike/{run_id}` | Status, frames, peak fps, seconds to first typing, which fields were filled. |
+| `POST /filler/dev/spike/{run_id}/stop` | Stop and release the browser. |
+| `WS /filler/dev/spike/{run_id}/live` | Live events: `frame`, `cursor`, `step`, `status`, `end`. |
+| `GET /filler/dev/viewer` | A bare page that starts a run and shows it live. Open `http://localhost:8000/api/filler/dev/viewer`. |
+
+Live checks against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py` (the browser), `scripts/spikes/filler_phase2.py` (reading three fictional sample papers) and `scripts/spikes/filler_phase3.py` (the Gemini loop on the practice form).
+
 Try it with the backend running:
 
 ```bash
@@ -148,6 +191,10 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 | `STEEL_API_KEY` | Only for `steel` | Steel cloud browser key. |
 | `BROWSER_AGENT_MODEL` | No | Gemini Computer Use model ID. Default `gemini-3.5-flash` (`gemini-4-hydrogen` was too slow to finish a run). |
 | `PRACTICE_BASE_URL` | No | Where the browser reaches the backend's practice form. Default `http://127.0.0.1:8000`; a cloud browser needs a public URL (for example a tunnel). |
+| `FILLER_ENABLED` | No | `1` mounts the Filler phase 1 dev routes (needs `GEMINI_API_KEY`). Off by default. |
+| `FILLER_PROVIDER` | No | Filler browser: `local` (default, Chrome on this machine) or `steel` (needs `STEEL_API_KEY`). |
+| `FILLER_MODEL` | No | Filler's Gemini Computer Use model ID. Default `gemini-3.5-flash`. |
+| `FILLER_READ_MODEL` | No | Gemini model that reads papers. Default `gemini-3.5-flash-lite` (1-2 s a paper). |
 | `LOCAL_BROWSER_CHANNEL` | No | For `local`: `chrome` (default) uses the installed Google Chrome, and falls back to Playwright's Chromium (`.venv/bin/playwright install chromium`) when Chrome isn't installed; empty always uses Playwright's Chromium. |
 | `LOCAL_BROWSER_HEADLESS` | No | For `local`: `true` hides the window. Default shows it. Keep it shown for a demo: the person signs and presses Submit in that window. |
 | `NESSIE_API_KEY` | No | Capital One Nessie **sandbox** key (`https://api.nessieisreal.com`). The sandbox starts empty for each key; seed it once with `backend/scripts/seed_nessie.py` (writes fictional personas to the shared sandbox). Without the key, or without seeded personas, the app uses the fictional personas in `backend/app/data/nessie_fallback.json`, labelled as seeded. See [docs/nessie-spike.md](docs/nessie-spike.md). |
@@ -216,6 +263,11 @@ backend/app/api/practice_routes.py serves the practice forms at /practice/ and /
 backend/app/execution/             browser assistant: gate, agent loop, computer, providers,
                                    run manager, fill sheet, outcome check, practice form
 backend/app/data/automation/       per-program automation records (start URL, hosts, mode)
+backend/app/data/filler/           Filler targets (which programs, how) and hand-checked field maps
+backend/app/filler/                Form-Fill Agent v2: consent, paper reading, cloud browser,
+                                   live stream, agent loop
+frontend/src/components/filler/    Filler UI: auto-read setting, consent notice, review card, live viewer stage
+backend/app/api/filler_routes.py   Filler dev routes and live viewer (mounted only when enabled)
 backend/scripts/spikes/            Phase 0 spikes: Gemini Computer Use, Steel, real forms
 backend/app/api/views.py           builds the client snapshot from graph state
 backend/app/api/schemas.py         request/response shapes          (contract file)

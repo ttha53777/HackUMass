@@ -82,20 +82,80 @@ def _mount_browser_agent(app: FastAPI, execution: ExecutionManager | None) -> No
         return error_response(exc.status, exc.code, exc.message)
 
 
+def _mount_filler(app: FastAPI, filler: Any) -> None:
+    """Mount the Filler (v2) routes when FILLER_ENABLED=1 (or a test passes a `Filler`).
+
+    Separate from the v1 browser agent above; with the flag off nothing from
+    `app.filler` beyond its config is imported.
+    """
+    from app.filler.config import FillerSettings
+
+    app.state.filler = None
+    if filler is None:
+        settings = FillerSettings.from_env()
+        if not settings.enabled:
+            return
+        if not settings.gemini_api_key:
+            logger.warning("FILLER_ENABLED is set but GEMINI_API_KEY is not; the Filler is off")
+            return
+        from app.filler.consent import FillerSessions
+        from app.filler.dom_map import GeminiFieldMapper
+        from app.filler.targets import all_targets
+        from app.filler.extract import GeminiReader
+        from app.filler.jobs import PaperJobs
+        from app.filler.loop import GeminiModel
+        from app.filler.runs import FillRuns, SpikeRuns
+        from app.filler.sandbox import SandboxError, make_browser
+        from app.filler.service import Filler
+
+        try:
+            browser = make_browser(settings)
+        except SandboxError:
+            logger.warning("FILLER_PROVIDER=%s is not configured; the Filler is off", settings.provider)
+            return
+        sessions = FillerSessions()
+        make_model = lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction)  # noqa: E731
+        filler = Filler(
+            sessions=sessions,
+            jobs=PaperJobs(GeminiReader(settings.gemini_api_key, settings.read_model)),
+            spike=SpikeRuns(browser, make_model),
+            runs=FillRuns(browser, make_model, sessions, targets=all_targets(),
+                          mapper=GeminiFieldMapper(settings.gemini_api_key, settings.read_model)),
+        )
+
+    from app.api.filler_routes import router as filler_router
+    from app.api.filler_routes import session_router as filler_session_router
+
+    app.state.filler = filler
+    app.include_router(filler_router)
+    app.include_router(filler_session_router)
+    if filler.runs is not None:
+        from app.filler.results import make_recorder
+
+        filler.runs.set_on_finish(make_recorder(app.state.sessions))
+        # Programs the Filler can fill join the snapshot's existing list, so the plan's
+        # "Fill my form" buttons appear for them (the Filler wins over v1 for a program).
+        enabled = {pid: t.mode for pid, t in filler.runs.targets.items() if t.enabled}
+        app.state.automation_modes = {**(getattr(app.state, "automation_modes", None) or {}), **enabled}
+
+
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     yield
     # Release every cloud browser on shutdown.
     if getattr(app.state, "execution", None) is not None:
         await app.state.execution.shutdown()
+    if getattr(app.state, "filler", None) is not None:
+        await app.state.filler.shutdown()
 
 
 def create_app(
     repository: ProgramsRepository | None = None,
     nessie: NessieService | None = None,
     execution: Any = None,
+    filler: Any = None,
 ) -> FastAPI:
-    """`execution` (an ExecutionManager) is for tests; normally BROWSER_PROVIDER decides."""
+    """`execution` (an ExecutionManager) and `filler` (a Filler) are for tests; normally the env decides."""
     app = FastAPI(title="Community Resource Navigator API", version="0.1.0", lifespan=_lifespan)
 
     programs = repository or repository_from_env(os.environ.get("PROGRAM_SOURCE"))
@@ -126,6 +186,7 @@ def create_app(
 
     app.include_router(router)
     _mount_browser_agent(app, execution)
+    _mount_filler(app, filler)
     return app
 
 
