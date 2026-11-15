@@ -98,7 +98,7 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
         from app.filler.extract import GeminiReader
         from app.filler.jobs import PaperJobs
         from app.filler.loop import GeminiModel
-        from app.filler.runs import SpikeRuns
+        from app.filler.runs import FillRuns, SpikeRuns
         from app.filler.sandbox import SandboxError, make_browser
         from app.filler.service import Filler
 
@@ -107,10 +107,13 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
         except SandboxError:
             logger.warning("FILLER_PROVIDER=%s is not configured; the Filler is off", settings.provider)
             return
+        sessions = FillerSessions()
+        make_model = lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction)  # noqa: E731
         filler = Filler(
-            sessions=FillerSessions(),
+            sessions=sessions,
             jobs=PaperJobs(GeminiReader(settings.gemini_api_key, settings.read_model)),
-            spike=SpikeRuns(browser, lambda instruction: GeminiModel(settings.gemini_api_key, settings.model, instruction)),
+            spike=SpikeRuns(browser, make_model),
+            runs=FillRuns(browser, make_model, sessions),
         )
 
     from app.api.filler_routes import router as filler_router

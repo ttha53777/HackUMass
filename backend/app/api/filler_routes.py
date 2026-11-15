@@ -11,6 +11,13 @@ Session routes, under /api/sessions/{session_id}/filler (values only to that ses
     POST   /details/confirm          {keys?: [...] (none = all), edits?: {key: value}}
     DELETE /details/{key}            forget one detail
 
+    POST   /runs                     start filling the practice form (409 if one is going)
+    GET    /runs/{run_id}            status, question, hand-off, filled fields, outcome
+    POST   /runs/{run_id}/answer     {value} or {skip: true}
+    POST   /runs/{run_id}/control    {action: pause | resume | take | return | done}
+    POST   /runs/{run_id}/stop       stop and release the browser
+    WS     /runs/{run_id}/live       frames, cursor, steps, questions; the person's input during a hand-off
+
 Dev spike routes (phase 1):
 
 Mounted only when FILLER_ENABLED=1, and answer only requests from this machine:
@@ -27,6 +34,7 @@ Phase 3 replaces these with the session-scoped routes in the spec
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 
 from fastapi import APIRouter, Body, File, Form, Request, UploadFile, WebSocket, WebSocketDisconnect
@@ -39,7 +47,7 @@ from app.filler.consent import ConsentError, FillerSession, scopes_from
 from app.filler.extract import MAX_BYTES, PaperRejected, check_upload
 from app.filler.jobs import PaperJobs
 from app.filler.models import CATALOGUE, NOTICE_VERSION, PAPER_KINDS
-from app.filler.runs import SpikeBusy, SpikeRuns
+from app.filler.runs import FillRuns, RunError, SpikeBusy, SpikeRuns
 
 router = APIRouter(prefix="/api/filler/dev")
 session_router = APIRouter(prefix="/api/sessions/{session_id}/filler")
@@ -178,6 +186,117 @@ async def forget_detail(session_id: str, key: str, request: Request):
     state = _state(request, session_id)
     state.forget_detail(key)
     return _out(state)
+
+
+# -- fill runs (phase 3) ------------------------------------------------------------
+
+
+class AnswerIn(BaseModel):
+    value: str | None = None
+    skip: bool = False
+
+
+class ControlIn(BaseModel):
+    action: str
+
+
+def _runs_for(request: Request) -> FillRuns:
+    runs = request.app.state.filler.runs
+    if runs is None:
+        raise ApiError(503, "filler_unavailable", "The form helper isn't available right now.")
+    return runs
+
+
+def _run_call(fn):
+    try:
+        return fn()
+    except RunError as exc:
+        raise ApiError(exc.status, exc.code, exc.message) from exc
+
+
+@session_router.post("/runs", status_code=202)
+async def start_run(session_id: str, request: Request):
+    _state(request, session_id)
+    run = _run_call(lambda: _runs_for(request).start(session_id))
+    return JSONResponse(run.view(), status_code=202, headers=NO_STORE)
+
+
+@session_router.get("/runs/{run_id}")
+async def get_run(session_id: str, run_id: str, request: Request):
+    _state(request, session_id)
+    return JSONResponse(_run_call(lambda: _runs_for(request).get(session_id, run_id)).view(), headers=NO_STORE)
+
+
+@session_router.post("/runs/{run_id}/answer")
+async def answer_run(session_id: str, run_id: str, request: Request, body: AnswerIn = Body(...)):
+    state = _state(request, session_id)
+    run = _run_call(lambda: _runs_for(request).get(session_id, run_id))
+    if run.status != "needs_answer" or not run.question:
+        raise ApiError(409, "no_question", "There's no question waiting.")
+    if not body.skip:
+        key = run.question["key"]
+        if not body.value or state.confirm([], {key: body.value}):
+            raise ApiError(422, "bad_value", f"That doesn't look like a {CATALOGUE[key].label}.")
+    _run_call(lambda: run.answer(not body.skip))
+    return JSONResponse(run.view(), headers=NO_STORE)
+
+
+@session_router.post("/runs/{run_id}/control")
+async def control_run(session_id: str, run_id: str, request: Request, body: ControlIn = Body(...)):
+    _state(request, session_id)
+    run = _run_call(lambda: _runs_for(request).get(session_id, run_id))
+    _run_call(lambda: run.control(body.action))
+    return JSONResponse(run.view(), headers=NO_STORE)
+
+
+@session_router.post("/runs/{run_id}/stop")
+async def stop_run(session_id: str, run_id: str, request: Request):
+    _state(request, session_id)
+    runs = _runs_for(request)
+    _run_call(lambda: runs.get(session_id, run_id))
+    run = await runs.stop(session_id, run_id)
+    return JSONResponse(run.view(), headers=NO_STORE)
+
+
+@session_router.websocket("/runs/{run_id}/live")
+async def run_live(websocket: WebSocket, session_id: str, run_id: str):
+    app = websocket.app
+    runs = app.state.filler.runs if app.state.filler else None
+    if runs is None or app.state.sessions.get(session_id) is None:
+        await websocket.close(code=4404)
+        return
+    try:
+        run = runs.get(session_id, run_id)
+    except RunError:
+        await websocket.close(code=4404)
+        return
+    await websocket.accept()
+    queue = run.stream.subscribe()
+
+    async def send() -> None:
+        while True:
+            event = await queue.get()
+            if event is None:
+                return
+            await websocket.send_json(event)
+
+    async def receive() -> None:
+        while True:
+            message = await websocket.receive_json()
+            if isinstance(message, dict):
+                await run.person_input(message)
+
+    sender, receiver = asyncio.create_task(send()), asyncio.create_task(receive())
+    try:
+        await asyncio.wait({sender, receiver}, return_when=asyncio.FIRST_COMPLETED)
+    finally:
+        for task in (sender, receiver):
+            task.cancel()
+        run.stream.unsubscribe(queue)
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------

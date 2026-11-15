@@ -96,7 +96,13 @@ def test_peak_fps_measures_the_busiest_window():
 
 
 class _FakeComputer:
-    url = "about:blank"
+    url = "https://form.test/"
+
+    async def facts(self, action):
+        from app.filler.gate import Element, PageFacts
+
+        field = Element(tag="input", type="text", text="First name", editable=True)
+        return PageFacts(url=self.url, target=field, focused=field)
 
     def __init__(self):
         self.done = []
@@ -129,7 +135,7 @@ def test_loop_types_values_only_through_the_sheet_and_never_captions_them():
         queue = stream.subscribe()
         computer = _FakeComputer()
         sheet = FillSheet({"first_name": SheetEntry("Maya", "first name", "your lease")})
-        end = await AgentLoop(Model(), computer, stream, sheet).run("Fill it in.")
+        end = await AgentLoop(Model(), computer, stream, sheet, allowed_hosts=frozenset({"form.test"})).run("Fill it in.")
         steps = []
         while not queue.empty():
             event = queue.get_nowait()
@@ -139,7 +145,7 @@ def test_loop_types_values_only_through_the_sheet_and_never_captions_them():
 
     end, done, steps = asyncio.run(scenario())
     assert end.kind == "finished" and end.typed_keys == ["first_name"]
-    assert done == [("click", None), ("type", "Maya")]  # the made-up text was never typed
+    assert done == [("click", None), ("type", "Maya")]  # the made-up text was never typed (the gate blocked it)
     assert steps[:2] == ["Clicking First name", "Typing your first name from your lease"]
     assert all("Maya" not in s for s in steps)
 

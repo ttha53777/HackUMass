@@ -14,11 +14,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlsplit
 
 from app.filler.config import CURSOR_STEPS, GRID, TYPE_DELAY_MS, VIEWPORT_HEIGHT, VIEWPORT_WIDTH
+from app.filler.gate import Action, Element, PageFacts
 from app.filler.stream import LiveStream
 
 logger = logging.getLogger(__name__)
@@ -56,10 +56,79 @@ _LABEL_AT = r"""
 """
 
 
-@dataclass(frozen=True)
-class Action:
-    name: str
-    args: dict[str, Any] = field(default_factory=dict)
+# Describes the element at a point (through a <label> to its control, or up to the
+# nearest interactive ancestor) or the focused element, for the gate only. Never reads
+# the value of a text field.
+_DESCRIBE = r"""
+(pt) => {
+  const S = (s) => (s || "").replace(/\s+/g, " ").trim().slice(0, 240);
+  let el = pt ? document.elementFromPoint(pt.x, pt.y) : document.activeElement;
+  while (pt && el && el.shadowRoot) {
+    const inner = el.shadowRoot.elementFromPoint(pt.x, pt.y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  if (!el || el === document.body || el === document.documentElement) return null;
+  if (pt) {
+    const label = el.closest("label");
+    if (label && label.control) el = label.control;
+    else {
+      const c = el.closest("button,a,summary,select,textarea,input,canvas,iframe,[role=button],[role=link]," +
+        "[role=checkbox],[role=radio],[role=switch],[role=option],[role=textbox],[contenteditable=''],[contenteditable=true]");
+      if (c) el = c;
+    }
+  }
+  const tag = el.tagName.toLowerCase();
+  const type = tag === "input" ? (el.getAttribute("type") || "text").toLowerCase() : "";
+  const buttonLike = ["submit", "button", "image", "reset"].includes(type);
+  const labels = el.labels ? Array.from(el.labels).map((l) => l.innerText).join(" ") : "";
+  const legend = el.closest("fieldset")?.querySelector("legend")?.innerText || "";
+  const own = tag === "input" || tag === "select" || tag === "textarea" ? "" : el.innerText;
+  const text = [own, buttonLike ? el.value : "", el.getAttribute("aria-label"), labels, legend,
+    el.getAttribute("placeholder"), el.getAttribute("title"), el.getAttribute("alt")].map(S).filter(Boolean).join(" | ");
+  const name = [el.getAttribute("name"), el.id, el.getAttribute("autocomplete")].map(S).filter(Boolean).join(" ");
+  const editable = !!(el.isContentEditable || ((tag === "input" || tag === "textarea" || tag === "select") &&
+    !el.disabled && !el.readOnly));
+  let frame_host = "";
+  if (tag === "iframe") { try { const u = new URL(el.src, location.href); frame_host = u.host + u.pathname; } catch (e) {} }
+  return { tag, type, role: (el.getAttribute("role") || "").toLowerCase(), text: S(text), name, editable, frame_host };
+}
+"""
+
+# Picks the option of a focused <select> whose label or value matches.
+_SELECT = r"""
+(wanted) => {
+  const el = document.activeElement;
+  if (!el || el.tagName !== "SELECT") return "not_select";
+  const norm = (s) => (s || "").trim().toLowerCase();
+  const opt = Array.from(el.options).find((o) => norm(o.label) === norm(wanted) || norm(o.value) === norm(wanted));
+  if (!opt) return "no_match";
+  el.value = opt.value;
+  el.dispatchEvent(new Event("input", { bubbles: true }));
+  el.dispatchEvent(new Event("change", { bubbles: true }));
+  return "selected";
+}
+"""
+
+# Marks the focused field as filled by the agent, so the review can highlight it.
+_MARK = "() => { const el = document.activeElement; if (el && el !== document.body) el.setAttribute('data-filler-filled', '1'); }"
+_HIGHLIGHT = r"""
+() => {
+  if (document.getElementById("filler-highlight")) return document.querySelectorAll("[data-filler-filled]").length;
+  const style = document.createElement("style");
+  style.id = "filler-highlight";
+  style.textContent = "[data-filler-filled]{outline:3px solid #2f6fde !important;outline-offset:2px;background:#eef4ff !important}";
+  document.head.appendChild(style);
+  return document.querySelectorAll("[data-filler-filled]").length;
+}
+"""
+
+
+def _element(raw: dict[str, Any] | None) -> Element | None:
+    if not raw:
+        return None
+    return Element(**{k: raw.get(k) or ("" if k != "editable" else False)
+                      for k in ("tag", "type", "role", "text", "name", "editable", "frame_host")})
 
 
 def to_pixels(x: Any, y: Any, width: int = VIEWPORT_WIDTH, height: int = VIEWPORT_HEIGHT, grid: int = GRID) -> tuple[int, int]:
@@ -94,6 +163,26 @@ class Computer:
         except Exception:
             return ""
 
+    async def facts(self, action: Action) -> PageFacts:
+        """What the gate needs: the element at the point, the focused element, every frame's host."""
+        page = self.page
+        args = action.args
+        point = to_pixels(args["x"], args["y"], self._width, self._height) if "x" in args and "y" in args else None
+        target = await page.evaluate(_DESCRIBE, {"x": point[0], "y": point[1]}) if point else None
+        focused = await page.evaluate(_DESCRIBE, None)
+        frames = tuple(
+            f"{urlsplit(f.url).hostname or ''}{urlsplit(f.url).path}"
+            for f in page.frames if f.url and not f.url.startswith("about:")
+        )
+        return PageFacts(url=page.url, target=_element(target), focused=_element(focused), frame_hosts=frames)
+
+    async def highlight_filled(self) -> int:
+        """Outline every field the agent filled (the review step). Returns how many."""
+        try:
+            return int(await self.page.evaluate(_HIGHLIGHT))
+        except Exception:
+            return 0
+
     async def screenshot(self) -> bytes:
         return await self.page.screenshot(type="png")
 
@@ -120,9 +209,14 @@ class Computer:
             elif name == "type":
                 if value is None:
                     return {"error": "Nothing to type."}
-                await page.keyboard.press("ControlOrMeta+A")
-                await page.keyboard.press("Backspace")
-                await page.keyboard.type(value, delay=self._type_delay)
+                picked = await page.evaluate(_SELECT, value)
+                if picked == "no_match":
+                    return {"error": "No option in this dropdown matches that detail. Leave it, or call request_handoff."}
+                if picked != "selected":
+                    await page.keyboard.press("ControlOrMeta+A")
+                    await page.keyboard.press("Backspace")
+                    await page.keyboard.type(value, delay=self._type_delay)
+                await page.evaluate(_MARK)
             elif name == "scroll":
                 x, y = (to_pixels(args["x"], args["y"], self._width, self._height)
                         if "x" in args and "y" in args else self._cursor)
