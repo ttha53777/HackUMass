@@ -194,8 +194,16 @@ export function stopFillerRun(sessionId: string, runId: string): Promise<FillerR
   return apiRequest(`${runs(sessionId)}/${encodeURIComponent(runId)}/stop`, { method: "POST" });
 }
 
-/** Same origin: Next.js forwards /api (WebSocket upgrades included) to the backend. */
+/**
+ * Locally, same origin: `next dev` forwards /api (WebSocket upgrades included) to the backend.
+ * Vercel's rewrites don't proxy WebSockets, so a deployment sets NEXT_PUBLIC_BACKEND_WS_ORIGIN
+ * (e.g. "wss://api.example.com") and the browser connects to the backend directly.
+ */
+const WS_ORIGIN = (process.env.NEXT_PUBLIC_BACKEND_WS_ORIGIN ?? "").replace(/\/+$/, "");
+
 export function liveUrl(sessionId: string, runId: string): string {
+  const path = `/api${runs(sessionId)}/${encodeURIComponent(runId)}/live`;
+  if (WS_ORIGIN) return `${WS_ORIGIN}${path}`;
   const scheme = window.location.protocol === "https:" ? "wss:" : "ws:";
-  return `${scheme}//${window.location.host}/api${runs(sessionId)}/${encodeURIComponent(runId)}/live`;
+  return `${scheme}//${window.location.host}${path}`;
 }

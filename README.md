@@ -208,6 +208,26 @@ The frontend needs no secrets. The browser only calls same-origin `/api/*`, whic
 - Restarting the backend clears every session. The app then shows a "session expired" message and starts a new one.
 - Run the backend without auto-reload during a demo so a file save does not wipe the session.
 
+## Deployment
+
+The frontend runs on Vercel. The backend can't run there: it keeps sessions in memory, runs background tasks and serves WebSockets, so it needs one long-running process. `render.yaml` deploys it to Render as a single always-on instance (any similar host works with the same start command).
+
+1. **Backend (Render).** New → Blueprint → pick this repo. Render asks for each variable listed in `render.yaml` (keys, `LLM_MODE`, `PROGRAM_SOURCE`, browser and Filler settings); set `PRACTICE_BASE_URL` to the service's own public URL. Not on Vercel: a serverless backend loses sessions as soon as a second instance starts, and can't serve the Filler's WebSocket. Check `https://<service>.onrender.com/api/health`. Keep `numInstances: 1`: a second instance would not see the first one's sessions.
+2. **Frontend (Vercel).** Project → Settings → General → **Root Directory** = `frontend` (`frontend/vercel.json` pins the framework and commands). Under Environment Variables (Production and Preview):
+   - `BACKEND_URL` = the backend's public URL, e.g. `https://api.example.com`. It is read **at build time** for the `/api/*` rewrite, so redeploy after changing it.
+   - `NEXT_PUBLIC_BACKEND_WS_ORIGIN` = the same host as `wss://`, e.g. `wss://api.example.com`. Vercel's rewrites don't proxy WebSockets, so the Filler's live view connects to the backend directly. Only needed when the Filler is on.
+3. **Domain (Porkbun → Vercel).** In Vercel → Settings → Domains, add `example.com` and `www.example.com`. In Porkbun → Domain → DNS, delete the default parking `ALIAS`/`CNAME` records, then add:
+
+   | Type | Host | Answer |
+   |---|---|---|
+   | `A` | *(blank)* | `76.76.21.21` |
+   | `CNAME` | `www` | `cname.vercel-dns.com` |
+   | `CNAME` | `api` | `<service>.onrender.com` (then add `api.example.com` as a custom domain in Render) |
+
+   Vercel may show project-specific values on the Domains page; use those if they differ. HTTPS certificates are issued automatically once DNS resolves.
+
+Never set `DEV_SESSION_FILE` on a deployed server.
+
 ## Tests and checks
 
 ```bash
@@ -254,6 +274,8 @@ For development without real data, `PROGRAM_SOURCE=fixtures` serves fictional pr
 
 ```text
 CLAUDE.md                          guidance for coding agents
+render.yaml                        Render Blueprint for the backend (see Deployment)
+frontend/vercel.json               Vercel build settings (Root Directory = frontend)
 docs/foundation-plan.md            architecture, contracts, tickets, risks
 docs/demo-script.md                the demo, step by step, with recovery steps
 backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
