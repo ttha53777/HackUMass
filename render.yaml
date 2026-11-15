@@ -6,7 +6,7 @@ services:
     name: resource-navigator-api
     runtime: python
     rootDir: backend
-    plan: starter # "free" works but sleeps after 15 idle minutes and loses sessions
+    plan: free # sleeps after 15 idle minutes, which forgets every session; "starter" stays up
     numInstances: 1
     # Editable install keeps the non-JSON data files (practice forms) reachable.
     # The browser extra brings the playwright package Steel connects with (no local browsers).
