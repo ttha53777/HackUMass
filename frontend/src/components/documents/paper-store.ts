@@ -18,8 +18,13 @@ export type Paper = {
   /** One of the fictional demo papers. */
   demo: boolean;
   blob: Blob;
-  /** The person turned off "the form helper can read this" for this paper (Plan Hub). */
+  /** Older setting: "the form helper can read this" turned off for the whole file. */
   helperOff?: boolean;
+  /**
+   * Kinds this file counts as for which the person turned "Helper reads" off (Plan Hub).
+   * Per kind, because one file can count as several (a bill as proof of address and as a utility bill).
+   */
+  helperOffKinds?: string[];
 };
 
 export const MAX_BYTES = 10 * 1024 * 1024;
@@ -116,7 +121,7 @@ export function usePapers(sessionId: string | null) {
   );
 
   const update = useCallback(
-    async (paper: Paper, change: Partial<Pick<Paper, "kinds" | "name" | "helperOff">>) => {
+    async (paper: Paper, change: Partial<Pick<Paper, "kinds" | "name" | "helperOff" | "helperOffKinds">>) => {
       await putPaper({ ...paper, ...change });
       await refresh();
     },
@@ -178,4 +183,10 @@ export function sizeLabel(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}
+
+/** Whether the form helper may read this file as `kind` ("Helper reads" on that paper's card). */
+export function helperReads(paper: Paper, kind: string): boolean {
+  if (paper.helperOff) return false;
+  return !(paper.helperOffKinds ?? []).includes(kind);
 }

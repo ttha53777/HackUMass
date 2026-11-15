@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { DETAIL_GROUPS, DETAIL_LABEL, DETAIL_ORDER, type Detail } from "@/components/documents/details-store";
+import { helperReads } from "@/components/documents/paper-store";
 import { docLabel } from "@/components/od/doc-kinds";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
@@ -124,7 +125,10 @@ export function PapersView() {
   const label = (k: string) => docLabel(k, walletTexts(kinds.find((d) => d.kind === k) ?? { kind: k, uses: [] }));
   const saved = kinds.filter((d) => plan.docs.includes(d.kind));
   const needed = kinds.filter((d) => !plan.docs.includes(d.kind) && usedIn(d.kind, steps).length);
-  const readable = papers.papers.filter((p) => !p.helperOff).length;
+  const readable = saved.filter((d) => {
+    const p = papers.paperFor(d.kind);
+    return p && helperReads(p, d.kind);
+  }).length;
   const visits = steps.filter((st) => !st.done && st.kinds.length);
   const packStep = visits.find((st) => st.id === pack) ?? visits[0];
   const details = DETAIL_ORDER.map((k) => papers.details.find((d) => d.key === k)).filter((d): d is Detail => !!d);
@@ -222,10 +226,9 @@ export function PapersView() {
                       <label>
                         <Switch
                           small
-                          on={papers.helper && !paper.helperOff}
-                          disabled={!papers.helper}
+                          on={helperReads(paper, d.kind)}
                           label={`Form helper can read ${label(d.kind)}`}
-                          onChange={(on) => void papers.setHelperRead(paper, on)}
+                          onChange={(on) => void papers.setHelperRead(paper, d.kind, on)}
                         />
                         Helper reads
                       </label>
@@ -376,17 +379,6 @@ export function PapersView() {
           </div>
         </section>
       ) : null}
-
-      <p className="priv" style={{ marginTop: 36 }}>
-        <span>
-          <Doodle id="lock" />
-          Papers stay on this device. Remove one and it is gone.
-        </span>
-        <span>
-          <Doodle id="eye" />
-          Sent to be read only when you ask, then deleted from our server.
-        </span>
-      </p>
 
       <HubSheets s={s} />
       <Spotlight />
