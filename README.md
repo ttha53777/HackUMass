@@ -43,7 +43,7 @@ Next.js frontend  ──/api/* proxy──>  FastAPI  ──>  LangGraph
 - Specialists never message each other. Each returns a typed update to shared state.
 - Discovery supplies sourced criteria before Eligibility assesses; Action Planning consumes the assessments.
 - Structured eligibility rules are evaluated in code. The language model (Google Gemini, live mode only) is used only to interpret free-text answers and to word explanations.
-- Needs cover 12 areas: food, heat and utilities, housing, medical care, getting around, emotional support, legal help, childcare, work and training, safety at home, free tax help, and phone and internet. Records for the newer areas are evidenced in `docs/curation/` like the rest. After the needs answer the chat offers up to three related areas from a fixed map (`RELATED` in `frontend/src/components/chat/script.ts`).
+- Needs cover 12 areas: food, heat and utilities, housing, medical care, getting around, emotional support, legal help, childcare, work and training, safety at home, free tax help, and phone and internet. Records for the newer areas are evidenced in `docs/curation/` like the rest. After the needs answer the chat offers up to three related areas from a fixed map (`RELATED` in `frontend/src/components/front/chat/content.ts`).
 - **Bank connector (sandbox only).** "Connect a bank account" (on Your money, and on the chat's income question) reads a fictional Nessie demo account into monthly totals: income sources, recurring bills with paid or unpaid status, and spending by category. Snapshots carry `bank_suggestions` for open questions (working, I rent, behind on a bill, an income range); each is applied only when the person confirms it, and the bank's income figure is confirmed through the existing confirmation question before forms or eligibility use it. The Your money page shows the budget, bills, help that lowers costs, and a tax-time checklist with the curated free tax programs. Disconnect removes everything read from the bank that wasn't confirmed.
 - When a need has no curated program in the person's area, `services/web_search.py` looks it up with Gemini's Google Search grounding. Those links appear on Home as "More places to look, found on the web" with a "we haven't checked these" note, never in the plan or with a status. Google Search grounding may need billing enabled on the Gemini key; without it the list is simply empty.
 - Typed chat messages are read by `services/conversation.py`. The model can only choose real question options; every value is validated like any other answer; facts for later questions are confirmed by the person before they are used; replies must pass `is_safe_reply` (no program, benefit or place names the person didn't use, no links, amounts, dates or questions, no promises); instruction-like messages yield nothing. Danger or crisis words show a fixed message (911, and 988 by call or text) in both modes. With `LLM_MODE=off` the same endpoint uses keyword matching and the chat uses template replies.
@@ -173,6 +173,12 @@ The backend and frontend share one snapshot fixture, `backend/tests/fixtures/sna
 cd frontend && npm run sync:fixture
 ```
 
+After adding or removing a program in `backend/app/data/programs/`, or a ZIP code in `backend/app/data/regions.json`, refresh the landing page's count and the conversation's ZIP-to-town table:
+
+```bash
+cd frontend && npm run sync:programs
+```
+
 ## Reproducing the demo
 
 Use `PROGRAM_SOURCE=curated` and run the backend without `--reload`. The click-by-click script, what to point at, and recovery steps are in [docs/demo-script.md](docs/demo-script.md).
@@ -226,8 +232,10 @@ docs/nessie-spike.md               what was verified about the Nessie API
 docs/curation/                     per-record evidence: source URL and quote for each fact
 backend/tests/                     pytest suite and the shared snapshot fixture
 frontend/src/app/                  pages
-frontend/src/components/front-door/ Welcome, then hands off to the chat intake
-frontend/src/components/chat/       the intake as a conversation: typing, quick replies, safety card
+frontend/src/components/front/      Landing page, Behind the scenes and the conversation at /start (front/chat/), with scoped light-only styles, fonts, door transition
+frontend/src/components/front/chat/i18n/ the conversation in English, Spanish, Portuguese, Chinese and Hindi (from the mock's tables; `node scripts/geni18n.mjs src/components/front/chat/i18n` regenerates them). Landing, Building and the dashboard stay English
+frontend/src/components/front-door/ the house drawing used on Home
+frontend/src/components/chat/       answer wording helpers (script.ts) and the agent checklist
 frontend/src/components/home/      Home: next step, plan, sharpen card, glance strip
 frontend/src/components/benefits/  Government benefits and the step-by-step guide
 frontend/src/components/local/     Local help and the week calendar
@@ -284,7 +292,7 @@ Where to make changes:
 ## OpenDoor UI notes
 
 - Run the backend with the real programs: `PROGRAM_SOURCE=curated .venv/bin/uvicorn app.main:app --port 8000 --env-file .env` (`fixtures` is still the default and is what most tests use).
-- Front door is `/`; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`. The old `/legacy` UI was retired in Phase 6.
+- The landing page is `/`, Behind the scenes is `/behind` and the conversation is `/start` (`?sample=1` plays the example, `?need=food` starts with a need picked, `?say=…` starts by reading the person's words). After review, Building ticks each agent off from its real status and opens `/home` on its own; the dashboard lives at `/home`, `/benefits`, `/benefits/[slug]`, `/local`, `/documents`, `/about`, and sends anyone without a finished intake to `/start`. The old `/legacy` UI was retired in Phase 6.
 - Where each endpoint shows up: `POST /sessions`, `GET /sessions/{id}` and `POST .../answers` drive every screen; `POST .../interpret` reads what people type in the chat intake; `POST .../evidence/document` is the "Add a document" card (About you, Documents); `GET /nessie/personas` and `POST .../evidence/nessie` are the "Try a sandbox profile" card (About you); a fact read from either is confirmed through the confirm card (Home, About you). `GET /health` is API-only (used by checks and the demo script). Agent statuses appear in the chat intake's "checking programs" message and under "How we checked this" in the program drawer; the action plan orders Home and supplies its step wording.
 - `BACKEND_URL` is read when Next.js builds its rewrites: for `next build` / `next start`, set it at build time, not only at start.
 - `NEXT_PUBLIC_UI_FIXTURE=1 npm run dev` runs the UI from `src/lib/fixtures/snapshot.ts` with no backend.

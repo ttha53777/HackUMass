@@ -1,11 +1,13 @@
 // Small per-device conveniences. Never sent to the server, never holds answers or documents.
 // Every access is wrapped: storage can be blocked or empty in private windows.
+// The name lives in sessionStorage, like the session id: close the tab and it goes too.
 const NAME_KEY = "od.name";
 const PLAN_KEY = "od.plan";
 
 export function readName(): string {
   try {
-    return window.localStorage.getItem(NAME_KEY) ?? "";
+    window.localStorage.removeItem(NAME_KEY); // where earlier versions kept it
+    return window.sessionStorage.getItem(NAME_KEY) ?? "";
   } catch {
     return "";
   }
@@ -13,8 +15,8 @@ export function readName(): string {
 
 export function saveName(name: string): void {
   try {
-    if (name) window.localStorage.setItem(NAME_KEY, name);
-    else window.localStorage.removeItem(NAME_KEY);
+    if (name) window.sessionStorage.setItem(NAME_KEY, name);
+    else window.sessionStorage.removeItem(NAME_KEY);
   } catch {
     // ignore
   }
@@ -102,6 +104,7 @@ export function clearDevice(): void {
   try {
     window.localStorage.removeItem(PLAN_KEY);
     window.localStorage.removeItem(NAME_KEY);
+    window.sessionStorage.removeItem(NAME_KEY);
   } catch {
     // ignore
   }
