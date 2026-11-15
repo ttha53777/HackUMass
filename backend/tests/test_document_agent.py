@@ -348,3 +348,29 @@ def test_two_wage_papers_are_never_added():
     b = read_document("b.txt", b"Gross monthly pay: $1,100", "income").extraction
     fact, included = household_income(b, [a, b])
     assert fact.value == 1100 and included == set()
+
+
+# --- the model may fill gaps, but only with what the paper shows -----------------
+
+
+class _FakeLLM:
+    def __init__(self, **values):
+        self.values = values
+
+    def generate_json(self, prompt, schema):
+        return schema(**self.values)
+
+
+def test_a_model_figure_the_paper_shows_is_kept_and_flagged(monkeypatch):
+    monkeypatch.setattr("app.services.documents.get_llm", lambda: _FakeLLM(monthly_income=2600.0))
+    reading = read_document("stub.txt", b"Employer: Sample Co\nEarnings this period  $1,200.00  biweekly", "income")
+    assert reading.extraction.extracted_facts["monthly_income"].value == 2600.0  # 1,200 x 26 / 12
+    assert "model_read" in reading.extraction.notes
+
+
+@pytest.mark.parametrize("values", [{"monthly_income": 9999.0}, {"household_size": 7}])
+def test_a_model_figure_the_paper_never_states_is_dropped(monkeypatch, values):
+    monkeypatch.setattr("app.services.documents.get_llm", lambda: _FakeLLM(**values))
+    kind = "income" if "monthly_income" in values else "dob"
+    reading = read_document("x.txt", b"Earnings $1,200.00\nPeople listed: 3 adults", kind)
+    assert reading.extraction.extracted_facts == {} and "model_read" not in reading.extraction.notes

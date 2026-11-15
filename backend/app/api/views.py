@@ -78,6 +78,7 @@ NOTE_TEXT = {
     "household_count_mismatch": "The household size didn't match the people listed, so we left it out.",
     "kind_not_read": "We keep this paper for you, but don't read details from this kind yet.",
     "income_adds_to_household": "This is added to the income on your other papers, so the amount is your household's total.",
+    "model_read": "Some of this was read by AI from a hard-to-read layout. Check it carefully.",
     "kind_mismatch": "This paper looks like a different kind than the one picked, so we didn't read it.",
 }
 
