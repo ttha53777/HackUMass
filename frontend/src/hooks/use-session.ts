@@ -9,9 +9,10 @@ import {
   submitAnswer,
   submitNessieEvidence,
   disconnectBank as disconnectBankApi,
+  submitReview as submitReviewApi,
   uploadDocument,
 } from "@/lib/api";
-import type { AnswerIn, SessionSnapshot } from "@/lib/types";
+import type { AnswerIn, IdentityReading, ReviewIn, SessionSnapshot } from "@/lib/types";
 
 const STORAGE_KEY = "crn.session_id";
 // Poll quickly at first (most runs finish in well under a second), then back off.
@@ -61,12 +62,26 @@ export type SessionController = {
   disconnectBank: () => Promise<string | null>;
   /** Upload a document (consent given). Returns an error message, or null. */
   submitDocument: (file: File) => Promise<string | null>;
+  /**
+   * The Document Agent reads one paper of a known kind (consent given). Identity
+   * details come back once, for the device only; they are never kept in the snapshot.
+   */
+  readPaper: (file: File, kind: string) => Promise<PaperReadResult>;
+  /** Answer one paper's review card. Returns an error message, or null. */
+  submitReview: (review: ReviewIn) => Promise<string | null>;
   restart: () => Promise<void>;
   clearAnswerError: () => void;
   /** Resolves once the backend has finished the current run (or after `timeoutMs`). */
   whenIdle: (timeoutMs?: number) => Promise<void>;
   /** Re-read the snapshot after a change made outside an answer (the browser assistant's result). */
   refresh: () => Promise<void>;
+};
+
+export type PaperReadResult = {
+  error: string | null;
+  identity: IdentityReading[];
+  /** How the snapshot names the paper just read ("your lease"), when it has a review card. */
+  title: string | null;
 };
 
 /**
@@ -228,6 +243,31 @@ export function useSession(): SessionController {
     [send],
   );
 
+  const readPaper = useCallback(
+    async (file: File, kind: string): Promise<PaperReadResult> => {
+      let identity: IdentityReading[] = [];
+      let title: string | null = null;
+      const result = await send(async (id) => {
+        // Identity is handed to the caller and kept out of the stored snapshot.
+        const { identity: read, ...snap } = await uploadDocument(id, file, kind);
+        identity = read ?? [];
+        const docId = identity[0]?.source.replace(/^doc:/, "");
+        title = snap.pending_reviews?.find((r) => r.document_id === docId)?.title ?? null;
+        return snap;
+      });
+      return { error: result === false ? null : result, identity, title };
+    },
+    [send],
+  );
+
+  const submitReview = useCallback(
+    async (review: ReviewIn) => {
+      const result = await send((id) => submitReviewApi(id, review));
+      return result === false ? null : result;
+    },
+    [send],
+  );
+
   const restart = useCallback(async () => {
     storeId(null);
     setSnapshot(null);
@@ -275,6 +315,8 @@ export function useSession(): SessionController {
     submitEvidence,
     disconnectBank,
     submitDocument,
+    readPaper,
+    submitReview,
     restart,
     clearAnswerError,
     whenIdle,

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ArrowUpDown, ClipboardCopy, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";
+import { ArrowRight, ArrowUpDown, ClipboardCopy, FileSearch, FolderOpen, LayoutGrid, List, Plus, Search, Sparkles, Upload, Wallet, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import { docLabel } from "@/components/od/doc-kinds";
@@ -13,8 +13,11 @@ import { useToast } from "@/components/shell/toast";
 import { cardById, docsFor, readiness, shortName, toneOf, walletKinds, walletPrograms, walletTexts } from "@/lib/derive";
 import { cn } from "@/lib/utils";
 
-import { InfoPanel } from "./info-panel";
-import { ACCEPT, DEMO_BASE, MAX_BYTES, demoName, guessKind, loadDemoManifest, usePapers } from "./paper-store";
+import { useDetails } from "./details-store";
+import { InfoPanel, READABLE_KINDS } from "./info-panel";
+import { MyDetails } from "./my-details";
+import { ACCEPT, DEMO_BASE, MAX_BYTES, demoName, guessKind, isReadable, loadDemoManifest, usePapers, type Paper } from "./paper-store";
+import { PaperReviews } from "./paper-review";
 import { PaperGrid, PaperList, type Row } from "./paper-views";
 
 type Filter = "all" | "needed" | "ready" | string; // or a program id
@@ -37,10 +40,12 @@ function conditionOf(texts: string[]): string | null {
  * add), and a Get Info panel. Files stay on this device.
  */
 export function WalletView() {
-  const { snapshot } = useApp();
+  const { snapshot, readPaper, whenIdle, working } = useApp();
   const { plan, toggleDoc } = usePlan();
   const toast = useToast();
   const { papers, add, update, remove } = usePapers(snapshot?.session_id ?? null);
+  const details = useDetails(snapshot?.session_id ?? null);
+  const [readingAll, setReadingAll] = useState<{ done: number; total: number } | null>(null);
   const [filter, setFilter] = useState<Filter>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [sort, setSort] = useState<Sort>("needed");
@@ -133,6 +138,49 @@ export function WalletView() {
     },
     [add, papers, remove, toast, update],
   );
+
+  /**
+   * Send one paper to the Document Agent as `kind` (the person said yes). Facts
+   * come back as a review card; name and address go to this device only.
+   * Returns a message for the person, or null when there was nothing to say.
+   */
+  const readOne = useCallback(
+    async (paper: Paper, kind: string): Promise<string | null> => {
+      const name = /\.(pdf|txt)$/i.test(paper.name) ? paper.name : `${paper.name}.pdf`;
+      await whenIdle();
+      const { error, identity, title } = await readPaper(new File([paper.blob], name, { type: paper.type }), kind);
+      await whenIdle();
+      if (error) return error;
+      if (!identity.length) return null;
+      const saved = await details.saveReadings(identity, title ?? `your ${docLabel(kind, []).toLowerCase()}`);
+      if (saved.otherPerson) return `This paper is for ${saved.otherPerson}, not you, so we didn't keep its name or address.`;
+      return null;
+    },
+    [details, readPaper, whenIdle],
+  );
+
+  const readable = (row: Row) => !!row.paper && isReadable(row.paper) && READABLE_KINDS.has(row.kind);
+
+  /** "Build my profile from my papers": read every readable paper in turn, then show the review cards. */
+  const readAll = async () => {
+    // One read per file: a lease that also counts as proof of address is read as a lease.
+    const seen = new Set<string>();
+    const queue = rows.filter((r) => readable(r) && !seen.has(r.paper!.id) && !!seen.add(r.paper!.id)).slice(0, 8);
+    if (!queue.length) return toast("Add a PDF of a pay stub, lease, bill or ID first.");
+    let problem: string | null = null;
+    setReadingAll({ done: 0, total: queue.length });
+    try {
+      for (const [i, row] of queue.entries()) {
+        // The file's own first kind (how it was added), not whichever row listed it first.
+        const kind = row.paper!.kinds.find((k) => READABLE_KINDS.has(k)) ?? row.kind;
+        problem = (await readOne(row.paper!, kind)) ?? problem;
+        setReadingAll({ done: i + 1, total: queue.length });
+      }
+    } finally {
+      setReadingAll(null);
+    }
+    toast(problem ?? "Read and deleted from our server. Check what we found before we use it.");
+  };
 
   const removeFor = async (row: Row) => {
     if (!row.paper) return;
@@ -234,6 +282,9 @@ export function WalletView() {
           }}
         />
       </div>
+
+      <PaperReviews className="mb-5" />
+      <MyDetails details={details.details} onConfirm={(d, v) => void details.confirm(d, v)} onRemove={(d) => void details.remove(d)} className="mb-5" />
 
       {!rows.length ? (
         <Panel className="text-[13px] leading-[1.7] text-muted-foreground">
@@ -343,6 +394,12 @@ export function WalletView() {
                   <option value="name">Name</option>
                 </select>
               </label>
+              {rows.some(readable) ? (
+                <button type="button" className={btn("ghost", "sm")} disabled={!!readingAll || working} onClick={() => void readAll()}>
+                  <FileSearch aria-hidden className="size-4" />{" "}
+                  {readingAll ? `Reading ${readingAll.done + 1 > readingAll.total ? readingAll.total : readingAll.done + 1} of ${readingAll.total}…` : "Build my profile from my papers"}
+                </button>
+              ) : null}
               {!hasDemo ? (
                 <button type="button" className={btn("ghost", "sm")} disabled={loadingDemo} onClick={() => void loadDemo()}>
                   <Sparkles aria-hidden className="size-4" /> {loadingDemo ? "Adding…" : "Use demo papers"}
@@ -432,6 +489,10 @@ export function WalletView() {
             onFile={(f) => void attach(selectedRow.kind, f)}
             onRemove={() => void removeFor(selectedRow)}
             onTogglePaperCopy={() => toggleDoc(selectedRow.kind)}
+            onRead={async () => {
+              if (!selectedRow.paper) return;
+              toast((await readOne(selectedRow.paper, selectedRow.kind)) ?? "Read and deleted from our server. Check what we found at the top of this page.");
+            }}
           />
         ) : null}
       </AnimatePresence>

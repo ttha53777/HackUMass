@@ -1,4 +1,16 @@
-import type { AnswerIn, ErrorBody, ErrorCode, InterpretIn, InterpretOut, PersonaOut, RunView, SessionSnapshot, WebResourcesOut } from "./types";
+import type {
+  AnswerIn,
+  DocumentReadOut,
+  ErrorBody,
+  ErrorCode,
+  InterpretIn,
+  InterpretOut,
+  PersonaOut,
+  ReviewIn,
+  RunView,
+  SessionSnapshot,
+  WebResourcesOut,
+} from "./types";
 
 /** An error response from the backend, with its machine-readable code. */
 export class ApiError extends Error {
@@ -72,14 +84,27 @@ export function submitNessieEvidence(sessionId: string, personaId: string): Prom
   });
 }
 
-/** Upload a PDF or text file to read household size and income from it. */
-export function uploadDocument(sessionId: string, file: File): Promise<SessionSnapshot> {
+/**
+ * Upload a PDF or text file for the Document Agent to read. With a `kind` (the
+ * wallet's paper kind) it reads only that kind's fields; without one, household
+ * size and income. `identity` comes back once and belongs on the device only.
+ */
+export function uploadDocument(sessionId: string, file: File, kind?: string): Promise<DocumentReadOut> {
   const form = new FormData();
   form.append("file", file);
   form.append("consent", "true");
-  return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/document`, {
+  if (kind) form.append("kind", kind);
+  return request<DocumentReadOut>(`/sessions/${encodeURIComponent(sessionId)}/evidence/document`, {
     method: "POST",
     body: form,
+  });
+}
+
+/** Answer one paper's review card: ticked rows are confirmed, edits become the person's answer. */
+export function submitReview(sessionId: string, body: ReviewIn): Promise<SessionSnapshot> {
+  return request(`/sessions/${encodeURIComponent(sessionId)}/evidence/review`, {
+    method: "POST",
+    body: JSON.stringify(body),
   });
 }
 

@@ -25,6 +25,8 @@ function Fixture({ children }: { children: ReactNode }) {
     submitEvidence: async () => null,
     disconnectBank: async () => null,
     submitDocument: async () => null,
+    readPaper: async () => ({ error: null, identity: [], title: null }),
+    submitReview: async () => null,
     restart: async () => {},
     clearAnswerError: () => {},
     whenIdle: async () => {},
