@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
       { source: "/local", destination: "/home?show=local", permanent: false },
       { source: "/documents", destination: "/papers", permanent: false },
       { source: "/about", destination: "/home?sheet=answers", permanent: false },
-      { source: "/money", destination: "/home", permanent: false },
+      { source: "/money", destination: "/home?sheet=bank", permanent: false },
     ];
   },
   async rewrites() {

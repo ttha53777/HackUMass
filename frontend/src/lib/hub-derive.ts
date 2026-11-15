@@ -7,7 +7,7 @@ import { answerFor, answerIncludes, asksFor, docsFor, isLive, isStepDone, openId
 import type { PlanState } from "./device-state";
 import type { ActionItem, AnsweredItem, ProgramCard, Provenance, SessionSnapshot } from "./types";
 
-export type Fit = "likely" | "open" | "possibly" | "need" | "later";
+export type Fit = "likely" | "open" | "possibly" | "need" | "later" | "have" | "out";
 export type Lane = "today" | "week" | "later";
 export type Kind = "gov" | "local";
 
@@ -45,6 +45,8 @@ export const FIT_LABEL: Record<Fit, string> = {
   possibly: "Possibly a fit",
   need: "Need more info",
   later: "Opens later",
+  have: "You have this",
+  out: "Not a fit right now",
 };
 
 /** CSS class for the fit badge (the design has four looks). */
@@ -54,6 +56,8 @@ export const FIT_CLASS: Record<Fit, string> = {
   possibly: "possibly",
   need: "need",
   later: "opt",
+  have: "likely",
+  out: "opt",
 };
 
 export const LANES: { id: Lane; label: string; icon: string }[] = [
@@ -85,6 +89,10 @@ function fitOf(card: ProgramCard, asks: string[]): Fit {
       return "open";
     case "later":
       return "later";
+    case "have":
+      return "have";
+    case "out":
+      return "out";
     default:
       return asks.length ? "need" : "possibly";
   }
@@ -107,16 +115,14 @@ const isSent = (s: SessionSnapshot, id: string) => {
   return status === "submitted" || status === "unclear";
 };
 
-/** Every live program as a plan step, in the Action Planning agent's order. */
-export function hubSteps(s: SessionSnapshot, plan: PlanState): HubStep[] {
+function stepBuilder(s: SessionSnapshot, plan: PlanState) {
   const needs = needsOf(s);
   const open = openIds(s);
   const actions = new Map(s.action_plan.map((a) => [a.program_id, a]));
-  const index = new Map(s.programs.map((c, i) => [c.program.id, i]));
   const income = incomeKnown(s);
   const automatable = new Set(s.automatable_program_ids ?? []);
 
-  const steps = s.programs.filter(isLive).map((card): HubStep => {
+  return (card: ProgramCard): HubStep => {
     const id = card.program.id;
     const action = actions.get(id) ?? null;
     const asks = asksFor(card, open);
@@ -153,8 +159,13 @@ export function hubSteps(s: SessionSnapshot, plan: PlanState): HubStep[] {
       done: isStepDone(plan, id) || sent,
       sent,
     };
-  });
+  };
+}
 
+/** Every live program as a plan step, in the Action Planning agent's order. */
+export function hubSteps(s: SessionSnapshot, plan: PlanState): HubStep[] {
+  const index = new Map(s.programs.map((c, i) => [c.program.id, i]));
+  const steps = s.programs.filter(isLive).map(stepBuilder(s, plan));
   const rank = (st: HubStep) => st.action?.rank ?? 1000 + (index.get(st.id) ?? 0);
   return steps.sort((a, b) => rank(a) - rank(b));
 }
@@ -217,4 +228,10 @@ export const PROVENANCE_LABEL: Record<Provenance, string> = {
 /** Where a stored answer came from, by its profile field. */
 export function provenanceOf(s: SessionSnapshot, field: string): Provenance | null {
   return s.profile_summary.find((p) => p.field === field)?.provenance ?? null;
+}
+
+/** Any program in the snapshot as a step, live or not (the spotlight can open either). */
+export function stepFor(s: SessionSnapshot, plan: PlanState, id: string): HubStep | null {
+  const card = s.programs.find((c) => c.program.id === id);
+  return card ? stepBuilder(s, plan)(card) : null;
 }

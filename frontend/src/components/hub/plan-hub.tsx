@@ -7,12 +7,14 @@ import { useApp } from "@/components/session/session-provider";
 import { readName } from "@/lib/device-state";
 import { caseOf, hubSteps, incomeQuestionId, nextUp, progress } from "@/lib/hub-derive";
 
-import { AskBox, Told, WalletBox } from "./aside-parts";
+import { AskBox, CheckBox, Told, WalletBox } from "./aside-parts";
 import { Hero, type HeroAction } from "./hero";
 import { useHub } from "./hub-state";
 import { Doodle } from "./icons";
 import { Banner, Filters, Lanes, NextCard } from "./plan-parts";
 import { HubSheets } from "./sheets";
+import { Shortcuts } from "./shortcuts";
+import { Spotlight } from "./spotlight";
 
 function subscribeOnline(cb: () => void) {
   window.addEventListener("online", cb);
@@ -46,7 +48,7 @@ function Skeletons() {
 export function PlanHub() {
   const { snapshot: s, refresh } = useApp();
   const { plan } = usePlan();
-  const { openSheet } = useHub();
+  const { openSheet, openSpot } = useHub();
   const online = useOnline();
   const [name, setName] = useState("");
   useEffect(() => {
@@ -63,7 +65,7 @@ export function PlanHub() {
   const incomeId = incomeQuestionId(s);
   const zip = s.answered.find((a) => a.question_id === "zip")?.display_value ?? "";
   const place = [s.region?.city, zip].filter(Boolean).join(" ");
-  const toNext = () => document.getElementById("next")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  const toNext = () => (next ? openSpot(next.id) : undefined);
   const changeZip = () => openSheet({ type: "answers", edit: "zip" });
 
   const actions: HeroAction[] =
@@ -85,6 +87,7 @@ export function PlanHub() {
     <>
       <Hero which={which} name={name} place={place} done={done} total={total} actions={actions} />
       <Told s={s} steps={steps} />
+      {which !== "loading" && which !== "nomatch" ? <Shortcuts s={s} steps={steps} /> : null}
 
       <div className="plan" id="plan">
         <section aria-label="Your plan">
@@ -124,12 +127,14 @@ export function PlanHub() {
         </section>
 
         <aside>
+          <CheckBox s={s} />
           <AskBox s={s} />
           <WalletBox s={s} steps={steps} />
         </aside>
       </div>
 
       <HubSheets s={s} />
+      <Spotlight />
     </>
   );
 }

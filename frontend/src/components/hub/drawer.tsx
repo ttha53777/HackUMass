@@ -10,11 +10,14 @@ export function Drawer({
   open,
   label,
   onClose,
+  full,
   children,
 }: {
   open: boolean;
   label: string;
   onClose: () => void;
+  /** Full screen, white: "show this at the counter". */
+  full?: boolean;
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -40,7 +43,7 @@ export function Drawer({
       <div className={`scrim${open ? " on" : ""}`} onClick={onClose} aria-hidden="true" />
       <div
         ref={panel}
-        className={`drawer${open ? " on" : ""}`}
+        className={`drawer${open ? " on" : ""}${full ? " full" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={label}
@@ -53,16 +56,49 @@ export function Drawer({
   );
 }
 
-export function DrawerHead({ eyebrow, title, onClose }: { eyebrow: string; title: string; onClose: () => void }) {
+export function DrawerHead({ eyebrow, title, onClose }: { eyebrow: ReactNode; title: string; onClose: () => void }) {
   return (
     <div className="dh">
       <div>
-        <p className="mono">{eyebrow}</p>
+        {typeof eyebrow === "string" ? <p className="mono">{eyebrow}</p> : eyebrow}
         <h3>{title}</h3>
       </div>
       <button className="xbtn" type="button" aria-label="Close" onClick={onClose}>
         ×
       </button>
+    </div>
+  );
+}
+
+/** "1 Pick — 2 Check — 3 Done": where a drawer's flow is. */
+export function Stepper({ at, labels }: { at: number; labels: string[] }) {
+  return (
+    <div className="steps3" aria-label={`Step ${at} of ${labels.length}: ${labels[at - 1]}`}>
+      {labels.map((l, i) => (
+        <span key={l} style={{ display: "contents" }}>
+          {i ? <i className={i < at ? "on" : ""} /> : null}
+          <span className={i < at ? "on" : ""}>
+            {i + 1} {l}
+          </span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** The sheet-of-paper doodle with a scanning band, while something is being read. */
+export function ReadingPaper() {
+  return (
+    <div className="sheetpaper">
+      <i className="scan" />
+      <div className="lines">
+        <i style={{ width: "55%" }} />
+        <i />
+        <i className="hl" style={{ width: "70%" }} />
+        <i style={{ width: "85%" }} />
+        <i className="hl" style={{ width: "40%" }} />
+        <i style={{ width: "62%" }} />
+      </div>
     </div>
   );
 }

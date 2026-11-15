@@ -106,8 +106,8 @@ const SHOWN = 6;
 
 /** "Your papers": every kind of paper the plan asks for, and how many steps each one counts in. */
 export function WalletBox({ s, steps }: { s: SessionSnapshot; steps: HubStep[] }) {
-  const { plan, toggleDoc } = usePlan();
-  const toast = useToast();
+  const { plan } = usePlan();
+  const { openSheet } = useHub();
   const all = walletKinds(s, plan);
   // Most-used first; the rest are on the Papers page.
   const kinds = all.slice(0, SHOWN);
@@ -127,10 +127,7 @@ export function WalletBox({ s, steps }: { s: SessionSnapshot; steps: HubStep[] }
                 className="paper"
                 type="button"
                 aria-pressed={have}
-                onClick={() => {
-                  toggleDoc(d.kind);
-                  toast(have ? `${label}: marked as not ready.` : `${label}: marked as ready. It counts in every step that asks for it.`);
-                }}
+                onClick={() => openSheet(have ? { type: "paper", kind: d.kind } : { type: "upload", kind: d.kind })}
               >
                 <span className="sq">
                   <Tick />
@@ -138,7 +135,7 @@ export function WalletBox({ s, steps }: { s: SessionSnapshot; steps: HubStep[] }
                 <span>
                   <b>{label}</b>
                 </span>
-                <span className="ct">{have ? `in ${n} step${n === 1 ? "" : "s"}` : "+ have it"}</span>
+                <span className="ct">{have ? `in ${n} step${n === 1 ? "" : "s"}` : "+ add"}</span>
               </button>
             );
           })}
@@ -149,10 +146,34 @@ export function WalletBox({ s, steps }: { s: SessionSnapshot; steps: HubStep[] }
           <p>None of your steps list papers yet.</p>
         </div>
       )}
-      <p style={{ fontSize: ".82rem", color: "var(--ink-3)" }}>Tap one you have. Kept on this device only.</p>
+      <p style={{ fontSize: ".82rem", color: "var(--ink-3)" }}>Stays on this device. You confirm every number we read.</p>
       <Link className="txt-btn" href="/papers" style={{ justifySelf: "start" }}>
         {more ? `Open my papers · ${more} more` : "Open my papers"}
       </Link>
+    </div>
+  );
+}
+
+/** Facts read from a paper or the simulated bank, waiting for the person's yes. */
+export function CheckBox({ s }: { s: SessionSnapshot }) {
+  const { openSheet } = useHub();
+  const n = s.pending_reviews.length;
+  if (!n) return null;
+  const rows = s.pending_reviews.reduce((sum, r) => sum + r.rows.length, 0);
+  return (
+    <div className="box" style={{ boxShadow: "0 0 0 2px var(--door)" }}>
+      <p className="mono">Check what we read</p>
+      <h3>
+        {rows} {rows === 1 ? "number" : "numbers"} to check
+      </h3>
+      <p style={{ fontSize: ".94rem", color: "var(--ink-2)" }}>
+        From {s.pending_reviews.map((r) => r.title).join(" and ")}. Nothing is used until you say it looks right.
+      </p>
+      <div className="askfoot">
+        <button className="btn sm" type="button" onClick={() => openSheet({ type: "review" })}>
+          Check them
+        </button>
+      </div>
     </div>
   );
 }

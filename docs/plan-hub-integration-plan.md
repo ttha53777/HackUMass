@@ -23,9 +23,15 @@ acceptance checklist for states (Phase 9).
   and urgent programs that still need more information go to **"week"**, not "today". Without this,
   a shutoff answer put seven red "do this today" cards on the plan.
 - B3 test added (`test_editing_needs_after_intake_adds_and_removes_programs`).
-- Until Phase 4, card titles are plain text and "Their page" links to the provider; until Phase 5,
-  papers are marked ready by hand (as on the old Documents page); "Watch demo" arrives in Phase 9.
-  Shortcut tiles (papers / bank / form) arrive with Phases 5–7.
+- **Phases 4–6 done.** Spotlight (`components/hub/spotlight.tsx`) from the program record, its
+  assessment checks and guide; programs without a guide get a first-step / contact fallback.
+  `if_denied` / `unlocks` are program ids in the data, so "If they say no" shows one fixed line of
+  advice plus those programs. Papers: `papers-context.tsx` (IndexedDB files, identity details,
+  form-helper switch), upload drawer on the real Document Agent with in-drawer review, paper and
+  counter drawers, full Papers page, "Check what we read" prompt for leftover reviews. Bank:
+  simulated profiles only, review card + bills summary, Disconnect; `/money` opens the bank drawer.
+- Still to come: "Fill the form for me" tile and form pip actions (Phase 7), chat (Phase 8),
+  Watch demo (Phase 9). The "What the helper did" log on Papers arrives with Phase 7.
 
 ## 1. What the artifact is
 

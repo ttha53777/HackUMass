@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-
 import { useAnswer } from "@/components/session/answer-provider";
 import { usePlan } from "@/components/session/plan-state";
 import { useToast } from "@/components/shell/toast";
@@ -14,8 +12,6 @@ import { needIcon, needLabel } from "./needs";
 
 const KIND_LABEL = { gov: "Government", local: "Local" } as const;
 
-const linkOf = (st: HubStep) => st.action?.link ?? st.card.program.apply_url ?? st.card.program.info_url;
-
 function KindPill({ st }: { st: HubStep }) {
   return (
     <span className={`kind ${st.kind}`}>
@@ -27,10 +23,9 @@ function KindPill({ st }: { st: HubStep }) {
 
 /** What a step's blocking pip asks for, as something to do now. */
 function usePipAction(incomeId: string | null) {
-  const router = useRouter();
   const { openSheet } = useHub();
   return (pip: Pip): (() => void) | null => {
-    if (pip.k === "papers") return () => router.push("/papers");
+    if (pip.k === "papers" && pip.kind) return () => openSheet({ type: "upload", kind: pip.kind });
     if (pip.k === "income" && incomeId) return () => openSheet({ type: "answers", edit: incomeId });
     return null;
   };
@@ -93,7 +88,7 @@ function DoneCheck({ st }: { st: HubStep }) {
 
 export function StepCard({ st, incomeId }: { st: HubStep; incomeId: string | null }) {
   const { moved } = useAnswer();
-  const { openSheet } = useHub();
+  const { openSheet, openSpot } = useHub();
   const act = usePipAction(incomeId);
   const b = st.done ? undefined : blocker(st);
   const go = b ? act(b) : null;
@@ -106,7 +101,11 @@ export function StepCard({ st, incomeId }: { st: HubStep; incomeId: string | nul
         <KindPill st={st} />
         <span className={`fit ${FIT_CLASS[st.fit]}`}>{FIT_LABEL[st.fit]}</span>
       </div>
-      <h4>{st.title}</h4>
+      <h4>
+        <button className="ttl" type="button" onClick={() => openSpot(st.id)}>
+          {st.title}
+        </button>
+      </h4>
       {st.need ? (
         <p className="helpsline">
           <Doodle id={needIcon(st.need)} />
@@ -134,21 +133,22 @@ export function StepCard({ st, incomeId }: { st: HubStep; incomeId: string | nul
         </button>
       ) : null}
       <div className="foot">
-        <a className="txt-btn more" href={linkOf(st)} target="_blank" rel="noopener noreferrer">
-          Their page <Arrow />
-        </a>
+        <button className="txt-btn more" type="button" onClick={() => openSpot(st.id)}>
+          More about this <Arrow />
+        </button>
         <DoneCheck st={st} />
       </div>
     </article>
   );
 }
 
-export function SlimRow({ st, onOpen }: { st: HubStep; onOpen: () => void }) {
+export function SlimRow({ st }: { st: HubStep }) {
   const { moved } = useAnswer();
+  const { openSpot } = useHub();
   const ok = st.pips.filter((p) => p.ok).length;
   const cls = ["slim", `k-${st.kind}`, st.done ? "done" : "", moved.has(st.id) ? "flash" : ""].filter(Boolean).join(" ");
   return (
-    <button className={cls} type="button" id={`c-${st.id}`} onClick={onOpen} aria-label={`${st.title}: show the card`}>
+    <button className={cls} type="button" id={`c-${st.id}`} onClick={() => openSpot(st.id)}>
       <b>{st.title}</b>
       <span className={`fit ${FIT_CLASS[st.fit]}`}>{FIT_LABEL[st.fit]}</span>
       <span className="sub">
@@ -162,7 +162,7 @@ export function SlimRow({ st, onOpen }: { st: HubStep; onOpen: () => void }) {
 
 export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: string | null }) {
   const act = usePipAction(incomeId);
-  const { openSheet } = useHub();
+  const { openSheet, openSpot } = useHub();
   if (!st) {
     return (
       <div className="next">
@@ -200,10 +200,13 @@ export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: 
             {b.label.charAt(0).toUpperCase() + b.label.slice(1)} <Arrow />
           </button>
         ) : (
-          <a className="btn light" href={linkOf(st)} target="_blank" rel="noopener noreferrer">
-            Go to their page <Arrow />
-          </a>
+          <button className="btn light" type="button" onClick={() => openSpot(st.id)}>
+            See how <Arrow />
+          </button>
         )}
+        <button className="txt-btn lite" type="button" onClick={() => openSpot(st.id)}>
+          More about this
+        </button>
       </div>
       <svg className="dd doodle" viewBox="0 0 160 110" aria-hidden="true">
         <path d="M10 100 H150 M24 100 V44 L80 12 L136 44 V100 M64 100 V64 H96 V100 M110 56 H126 V70 H110 Z M100 24 V10 H114 V32" strokeWidth={2.6} />
@@ -213,6 +216,7 @@ export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: 
 }
 
 export function Banner({ which, steps, onChangeZip }: { which: HubCase; steps: HubStep[]; onChangeZip: () => void }) {
+  const { openSpot } = useHub();
   if (which === "offline") {
     return (
       <div className="banner quiet">
@@ -240,7 +244,7 @@ export function Banner({ which, steps, onChangeZip }: { which: HubCase; steps: H
         <span>
           <b>Do this today.</b> {u.title}
         </span>
-        <button className="btn" type="button" onClick={() => document.getElementById("next")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+        <button className="btn" type="button" onClick={() => openSpot(u.id)}>
           Open
         </button>
       </div>
@@ -285,11 +289,11 @@ export function Filters({ steps }: { steps: HubStep[] }) {
 }
 
 export function Lanes({ steps, next, incomeId }: { steps: HubStep[]; next: HubStep | undefined; incomeId: string | null }) {
-  const { kind, need, setKind, setNeed, expanded, setExpanded } = useHub();
+  const { kind, need, setKind, setNeed } = useHub();
   const shown = steps.filter((st) => (!kind || st.kind === kind) && (!need || st.need === need));
   const lanes = LANES.map((l) => {
     const items = shown
-      .filter((st) => st.lane === l.id && !(next && st.id === next.id && expanded !== next.id))
+      .filter((st) => st.lane === l.id && !(next && st.id === next.id))
       .sort((a, b) => Number(a.done) - Number(b.done) || Number(b.deadline) - Number(a.deadline) || Number(b.urgent) - Number(a.urgent));
     return { ...l, items };
   }).filter((l) => l.items.length);
@@ -331,11 +335,7 @@ export function Lanes({ steps, next, incomeId }: { steps: HubStep[]; next: HubSt
             </div>
             <div className={full ? "cards" : "stack"}>
               {l.items.map((st) =>
-                (full && !st.done) || expanded === st.id ? (
-                  <StepCard key={st.id} st={st} incomeId={incomeId} />
-                ) : (
-                  <SlimRow key={st.id} st={st} onOpen={() => setExpanded(st.id)} />
-                ),
+                full && !st.done ? <StepCard key={st.id} st={st} incomeId={incomeId} /> : <SlimRow key={st.id} st={st} />,
               )}
             </div>
           </section>

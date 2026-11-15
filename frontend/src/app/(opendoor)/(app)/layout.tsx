@@ -3,6 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { paperFontVars } from "@/components/front/paper-fonts";
 import { HubShell } from "@/components/hub/hub-shell";
 import { HubProvider } from "@/components/hub/hub-state";
+import { PapersProvider } from "@/components/hub/papers-context";
 import { AnswerProvider } from "@/components/session/answer-provider";
 import { PlanProvider } from "@/components/session/plan-state";
 import { Gate } from "@/components/shell/gate";
@@ -21,9 +22,11 @@ export default function HubLayout({ children }: { children: ReactNode }) {
       <Gate>
         <PlanProvider>
           <AnswerProvider>
-            <Suspense>
-              <HubProvider>{children}</HubProvider>
-            </Suspense>
+            <PapersProvider>
+              <Suspense>
+                <HubProvider>{children}</HubProvider>
+              </Suspense>
+            </PapersProvider>
           </AnswerProvider>
         </PlanProvider>
       </Gate>

@@ -10,20 +10,40 @@ import { clearDevice } from "@/lib/device-state";
 import { needsOf, PROVENANCE_LABEL, provenanceOf } from "@/lib/hub-derive";
 import type { AnsweredItem, Question, SessionSnapshot } from "@/lib/types";
 
+import { BankSheet } from "./bank-sheet";
 import { Drawer, DrawerHead } from "./drawer";
-import { useHub } from "./hub-state";
+import { useHub, type Sheet } from "./hub-state";
 import { Arrow, Doodle } from "./icons";
 import { ALL_NEEDS, NEED_GROUPS, needIcon } from "./needs";
+import { CounterSheet, PaperSheet, ReviewSheet, UploadSheet } from "./paper-sheets";
 import { QuestionInput } from "./question-input";
+
+const LABEL: Record<Sheet["type"], string> = {
+  needs: "Add a need",
+  answers: "Your answers",
+  upload: "Add a paper",
+  paper: "Saved paper",
+  counter: "Show this at the counter",
+  review: "Check what we read",
+  bank: "Connect a bank",
+};
 
 /** The hub's drawers. Only one is open at a time (useHub().sheet). */
 export function HubSheets({ s }: { s: SessionSnapshot }) {
   const { sheet, closeSheet } = useHub();
-  const label = sheet?.type === "needs" ? "Add a need" : "Your answers";
+  // A new key per drawer and target, so a flow starts fresh (e.g. "Add another").
+  const key = sheet ? JSON.stringify(sheet.type === "answers" ? { type: "answers" } : sheet) : "none";
   return (
-    <Drawer open={!!sheet} label={label} onClose={closeSheet}>
-      {sheet?.type === "needs" ? <NeedsSheet s={s} /> : null}
-      {sheet?.type === "answers" ? <AnswersSheet s={s} edit={sheet.edit} /> : null}
+    <Drawer open={!!sheet} label={sheet ? LABEL[sheet.type] : "Drawer"} onClose={closeSheet} full={sheet?.type === "counter"}>
+      <div key={key} style={{ display: "contents" }}>
+        {sheet?.type === "needs" ? <NeedsSheet s={s} /> : null}
+        {sheet?.type === "answers" ? <AnswersSheet s={s} edit={sheet.edit} /> : null}
+        {sheet?.type === "upload" ? <UploadSheet s={s} kind={sheet.kind} /> : null}
+        {sheet?.type === "paper" ? <PaperSheet s={s} kind={sheet.kind} /> : null}
+        {sheet?.type === "counter" ? <CounterSheet s={s} kinds={sheet.kinds} /> : null}
+        {sheet?.type === "review" ? <ReviewSheet s={s} /> : null}
+        {sheet?.type === "bank" ? <BankSheet s={s} /> : null}
+      </div>
     </Drawer>
   );
 }

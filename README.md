@@ -237,7 +237,7 @@ frontend/src/components/front/      Landing page, Behind the scenes and the conv
 frontend/src/components/front/chat/i18n/ the conversation in English, Spanish, Portuguese, Chinese and Hindi (from the mock's tables; `node scripts/geni18n.mjs src/components/front/chat/i18n` regenerates them). Landing, Building and the dashboard stay English
 frontend/src/components/front-door/ the house drawing used on Home
 frontend/src/components/chat/       answer wording helpers (script.ts) and the agent checklist
-frontend/src/components/hub/       the Plan Hub (/home, /papers): hero and door, plan lanes, ask box, drawers, scoped light-only styles (hub.css)
+frontend/src/components/hub/       the Plan Hub (/home, /papers): hero and door, plan lanes, ask box, program spotlight, drawers (needs, answers, add a paper, paper, counter, review, bank), papers on the device (papers-context.tsx), scoped light-only styles (hub.css)
 frontend/src/lib/hub-derive.ts     the hub's selectors: steps, lanes, cases, pips (no statuses decided here)
 frontend/src/components/home/      archived: the old Home (not routed)
 frontend/src/components/benefits/  archived views (guide, benefits list); the browser assistant and readiness card are still used

@@ -799,4 +799,10 @@ details.fold[open] summary::after{content:"–"}
   button.pip{cursor:pointer}
   .check[disabled]{cursor:default}
   .opt[disabled],.qchk[disabled],.pneed[disabled]{opacity:.6;cursor:progress}
+  .hub-tiles{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+  .found .bk{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:center}
+  .found .bk span{color:var(--ink)}
+  .found .bk small{grid-column:1/-1;color:var(--ink-3);font-size:.8rem}
+  .spot .sp-b p a{color:var(--door);font-weight:700}
+  .drawer.full .ctr-p iframe,.drawer.full .ctr-p img{margin-top:8px}
 }
