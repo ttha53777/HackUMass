@@ -72,7 +72,7 @@ export function HubShell({ fonts, children }: { fonts: string; children: ReactNo
               </svg>
             </button>
             <span className="tourhint">
-              see it work in 70 seconds
+              see it work in 30 seconds
               <svg className="dd" viewBox="0 0 30 26" aria-hidden="true">
                 <path d="M3 22 C10 20 18 14 22 4 M15 7 C18 6 20 5 22 3 C23 6 24 9 26 11" strokeWidth={2.2} />
               </svg>
@@ -92,7 +92,7 @@ export function HubShell({ fonts, children }: { fonts: string; children: ReactNo
             </p>
             {/* The nav's Watch demo button is hidden on phones, as in the design; this keeps the demo reachable. */}
             <button className="txt-btn demo-link" type="button" onClick={() => window.dispatchEvent(new Event(TOUR_EVENT))}>
-              Watch the 70-second demo
+              Watch the 30-second demo
             </button>
             <a
               className="leave"

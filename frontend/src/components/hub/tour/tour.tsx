@@ -6,8 +6,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 import { useToast } from "@/components/shell/toast";
+import { DEMO_BASE } from "@/components/documents/paper-store";
 import { createSession, getSession, submitAnswer } from "@/lib/api";
-import { hubSteps } from "@/lib/hub-derive";
+import { addFillerPaper, confirmDetails, FILLER_SCOPES, getFillerState, setAutoRead } from "@/lib/filler";
 import type { AnswerIn, SessionSnapshot } from "@/lib/types";
 
 import { useHub } from "../hub-state";
@@ -18,24 +19,20 @@ import { createEngine, STOP, type Engine } from "./engine";
 export const TOUR_EVENT = "od:tour-start";
 
 const CHAPTERS = [
-  { k: "Say it in words", t: "Maya doesn't fill out a screener. She just says what is wrong." },
-  { k: "It listens", t: "OpenDoor picks out what she needs, and the fact that makes one urgent." },
-  { k: "One plan, in order", t: "Her plan is rebuilt and sorted by deadline. The urgent step comes first." },
-  { k: "Know what to do", t: "Each program opens up: what it costs, what to say, and a plan B if they say no." },
-  { k: "Papers, once", t: "One copy of her bill counts in every step that needs it." },
-  { k: "No typing income", t: "A read-only, simulated bank link suggests her income and bills. She confirms them." },
-  { k: "She presses Send", t: "The form helper can fill the application in a practice browser. Only Maya signs and sends it." },
-  { k: "The door opens", t: "Fast-forward her week: each step done swings the door wider." },
+  { k: "Her plan", t: "Maya told us her situation once. Now every program she might get is in one list, most urgent first." },
+  { k: "Bank, not typing", t: "Instead of typing her income, she links a bank. Read-only, and simulated for this demo." },
+  { k: "AI fills the form", t: "The AI fills her application from her papers, live, in its own browser. She watches every field." },
 ];
 
-const SAY = "I got a shutoff notice for my heat, I have a toddler, and we are almost out of groceries.";
+/** Maya's fictional papers the Filler reads in the background, so the form fills without asking. */
+const DEMO_PAPERS = ["photo-id", "proof-of-address", "household-members", "pay-stub", "electric-bill"];
 
-/** The demo person's starting answers (fictional): enough for a plan, before she says more. */
+/** The demo person's answers (fictional), as onboarding would have left them: heat, groceries, a toddler. */
 const START: AnswerIn[] = [
-  { question_id: "needs", selected_option_ids: ["housing"] },
+  { question_id: "needs", selected_option_ids: ["utilities", "food", "housing"] },
   { question_id: "zip", value: "01002" },
   { question_id: "household_size", value: 2 },
-  { question_id: "household_who", selected_option_ids: ["none"] },
+  { question_id: "household_who", selected_option_ids: ["child"] },
 ];
 
 const CIRCLE = (
@@ -61,14 +58,39 @@ async function prepareDemo(): Promise<SessionSnapshot> {
 }
 
 /**
- * "Watch demo": a 70-second walk through the real app on a throwaway session. A doodle cursor
+ * Lets the Filler read Maya's fictional papers on the demo session and confirms what it found,
+ * so the form fills from them. Runs while the tour shows the plan and the bank. Best effort:
+ * without the Filler the form simply asks for more.
+ */
+async function seedPapers(sessionId: string): Promise<void> {
+  try {
+    await setAutoRead(sessionId, true, FILLER_SCOPES.map((x) => x.id));
+    await Promise.all(
+      DEMO_PAPERS.map(async (name) => {
+        const res = await fetch(`${DEMO_BASE}/${name}.pdf`);
+        if (!res.ok) return;
+        await addFillerPaper(sessionId, await res.blob(), `${name}.pdf`, null);
+      }),
+    );
+    for (let i = 0; i < 40; i++) {
+      const st = await getFillerState(sessionId);
+      if (!st || !st.papers.some((p) => p.status === "queued" || p.status === "reading")) break;
+      await new Promise((r) => setTimeout(r, 500));
+    }
+    await confirmDetails(sessionId);
+  } catch {
+    // No Filler here, or a paper failed: the form asks for what is missing.
+  }
+}
+
+/**
+ * "Watch demo": a 30-second walk through the real app on a throwaway session. A doodle cursor
  * taps the real buttons; the person's own session, plan, papers and answers are untouched, and
- * come back when the tour stops. It never starts a form run (that drives a paid browser and model)
- * and never presses Send.
+ * come back when the tour stops. It runs one form fill on a practice form, and never presses Send.
  */
 export function Tour() {
   const app = useApp();
-  const { plan, toggleDone } = usePlan();
+  const { plan } = usePlan();
   const hub = useHub();
   const papers = usePapersHub();
   const toast = useToast();
@@ -78,6 +100,7 @@ export function Tour() {
   const [on, setOn] = useState(false);
   const [done, setDone] = useState(false);
   const [chapter, setChapter] = useState(-1);
+  const [line, setLine] = useState("");
   const cursor = useRef<HTMLDivElement>(null);
   const body = useRef<HTMLDivElement>(null);
   const trail = useRef<SVGPathElement>(null);
@@ -132,141 +155,91 @@ export function Tour() {
       const prepared = await prepareDemo();
       if (!alive()) return;
       latest.current.app.beginDemo(prepared);
-      await E.sleep(900);
+      const seeded = seedPapers(prepared.session_id);
+      const say = (i: number, t = CHAPTERS[i].t) => {
+        setChapter(i);
+        setLine(t);
+      };
+      await E.sleep(600);
       E.setCur(window.innerWidth * 0.62, window.innerHeight * 0.72);
       cursor.current.classList.add("on");
-      await E.sleep(1400);
+      await E.sleep(600);
 
-      // 1: say it
-      setChapter(0);
-      await E.tap('[data-tour="chat"]', { after: 700 });
-      await E.typeIn(".drawer .cbox textarea", SAY);
-      await E.sleep(350);
-      await E.tap('[data-tour="send"]', { after: 300 });
-
-      // 2: it listens
-      setChapter(1);
-      await E.waitFor('.drawer .heard [data-tour="add"]', 12000);
-      await E.sleep(300);
-      E.annotate(".drawer .heard .hn", "from one sentence", { pad: 6 });
-      await E.sleep(1500);
-      E.annotate(".drawer .heard .facts", "and the urgent part", { pad: 6, below: true });
-      await E.sleep(1900);
-      await E.tap('.drawer .heard [data-tour="add"]', { after: 900 });
-      await E.tap('.drawer [data-tour="seeplan"]', { after: 900 });
-
-      // 3: the plan
-      setChapter(2);
-      await E.glide(null, 0, 900);
-      await E.sleep(300);
-      E.annotate(".hero h1", "rebuilt for today", { pad: 12, below: true, left: true });
-      await E.sleep(1600);
-      E.clearAnn();
+      // 1: her plan (~4 s)
+      say(0);
       const nx = await E.waitFor(".next");
       await E.show(nx);
-      E.annotate(".next", "deadline first", { pad: 8 });
+      E.annotate(".next", "most urgent first", { pad: 8 });
       await E.point(".next h3", { fx: 0.6 });
-      await E.sleep(1700);
-
-      // 4: the spotlight
-      setChapter(3);
-      await E.tap('.next [data-tour="more"]', { after: 900 });
-      const gl = await E.waitFor(".spot.on .gl");
-      await E.sleep(300);
-      E.annotate(gl, "cost, timing, papers", { pad: 6, below: true });
-      await E.point(gl, { fx: 0.45 });
-      await E.sleep(1700);
-      E.clearAnn();
-      const folds = [...document.querySelectorAll<HTMLDetailsElement>(".spot.on details.fold")];
-      const no = folds.find((d) => /say no/i.test(d.textContent ?? ""));
-      if (no) {
-        await E.tap(no.querySelector("summary") as HTMLElement, { after: 500 });
-        E.annotate(no, "a plan B, too", { pad: 6 });
-        await E.sleep(1600);
-      }
-      await E.tap(".spot.on .sp-x", { after: 700 });
-
-      // 5: papers, once
-      setChapter(4);
-      const s5 = latest.current.app.snapshot;
-      const steps5 = s5 ? hubSteps(s5, latest.current.plan) : [];
-      const kind = ["heat", "income", "lease", "id"].find((k) => steps5.some((st) => st.kinds.includes(k))) ?? null;
-      latest.current.hub.openSheet({ type: "upload", kind });
-      await E.sleep(800);
-      const sample = await E.waitFor(".drawer .samples .smp");
-      await E.tap(sample, { after: 400 });
-      const after = await Promise.race([E.waitFor('.drawer [data-tour="looks-right"]', 20000), E.waitFor(".drawer .reuse", 20000)]);
-      if (after.matches('[data-tour="looks-right"]')) {
-        E.annotate(".drawer .found", "read for her, on request", { pad: 6, below: true });
-        await E.sleep(1700);
-        await E.tap(after, { after: 800 });
-      }
-      const reuse = await E.waitFor(".drawer .reuse", 12000);
-      E.annotate(reuse, "one paper, many steps", { pad: 6, below: true });
-      await E.point(reuse, { fx: 0.6 });
-      await E.sleep(1700);
-      await E.tap(".drawer .xbtn", { after: 700 });
-
-      // 6: no typing income
-      setChapter(5);
-      latest.current.hub.openSheet({ type: "bank" });
-      await E.sleep(900);
-      await E.waitFor(".drawer .opts .opt", 8000);
-      await E.tap(".drawer .agree", { after: 350 });
-      await E.tap('.drawer [data-tour="connect"]', { after: 300 });
-      const check = await E.waitFor('.drawer [data-tour="looks-right"]', 20000);
-      E.annotate(".drawer .found", "simulated, read-only", { pad: 6, below: true });
-      await E.sleep(1700);
-      await E.tap(check, { after: 900 });
-      await E.tap(".drawer .xbtn", { after: 700 });
-
-      // 7: she presses Send (shown, never started)
-      setChapter(6);
-      const s7 = latest.current.app.snapshot;
-      const formId = s7?.automatable_program_ids.find((x) => x === "capv-fuel-assistance") ?? s7?.automatable_program_ids[0];
-      if (formId) {
-        latest.current.hub.openSheet({ type: "form", id: formId });
-        await E.sleep(900);
-        const gate = [...document.querySelectorAll<HTMLElement>(".drawer .txt-btn")].find((b) => /asks me instead/i.test(b.textContent ?? ""));
-        if (gate) await E.tap(gate, { after: 700 });
-        const ready = await E.waitFor(".drawer .found", 8000).catch(() => null);
-        if (ready) {
-          E.annotate(ready, "filled from her answers", { pad: 6, below: true });
-          await E.sleep(1500);
-        }
-        const promise = document.querySelector(".drawer .promise");
-        if (promise) {
-          E.annotate(promise, "only Maya presses Send", { pad: 6, below: true });
-          await E.point(promise as HTMLElement, { fx: 0.4 });
-          await E.sleep(1900);
-        }
-        await E.tap(".drawer .xbtn", { after: 700 });
-      } else {
-        await E.sleep(2200);
-      }
-
-      // 8: the door opens
-      setChapter(7);
-      await E.glide(null, 0, 1100);
-      await E.sleep(400);
-      await E.point(".meter b", { fx: 0.9 });
-      E.annotate(".meter", "", { pad: 8 });
-      await E.sleep(900);
-      const s8 = latest.current.app.snapshot;
-      const left = s8 ? hubSteps(s8, latest.current.plan).filter((st) => !st.done) : [];
-      for (let i = 0; i < left.length; i++) {
-        if (!alive()) throw STOP;
-        toggleDone(left[i].id); // the demo session's plan is never saved
-        await E.press();
-        await E.sleep(i === left.length - 1 ? 200 : 380);
-      }
-      E.clearAnn();
-      await E.sleep(900);
-      E.annotate(".scene", "the door is open", { pad: -30, below: true });
-      await E.point(".scene", { fx: 0.62, fy: 0.5 });
       await E.sleep(2600);
       E.clearAnn();
-      await E.moveTo(window.innerWidth - 60, window.innerHeight - 40, 900);
+
+      // 2: bank, not typing (~8 s)
+      say(1);
+      latest.current.hub.openSheet({ type: "bank" });
+      await E.waitFor(".drawer .bk-card:not(.sk)", 8000);
+      // Maya works part time, so pick the matching simulated profile.
+      const card = [...document.querySelectorAll<HTMLElement>(".drawer .bk-card:not(.sk)")].find((b) => /part-time/i.test(b.textContent ?? ""));
+      if (card) await E.tap(card, { after: 250 });
+      await E.tap(".drawer .agree", { after: 250 });
+      await E.tap('.drawer [data-tour="connect"]', { after: 200 });
+      say(1, "It reads 90 days of transactions, works out her monthly income, and tests it against each program's limit.");
+      const skip = await E.waitFor(".drawer .af-skip", 10000);
+      await E.sleep(1100);
+      await E.tap(skip, { after: 200 });
+      const flowDone = await E.waitFor('.drawer [data-tour="flow-done"]', 10000);
+      await E.show(flowDone);
+      E.annotate(".drawer .af-go", "", { pad: 6 });
+      await E.sleep(900);
+      E.clearAnn();
+      await E.tap(flowDone, { after: 300 });
+      const check = await E.waitFor('.drawer [data-tour="looks-right"]', 10000);
+      say(1, "It finds her monthly income and her bills. Nothing is used until she says it looks right.");
+      E.annotate(".drawer .found", "income and bills, found for her", { pad: 6, below: true });
+      await E.sleep(1800);
+      await E.tap(check, { after: 400 });
+      await E.tap(".drawer .xbtn", { after: 300 });
+
+      // 3: AI fills the form (~15 s)
+      say(2, "First the AI reads her papers: ID, lease, pay stub, electric bill. She agreed to that.");
+      await Promise.race([seeded, E.sleep(3000)]);
+      const s3 = latest.current.app.snapshot;
+      const formId = s3?.automatable_program_ids.find((x) => x === "capv-fuel-assistance") ?? s3?.automatable_program_ids[0];
+      if (!formId) throw new Error("no form");
+      latest.current.hub.openSheet({ type: "form", id: formId });
+      const pre = await E.waitFor(".drawer .fl-pre", 25000);
+      say(2, "Before typing anything, it shows every value it will use and which paper it came from.");
+      E.annotate(pre, "every value, and its source", { pad: 6 });
+      await E.sleep(1500);
+      E.clearAnn();
+      await E.tap(".drawer .fl-pre .fl-actions .btn:not(.quiet)", { after: 300 });
+      say(2);
+      const viewer = await E.waitFor(".drawer .fl-left", 8000);
+      E.annotate(viewer, "the AI typing, live", { pad: 6 });
+      await E.point(viewer, { fx: 0.5, fy: 0.4 });
+      // Let it fill; skip anything it would ask, so the demo keeps moving. It stops at the
+      // signature (Your turn) or at the review: either way the last step is Maya's.
+      const t0 = Date.now();
+      let mine: HTMLElement | null = null;
+      while (Date.now() - t0 < 20000) {
+        mine = document.querySelector<HTMLElement>(".drawer .fl-banner");
+        if (mine) break;
+        const skip = document.querySelector<HTMLElement>(".drawer .fl-question .txt-btn");
+        if (skip) await E.tap(skip, { after: 300 });
+        else await E.sleep(300);
+      }
+      E.clearAnn();
+      if (mine) {
+        say(2, "Every field filled from her papers. Signing and pressing Send stay with Maya. The AI never sends.");
+        E.annotate(".drawer .fl-left", "filled in seconds", { pad: 6 });
+        await E.sleep(1400);
+        E.annotate(mine, "she signs and sends, not the AI", { pad: 6, below: true });
+        await E.point(mine, { fx: 0.4 });
+        await E.sleep(2200);
+        E.clearAnn();
+      }
+      await E.tap(".drawer .xbtn", { after: 400 });
+      await E.moveTo(window.innerWidth - 60, window.innerHeight - 40, 700);
       cursor.current?.classList.remove("on");
       root()?.classList.remove("touring");
       setDone(true);
@@ -277,7 +250,7 @@ export function Tour() {
         toast("The demo stopped early. Your own plan is back, unchanged.");
       }
     }
-  }, [router, toggleDone, finish, toast]);
+  }, [router, finish, toast]);
 
   useEffect(() => {
     const onStart = () => void start();
@@ -346,20 +319,20 @@ export function Tour() {
               {done ? (
                 <>
                   <span className="mono">That is OpenDoor</span>
-                  <span className="txt">One sentence in. A plan, papers counted once, and Maya presses Send.</span>
+                  <span className="txt">Her programs in one list, income from her bank, and a form the AI filled. Maya presses Send.</span>
                 </>
               ) : c ? (
                 <>
                   <span className="mono">
                     {chapter + 1} of {CHAPTERS.length} · {c.k}
                   </span>
-                  <span className="txt" key={chapter}>
-                    {c.t}
+                  <span className="txt" key={line}>
+                    {line}
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="mono">OpenDoor · a 70-second walk-through</span>
+                  <span className="mono">OpenDoor · a 30-second walk-through</span>
                   <span className="txt">Meet Maya. Her heat is about to be shut off. This runs on a separate demo plan.</span>
                 </>
               )}

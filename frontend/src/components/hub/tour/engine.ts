@@ -137,7 +137,7 @@ export function createEngine(els: { cursor: HTMLElement; body: HTMLElement; trai
       if (el && el.getClientRects().length) return el;
       await sleep(90);
     }
-    throw STOP;
+    throw new Error(`tour: ${sel} did not appear`);
   }
   async function point(sel: string | HTMLElement, opt: { fx?: number; fy?: number } = {}) {
     const el = typeof sel === "string" ? await waitFor(sel) : sel;
