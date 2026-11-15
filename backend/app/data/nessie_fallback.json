@@ -156,7 +156,7 @@
     {
       "id": "part-time-irregular",
       "label": "Simulated: part-time work, uneven pay",
-      "description": "One adult with uneven part-time pay. Pays rent, electric and phone; the latest electric bill is unpaid.",
+      "description": "One adult with uneven part-time pay. Pays rent, an Eversource electric bill and phone; the latest electric bill is unpaid.",
       "balance": 84.15,
       "deposits": [
         {
@@ -241,13 +241,13 @@
       "bills": [
         {
           "payment_date": "2026-08-18",
-          "payee": "Electric company",
+          "payee": "Eversource electric",
           "payment_amount": 71.3,
           "status": "completed"
         },
         {
           "payment_date": "2026-09-18",
-          "payee": "Electric company",
+          "payee": "Eversource electric",
           "payment_amount": 76.85,
           "status": "pending"
         },
@@ -559,6 +559,47 @@
           "amount": 1279.68,
           "status": "completed"
         }
+      ]
+    },
+    {
+      "id": "between-jobs",
+      "label": "Simulated: between jobs, unemployment benefits",
+      "description": "One adult who lost a job this summer. Weekly unemployment benefits and one transfer from savings; pays rent, an Eversource electric bill and phone. October's rent is unpaid.",
+      "balance": 212.4,
+      "deposits": [
+        {"transaction_date": "2026-08-06", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-08-13", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-08-20", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-08-27", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-09-03", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-09-10", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-09-12", "amount": 400.0, "description": "Transfer from savings", "status": "completed"},
+        {"transaction_date": "2026-09-17", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-09-24", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-10-01", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-10-08", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-10-15", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-10-22", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"},
+        {"transaction_date": "2026-10-29", "amount": 455.0, "description": "Unemployment benefit payment", "status": "completed"}
+      ],
+      "bills": [
+        {"payment_date": "2026-08-01", "payee": "Apartment rent", "payment_amount": 1050.0, "status": "completed"},
+        {"payment_date": "2026-09-01", "payee": "Apartment rent", "payment_amount": 1050.0, "status": "completed"},
+        {"payment_date": "2026-10-01", "payee": "Apartment rent", "payment_amount": 1050.0, "status": "pending"},
+        {"payment_date": "2026-08-16", "payee": "Eversource electric", "payment_amount": 64.2, "status": "completed"},
+        {"payment_date": "2026-09-16", "payee": "Eversource electric", "payment_amount": 69.9, "status": "completed"},
+        {"payment_date": "2026-10-16", "payee": "Eversource electric", "payment_amount": 73.15, "status": "completed"},
+        {"payment_date": "2026-08-24", "payee": "Phone company", "payment_amount": 40.0, "status": "completed"},
+        {"payment_date": "2026-09-24", "payee": "Phone company", "payment_amount": 40.0, "status": "completed"},
+        {"payment_date": "2026-10-24", "payee": "Phone company", "payment_amount": 40.0, "status": "completed"}
+      ],
+      "purchases": [
+        {"purchase_date": "2026-08-10", "description": "Grocery market", "amount": 362.4, "status": "completed"},
+        {"purchase_date": "2026-08-18", "description": "PVTA bus and rides", "amount": 52.0, "status": "completed"},
+        {"purchase_date": "2026-09-10", "description": "Grocery market", "amount": 341.15, "status": "completed"},
+        {"purchase_date": "2026-09-18", "description": "PVTA bus and rides", "amount": 48.0, "status": "completed"},
+        {"purchase_date": "2026-10-10", "description": "Grocery market", "amount": 329.8, "status": "completed"},
+        {"purchase_date": "2026-10-18", "description": "PVTA bus and rides", "amount": 50.0, "status": "completed"}
       ]
     }
   ]
