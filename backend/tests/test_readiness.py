@@ -51,7 +51,8 @@ def test_a_disputed_answer_the_form_needs_blocks_the_start(harness):
     sid, _ = run_food_intake(client)  # typed household of 1
     client.post(f"/api/sessions/{sid}/evidence/document",
                 files={"file": ("h.txt", b"Household size: 3", "text/plain")}, data={"consent": "true", "kind": "dob"})
-    assert client.get(ready_url(sid)).json()["blocked_by"] == ["household_size"]
+    ready = client.get(ready_url(sid)).json()
+    assert ready["blocked_by"] == ["household_size"] and "household_size" not in ready["will_ask"]
     r = client.post(runs_url(sid), json={"program_id": PROGRAM, "consent": True})
     assert r.status_code == 409 and r.json()["error"]["code"] == "facts_in_conflict"
 

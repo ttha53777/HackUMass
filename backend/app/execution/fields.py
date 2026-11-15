@@ -222,6 +222,7 @@ def readiness(profile: Profile, store: FieldStore, required: list[str], optional
         k for k in missing
         if k in PROFILE_FIELD and PROFILE_FIELD[k] in profile.facts and PROFILE_FIELD[k] not in disputed
     ]
-    from_device = [k for k in missing if k in DEVICE_KEYS and k not in unconfirmed]
-    will_ask = [k for k in missing if k not in DEVICE_KEYS and k not in unconfirmed]
+    held = {k for k in missing if k in PROFILE_FIELD and PROFILE_FIELD[k] in disputed}  # settled first
+    from_device = [k for k in missing if k in DEVICE_KEYS and k not in unconfirmed and k not in held]
+    will_ask = [k for k in missing if k not in DEVICE_KEYS and k not in unconfirmed and k not in held]
     return Readiness(from_profile, from_device, will_ask, unconfirmed, blocked)
