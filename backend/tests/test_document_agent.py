@@ -267,3 +267,48 @@ def test_disconnect_keeps_a_paper_that_agreed_with_the_bank(client):
     disconnect_bank(client, sid)
     income = client.app.state.sessions.values(sid)["profile"].facts["monthly_income"]
     assert income.source.startswith("doc:") and not income.confirmed
+
+
+# --- the kind picked must fit the paper -----------------------------------------
+
+
+def test_a_paper_filed_as_the_wrong_kind_is_not_read(client):
+    reading = read_document("pay-stub.pdf", paper("pay-stub"), "lease")
+    assert reading.extraction.extracted_facts == {} and reading.identity == {}
+    assert "kind_mismatch" in reading.extraction.notes
+
+    sid = start(client)
+    snap = upload(client, sid, "pay-stub.pdf", paper("pay-stub"), "lease").json()
+    assert "document_kind_mismatch" in [n["code"] for n in snap["notices"]]
+
+
+@pytest.mark.parametrize("name,kind", [
+    ("lease", "address"), ("electric-bill", "address"), ("photo-id", "address"),
+    ("pay-stub", "income"), ("shutoff-notice", "shutoff"), ("photo-id", "id"),
+])
+def test_papers_that_also_prove_an_address_still_fit(name, kind):
+    assert "kind_mismatch" not in read_document(f"{name}.pdf", paper(name), kind).extraction.notes
+
+
+def test_a_paper_with_no_known_title_trusts_the_kind_picked():
+    facts = read_document("x.txt", b"Tenant: A Person\nHeat included: yes", "lease").extraction.extracted_facts
+    assert set(facts) == {"housing_status", "heat_included_in_rent"}
+
+
+def test_bills_and_notices_set_their_utility_fields():
+    bill = read_kind("heat", "Utility bill\nCompany: Eversource Energy\nStatus: Past due")
+    assert bill.facts == {"utility_urgency": "behind", "eversource_customer": "yes"}
+    assert "eversource_customer" not in read_kind("heat", "Electric bill - Sample Electric Co.\nStatus: Past due").facts
+    notice = read_document("n.pdf", paper("shutoff-notice"), "shutoff").extraction.extracted_facts
+    assert notice["utility_urgency"].value == "shutoff" and notice["utility_issues"].value == ["shutoff"]
+
+
+def test_unclaimed_readings_expire(monkeypatch):
+    from app.services import documents
+
+    clock = [1000.0]
+    monkeypatch.setattr(documents.time, "monotonic", lambda: clock[0])
+    inbox = documents.DocumentInbox()
+    ref = inbox.put(read_document("x.txt", b"Household size: 2", "dob").extraction)
+    clock[0] += documents.INBOX_TTL_SECONDS + 1
+    assert inbox.pop(ref) is None

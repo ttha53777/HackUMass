@@ -25,8 +25,8 @@ KIND_FIELDS: dict[str, frozenset[str]] = {
     "income": frozenset({"monthly_income", "situation"}),
     "dob": frozenset({"household_size", "household_who"}),
     "lease": frozenset({"housing_status", "heat_included_in_rent"}),
-    "heat": frozenset({"utility_urgency"}),
-    "shutoff": frozenset({"utility_urgency"}),
+    "heat": frozenset({"utility_urgency", "eversource_customer"}),
+    "shutoff": frozenset({"utility_urgency", "utility_issues"}),
     "address": frozenset(),
     "id": frozenset(),
 }
@@ -43,6 +43,36 @@ KIND_IDENTITY: dict[str, frozenset[str]] = {
 }
 
 READABLE_KINDS = frozenset(KIND_FIELDS)
+
+# What each kind's title looks like, checked against the paper's first lines.
+# A paper whose title clearly belongs to another kind is not read as this one
+# (note "kind_mismatch"), so a pay stub filed as a lease cannot set lease facts.
+_TITLES: dict[str, re.Pattern[str]] = {
+    "income": re.compile(r"pay\s*stub|earnings\s+statement|pay\s+statement|benefit\s+(?:letter|amount)|award\s+letter", re.I),
+    "dob": re.compile(r"household\s+members|birth\s+(?:certificate|dates?)", re.I),
+    "lease": re.compile(r"\blease\b|rental\s+agreement", re.I),
+    "heat": re.compile(r"(?:electric|gas|utility|heating|energy)\s+bill", re.I),
+    "shutoff": re.compile(r"disconnection|shut-?\s?off|termination\s+(?:notice|of\s+service)", re.I),
+    "address": re.compile(r"(?:proof|confirming|verification)\s+of\s+address|confirming\s+address", re.I),
+    "id": re.compile(r"\bid\s+card\b|identification\s+card|driver'?s\s+licen[cs]e", re.I),
+}
+# Papers that may also be filed as another kind (a lease or a bill proves an address).
+_ALSO_FITS: dict[str, frozenset[str]] = {
+    "address": frozenset({"lease", "heat", "shutoff", "id"}),
+}
+TITLE_LINES = 5
+
+
+def title_kinds(text: str) -> set[str]:
+    """Kinds whose title pattern matches one of the paper's first few lines."""
+    head = [line for line in text.splitlines() if line.strip()][:TITLE_LINES]
+    return {kind for kind, pattern in _TITLES.items() if any(pattern.search(line) for line in head)}
+
+
+def kind_fits(kind: str, text: str) -> bool:
+    """False only when the title clearly says another kind. No recognisable title: trust the choice."""
+    seen = title_kinds(text)
+    return not seen or kind in seen or bool(seen & _ALSO_FITS.get(kind, frozenset()))
 
 _SSN = re.compile(r"\b\d{3}[- ]\d{2}[- ]\d{4}\b|social\s+security\s+(?:number|no\.?|#)|\bssn\b", re.I)
 _PLACEHOLDER = re.compile(r"\{\{|\}\}")
@@ -63,6 +93,7 @@ _STATUS = _line(r"status|account\s+status")
 _PAST_DUE = _line(r"amount\s+past\s+due")
 _DISCONNECT = _line(r"disconnection\s+(?:scheduled|date)|shut-?\s?off\s+date|service\s+ends")
 _EMPLOYER = _line(r"employer")
+_UTILITY = _line(r"utility|company|provider|electric\s+company|gas\s+company")
 _MEMBER_ROW = re.compile(
     r"(?im)^[ \t]*(?P<name>[A-Z][\w.'-]*(?:[ \t]+[A-Z][\w.'-]*){0,3})[ \t]+-[ \t]+(?P<relation>[a-z ]+?)"
     r"[ \t]+-[ \t]+born[ \t]+(?P<born>\d{2}/\d{2}/\d{4})[ \t]*$"
@@ -204,9 +235,14 @@ def read_kind(kind: str, text: str, today: date | None = None) -> KindReading:
         status = (_value(_STATUS, text) or "").lower()
         if "past due" in status or "overdue" in status or _value(_PAST_DUE, text):
             reading.facts["utility_urgency"] = "behind"
+        company = _value(_UTILITY, text) or ""
+        head = " ".join(line for line in text.splitlines() if line.strip())[:300]
+        if re.search(r"\beversource\b", company, re.I) or re.search(r"^\s*eversource\b", head, re.I):
+            reading.facts["eversource_customer"] = "yes"
 
     if kind == "shutoff" and _value(_DISCONNECT, text):
         reading.facts["utility_urgency"] = "shutoff"
+        reading.facts["utility_issues"] = ["shutoff"]
 
     for key, value in _identity(text, KIND_IDENTITY.get(kind, frozenset())).items():
         reading.identity.setdefault(key, value)

@@ -17,6 +17,10 @@ from app.services.documents import DocumentInbox
 NO_FACTS_MESSAGE = (
     "We couldn't find anything we use in that document. You can type the details in instead."
 )
+KIND_MISMATCH_MESSAGE = (
+    "That paper looks like a different kind than the one picked, so we didn't read it. "
+    "Pick the kind that matches and add it again."
+)
 COUNT_MISMATCH_MESSAGE = (
     "The household size on that paper doesn't match the people it lists, so we left it out."
 )
@@ -38,7 +42,10 @@ def make_document_analysis(inbox: DocumentInbox | None = None):
             if "household_count_mismatch" in extraction.notes:
                 errors.append(SafeError(code="document_count_mismatch", message=COUNT_MISMATCH_MESSAGE,
                                         agent="document_analysis", at=now))
-        if extraction is None or not (extraction.extracted_facts or extraction.identity_keys):
+        if extraction is not None and "kind_mismatch" in extraction.notes:
+            errors.append(SafeError(code="document_kind_mismatch", message=KIND_MISMATCH_MESSAGE,
+                                    agent="document_analysis", at=now))
+        elif extraction is None or not (extraction.extracted_facts or extraction.identity_keys):
             errors.append(SafeError(code="document_no_facts", message=NO_FACTS_MESSAGE,
                                     agent="document_analysis", at=now))
         if len(errors) != len(state.get("errors") or []):

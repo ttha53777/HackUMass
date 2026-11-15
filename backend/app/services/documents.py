@@ -22,6 +22,7 @@ import os
 import re
 import tempfile
 import threading
+import time
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -31,6 +32,7 @@ from pydantic import BaseModel, Field
 
 from app.graph.state import DocumentExtraction, Fact
 from app.services.document_patterns import (
+    kind_fits,
     KIND_FIELDS,
     clean_text,
     read_kind,
@@ -218,6 +220,11 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
     try:
         text, dropped = clean_text(text)
         notes += dropped
+        fits = known_kind is None or kind_fits(known_kind, text)
+        if not fits:
+            # The title says another kind: read nothing rather than the wrong fields.
+            allowed = frozenset()
+            notes.append("kind_mismatch")
         numbers = _in_range(pattern_extract(text))
         wanted = allowed & LEGACY_FIELDS
         missing = [name for name in wanted if getattr(numbers, name) is None]
@@ -230,7 +237,7 @@ def read_document(filename: str, data: bytes, kind: str | None = None) -> Docume
                     monthly_income=numbers.monthly_income if numbers.monthly_income is not None else found.monthly_income,
                     household_size=numbers.household_size if numbers.household_size is not None else found.household_size,
                 )
-        if known_kind:
+        if known_kind and fits:
             reading = read_kind(known_kind, text)
             other = {k: v for k, v in reading.facts.items() if k in allowed or k.startswith("_")}
             identity = reading.identity
@@ -289,22 +296,37 @@ def extract(filename: str, data: bytes, kind: str | None = None) -> DocumentExtr
 # --------------------------------------------------------------------------
 
 
+# An unclaimed reading (the run never started, say) is dropped after this long.
+INBOX_TTL_SECONDS = 120.0
+
+
 @dataclass
 class DocumentInbox:
     """Extractions waiting for User Intelligence, keyed by document id.
 
-    Only facts are held here (never text). An entry lives for one graph run.
+    Only facts are held here (never text). An entry lives for one graph run,
+    and at most INBOX_TTL_SECONDS if no run claims it.
     """
 
+    ttl_seconds: float = INBOX_TTL_SECONDS
+
     def __post_init__(self) -> None:
-        self._items: dict[str, DocumentExtraction] = {}
+        self._items: dict[str, tuple[float, DocumentExtraction]] = {}
         self._lock = threading.Lock()
 
+    def _expire(self, now: float) -> None:
+        for key in [k for k, (at, _) in self._items.items() if now - at > self.ttl_seconds]:
+            del self._items[key]
+
     def put(self, extraction: DocumentExtraction) -> str:
+        now = time.monotonic()
         with self._lock:
-            self._items[extraction.document_id] = extraction
+            self._expire(now)
+            self._items[extraction.document_id] = (now, extraction)
         return extraction.document_id
 
     def pop(self, document_id: str) -> DocumentExtraction | None:
         with self._lock:
-            return self._items.pop(document_id, None)
+            self._expire(time.monotonic())
+            item = self._items.pop(document_id, None)
+        return item[1] if item else None
