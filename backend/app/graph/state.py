@@ -21,7 +21,9 @@ WorkflowPhase = Literal[
     "intake", "discovering", "evaluating", "awaiting_user", "planning", "complete", "error"
 ]
 
-AgentName = Literal["user_intelligence", "program_discovery", "eligibility", "action_planning"]
+AgentName = Literal[
+    "user_intelligence", "document_analysis", "program_discovery", "eligibility", "action_planning"
+]
 
 RunStatus = Literal["queued", "running", "completed", "failed", "skipped"]
 
@@ -99,6 +101,9 @@ class Fact(BaseModel):
     updated_at: datetime
     period: str | None = None
     confirmed: bool = True
+    # Where the value came from, for conflict wording: "chat", "doc:<document id>"
+    # or "bank:<persona id>". Never a file name or any value.
+    source: str | None = None
 
 
 class Conflict(BaseModel):
@@ -167,6 +172,41 @@ class DocumentExtraction(BaseModel):
     filename: str
     status: Literal["extracted", "failed"]
     extracted_facts: dict[str, Fact] = Field(default_factory=dict)
+    # The paper's kind (a document kind such as "income" or "dob"), as chosen in
+    # the wallet and checked by the Document Agent. None for older readings.
+    kind: str | None = None
+    # Short notice codes, e.g. "ssn_line_dropped", "household_count_mismatch".
+    notes: list[str] = Field(default_factory=list)
+    # Identity details found on the paper, by key name only (e.g. "phone").
+    # The values go to the person's device once and are never kept here.
+    identity_keys: list[str] = Field(default_factory=list)
+
+
+class ReviewDecision(BaseModel):
+    """The person's answer to one paper's review card."""
+
+    document_id: str
+    accept: list[str] = Field(default_factory=list)  # field names confirmed as read
+    edits: dict[str, Any] = Field(default_factory=dict)  # field -> corrected value
+
+
+TraceStep = Literal["routed", "completed", "failed", "asked", "skipped"]
+
+
+class TraceEvent(BaseModel):
+    """One step of the agent loop, for "How we got here". Codes and field names only."""
+
+    seq: int
+    invoke: int
+    step: TraceStep
+    node: str  # "administrator" or an AgentName
+    reason: str | None = None  # an enum-like code, e.g. "evidence_document", "conflict"
+    fields: list[str] = Field(default_factory=list)
+    count: int | None = None
+    question_id: str | None = None
+
+
+TRACE_LIMIT = 200
 
 
 # --------------------------------------------------------------------------
@@ -412,7 +452,11 @@ class SessionState(TypedDict, total=False):
                          changed_fields and application_result; prunes
                          assessments and plan items whose program is gone
       User Intelligence  profile, changed_fields, consents, financial_summary,
-                         documents; clears user_answer and pending_evidence
+                         documents; clears user_answer, pending_evidence,
+                         document_queue and review_decisions
+      Document Analysis  documents, document_queue; clears pending_evidence
+                         (registered in Phase 2, routed to from Phase 3)
+      Administrator/any  trace, invoke_count
       Program Discovery  programs, coverage
       Eligibility        eligibility_assessments
       Action Planning    action_plan
@@ -444,3 +488,10 @@ class SessionState(TypedDict, total=False):
     # Per-run execution metadata. The API resets run_counts on every invoke.
     dispatched: str | None  # specialist the Administrator is waiting on
     run_counts: dict[str, int]  # specialist name -> runs in the current invoke
+    # Document Agent -> Profile Agent: ids of extractions still to apply.
+    document_queue: list[str]
+    # Review cards answered by the person, waiting for the Profile Agent.
+    review_decisions: list[ReviewDecision]
+    # Append-only loop record (capped at TRACE_LIMIT) and the invoke counter.
+    trace: list[TraceEvent]
+    invoke_count: int

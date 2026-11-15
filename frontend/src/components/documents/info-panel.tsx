@@ -7,11 +7,24 @@ import { useEffect, useRef, useState } from "react";
 import { ConfirmCard } from "@/components/evidence/evidence-cards";
 import { btn } from "@/components/od/ui";
 import { useApp } from "@/components/session/session-provider";
-import { useToast } from "@/components/shell/toast";
 import { cn } from "@/lib/utils";
 
 import { ACCEPT, isReadable, sizeLabel } from "./paper-store";
 import { STATUS_LABEL, useObjectUrl, type Row } from "./paper-views";
+
+/** Kinds the Document Agent reads (backend services/document_patterns.KIND_FIELDS). */
+export const READABLE_KINDS = new Set(["income", "dob", "lease", "heat", "shutoff", "address", "id"]);
+
+/** What each kind gives us, in the person's words. */
+const READS: Record<string, string> = {
+  income: "monthly income and whether you're working",
+  dob: "how many people live with you and their age groups",
+  lease: "that you rent and whether heat is included, plus your name and address",
+  heat: "whether a bill is past due, plus your name, address, phone and email",
+  shutoff: "that you have a shut-off notice",
+  address: "your name and address",
+  id: "your name, date of birth and address",
+};
 
 /**
  * Finder's "Get Info" / Quick Look for one kind of paper: a preview, what each
@@ -23,15 +36,17 @@ export function InfoPanel({
   onFile,
   onRemove,
   onTogglePaperCopy,
+  onRead,
 }: {
   row: Row;
   onClose: () => void;
   onFile: (file: File) => void;
   onRemove: () => void;
   onTogglePaperCopy: () => void;
+  /** Send this paper to the Document Agent (consent given). */
+  onRead: () => Promise<void>;
 }) {
-  const { submitDocument, whenIdle, working, snapshot } = useApp();
-  const toast = useToast();
+  const { working, snapshot } = useApp();
   const input = useRef<HTMLInputElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -48,14 +63,13 @@ export function InfoPanel({
   }, [row.kind, onClose]);
 
   const read = async () => {
-    if (!paper) return;
     setReading(true);
-    await whenIdle();
-    const error = await submitDocument(new File([paper.blob], paper.name.endsWith(".pdf") || paper.name.endsWith(".txt") ? paper.name : `${paper.name}.pdf`, { type: paper.type }));
-    await whenIdle();
-    setReading(false);
-    setAskRead(false);
-    toast(error ?? "Read and deleted from our server. Check what we found below.");
+    try {
+      await onRead();
+    } finally {
+      setReading(false);
+      setAskRead(false);
+    }
   };
 
   const conflict = snapshot?.pending_question?.origin === "conflict";
@@ -166,15 +180,15 @@ export function InfoPanel({
           </div>
         ) : null}
 
-        {/* Read income and household */}
-        {paper && isReadable(paper) && row.kind === "income" ? (
+        {/* The Document Agent reads this kind's fields */}
+        {paper && isReadable(paper) && READABLE_KINDS.has(row.kind) ? (
           <div className="rounded-[14px] border border-line p-3.5">
             <p className="flex items-center gap-2 text-[13.5px] font-extrabold">
               <FileSearch aria-hidden className="size-4 text-brand-text" /> Read this for me
             </p>
             <p className="mt-1 text-[12.5px] leading-relaxed text-muted-foreground">
-              We can read household size and monthly income from this file to check what you may qualify for. It&apos;s sent once, read, and
-              deleted, and nothing is used until you confirm it.
+              We can read {READS[row.kind] ?? "the details we use"} from this file. It&apos;s sent once, read, and deleted. Nothing is used
+              until you confirm it, and your name and address stay on this device.
             </p>
             {askRead ? (
               <div className="mt-2.5 flex flex-wrap gap-2">
@@ -187,7 +201,7 @@ export function InfoPanel({
               </div>
             ) : (
               <button type="button" className={btn("ghost", "sm", "mt-2.5")} onClick={() => setAskRead(true)}>
-                Read income and household
+                Read it for me
               </button>
             )}
           </div>

@@ -1,0 +1,100 @@
+{
+  "_comment": "FICTIONAL demo papers. Generated; do not edit by hand.",
+  "slug": "maya",
+  "person": "Maya Rivera",
+  "papers": [
+    {
+      "file": "pay-stub",
+      "title": "Pay stub - Valley Grocers (fictional)",
+      "kinds": [
+        "income"
+      ],
+      "pdf": "pay-stub.pdf",
+      "txt": "pay-stub.txt"
+    },
+    {
+      "file": "household-members",
+      "title": "Household members and birth dates (fictional)",
+      "kinds": [
+        "dob"
+      ],
+      "pdf": "household-members.pdf",
+      "txt": "household-members.txt"
+    },
+    {
+      "file": "lease",
+      "title": "Residential lease (fictional)",
+      "kinds": [
+        "lease",
+        "address"
+      ],
+      "pdf": "lease.pdf",
+      "txt": "lease.txt"
+    },
+    {
+      "file": "electric-bill",
+      "title": "Electric bill - Sample Electric Co. (fictional)",
+      "kinds": [
+        "heat",
+        "address"
+      ],
+      "pdf": "electric-bill.pdf",
+      "txt": "electric-bill.txt"
+    },
+    {
+      "file": "shutoff-notice",
+      "title": "Notice of service disconnection (fictional)",
+      "kinds": [
+        "shutoff"
+      ],
+      "pdf": "shutoff-notice.pdf",
+      "txt": "shutoff-notice.txt"
+    },
+    {
+      "file": "proof-of-address",
+      "title": "Letter confirming address (fictional)",
+      "kinds": [
+        "address"
+      ],
+      "pdf": "proof-of-address.pdf",
+      "txt": "proof-of-address.txt"
+    },
+    {
+      "file": "photo-id",
+      "title": "Sample ID card (fictional)",
+      "kinds": [
+        "id"
+      ],
+      "pdf": "photo-id.pdf",
+      "txt": "photo-id.txt"
+    },
+    {
+      "file": "landlord-notice",
+      "title": "Notice from landlord (fictional)",
+      "kinds": [
+        "notices"
+      ],
+      "pdf": "landlord-notice.pdf",
+      "txt": "landlord-notice.txt"
+    },
+    {
+      "file": "fuel-assistance-letter",
+      "title": "Fuel Assistance application received (fictional)",
+      "kinds": [
+        "liheap"
+      ],
+      "pdf": "fuel-assistance-letter.pdf",
+      "txt": "fuel-assistance-letter.txt"
+    },
+    {
+      "file": "benefit-letter",
+      "title": "Social Security benefit letter for Rosa Rivera (fictional)",
+      "kinds": [
+        "member_income"
+      ],
+      "pdf": "benefit-letter.pdf",
+      "txt": "benefit-letter.txt",
+      "household_member": "Rosa Rivera"
+    }
+  ]
+}

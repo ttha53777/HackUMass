@@ -3302,5 +3302,70 @@ export const snapshotFixture: SessionSnapshot = {
     "fbwm-snap-application-assistance": "practice",
     "eversource-ma-discount-rate": "practice",
     "capv-fuel-assistance": "practice"
-  }
+  },
+  "pending_reviews": [
+    {
+      "document_id": "doc_household",
+      "kind": "dob",
+      "title": "your household paper",
+      "rows": [
+        {
+          "field": "household_size",
+          "label": "People in your household",
+          "value": 3,
+          "display": "3 people",
+          "in_conflict": true
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "trace": [
+    {
+      "seq": 1,
+      "invoke": 1,
+      "step": "routed",
+      "node": "administrator",
+      "reason": "evidence_document",
+      "fields": [],
+      "count": null,
+      "question_id": null
+    },
+    {
+      "seq": 2,
+      "invoke": 1,
+      "step": "completed",
+      "node": "document_analysis",
+      "reason": null,
+      "fields": [
+        "household_size"
+      ],
+      "count": 1,
+      "question_id": null
+    },
+    {
+      "seq": 3,
+      "invoke": 1,
+      "step": "completed",
+      "node": "user_intelligence",
+      "reason": null,
+      "fields": [
+        "household_size"
+      ],
+      "count": 1,
+      "question_id": null
+    },
+    {
+      "seq": 4,
+      "invoke": 1,
+      "step": "asked",
+      "node": "administrator",
+      "reason": "conflict",
+      "fields": [
+        "household_size"
+      ],
+      "count": null,
+      "question_id": "confirm_household_size"
+    }
+  ]
 };

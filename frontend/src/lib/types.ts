@@ -18,6 +18,7 @@ export type WorkflowPhase =
 
 export type AgentName =
   | "user_intelligence"
+  | "document_analysis"
   | "program_discovery"
   | "eligibility"
   | "action_planning";
@@ -335,6 +336,77 @@ export type SessionSnapshot = {
   automatable_program_ids: string[];
   /** For each of those: our practice copy, or a real form where the assistant stops before sending. */
   automation_modes: Record<string, "practice" | "stop_before_submit">;
+  /** One card per read paper with facts still to confirm. */
+  pending_reviews: PendingReview[];
+  /** The last steps of the agent loop, oldest first (codes and field names only). */
+  trace: TraceEventView[];
+};
+
+export type ReviewRow = {
+  field: string;
+  label: string;
+  value: boolean | number | string | string[] | null;
+  /** Human wording, e.g. "$1,240 a month". */
+  display: string;
+  in_conflict: boolean;
+};
+
+export type PendingReview = {
+  document_id: string;
+  kind: string | null;
+  /** e.g. "your pay stub": from the kind, never the file name. */
+  title: string;
+  rows: ReviewRow[];
+  notes: string[];
+};
+
+export type TraceStep = "routed" | "completed" | "failed" | "asked" | "skipped";
+
+export type TraceEventView = {
+  seq: number;
+  invoke: number;
+  step: TraceStep;
+  node: string;
+  reason: string | null;
+  fields: string[];
+  count: number | null;
+  question_id: string | null;
+};
+
+/** POST /sessions/{id}/evidence/review */
+export type ReviewIn = {
+  document_id: string;
+  accept: string[];
+  /** field -> corrected value: an option id (or ids) for a choice, a number otherwise. */
+  edits: Record<string, number | string | string[]>;
+};
+
+export type IdentityKey =
+  | "first_name"
+  | "last_name"
+  | "full_name"
+  | "date_of_birth"
+  | "street_address"
+  | "city"
+  | "state"
+  | "zip"
+  | "phone"
+  | "email";
+
+/** An identity detail read from a paper. Returned once; kept only on the device. */
+export type IdentityReading = { key: IdentityKey; value: string; source: string };
+
+/** POST /sessions/{id}/evidence/document: the snapshot plus identity details, for the device only. */
+export type DocumentReadOut = SessionSnapshot & { identity: IdentityReading[] };
+
+/** GET /sessions/{id}/applications/readiness: fill-sheet keys only, never values. */
+export type ReadinessOut = {
+  program_id: string;
+  from_profile: string[];
+  from_device_needed: string[];
+  will_ask: string[];
+  unconfirmed: string[];
+  blocked_by: string[];
 };
 
 // ---------------------------------------------------------------------------
@@ -423,7 +495,8 @@ export type ErrorCode =
   | "run_finished"
   | "not_automatable"
   | "browser_unavailable"
-  | "too_many_runs";
+  | "too_many_runs"
+  | "facts_in_conflict";
 
 export type ErrorBody = { error: { code: ErrorCode; message: string } };
 

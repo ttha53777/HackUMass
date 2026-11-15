@@ -562,7 +562,51 @@ def unconfirmed_evidence(profile: Profile, field: str):
     return None
 
 
-def confirmation_question(profile: Profile, intake: IntakeState) -> Question | None:
+# How a paper is named to the person, from its kind (never the file name).
+PAPER_TITLES: dict[str, str] = {
+    "income": "your pay stub",
+    "dob": "your household paper",
+    "lease": "your lease",
+    "heat": "your utility bill",
+    "shutoff": "your shut-off notice",
+    "address": "your proof of address",
+    "id": "your ID",
+}
+
+
+def paper_title(kind: str | None) -> str:
+    return PAPER_TITLES.get(kind or "", "your document")
+
+
+def evidence_from_source(profile: Profile, field: str, source: str):
+    """The unconfirmed evidence for `field` that came from `source` ("doc:<id>"), if any."""
+    fact = profile.facts.get(field)
+    if fact is not None and not fact.confirmed and fact.source == source:
+        return fact
+    conflict = next((c for c in profile.conflicts if c.field == field), None)
+    if conflict is not None:
+        return next((c for c in conflict.candidates if c.source == source), None)
+    return None
+
+
+def _source_phrase(fact, source_labels: dict[str, str]) -> str:
+    """ "Your pay stub shows", "The simulated bank profile shows". """
+    label = source_labels.get(fact.source or "")
+    if label:
+        return f"{label[0].upper()}{label[1:]} shows"
+    return _EVIDENCE_SOURCE.get(fact.provenance, "Your document shows")
+
+
+def _describe(field: str, fact) -> str:
+    if field == "monthly_income":
+        noun = "in deposits" if fact.provenance == "nessie_sandbox" else "in household income"
+        return f"about ${float(fact.value):,.0f} a month {noun}"
+    return f"a household of {fact.value}"
+
+
+def confirmation_question(
+    profile: Profile, intake: IntakeState, source_labels: dict[str, str] | None = None
+) -> Question | None:
     """Ask the person to confirm a fact that came from evidence, if one is waiting."""
     for field, question_id in CONFIRMATION_FOR.items():
         spec = REGISTRY[question_id]
@@ -573,19 +617,22 @@ def confirmation_question(profile: Profile, intake: IntakeState) -> Question | N
             continue
         if not _budget_left(question_id, intake, followup=False, counted=False):
             continue
-        source = _EVIDENCE_SOURCE[evidence.provenance]
-        if field == "monthly_income":
-            detail = f"{source} about ${float(evidence.value):,.0f} a month in household income"
-            if evidence.provenance == "nessie_sandbox":
-                detail = f"{source} about ${float(evidence.value):,.0f} a month in deposits"
+        labels = source_labels or {}
+        detail = f"{_source_phrase(evidence, labels)} {_describe(field, evidence)}"
+        conflict = next((c for c in profile.conflicts if c.field == field), None)
+        user = next((c for c in conflict.candidates if c.provenance == "user_reported"), None) if conflict else None
+        others = [c for c in conflict.candidates if c is not evidence and c.provenance != "user_reported"] if conflict else []
+        if user is not None:
+            told = (f"You told us about ${float(user.value):,.0f} a month" if field == "monthly_income"
+                    else f"You told us {user.value} {'person lives' if user.value == 1 else 'people live'} with you")
+            detail = f"{told}. {detail}"
+            reason = "This is different from what you told us, so we're still using your answer."
+        elif others:
+            other = others[-1]
+            detail = f"{detail}, but {_source_phrase(other, labels).lower()} {_describe(field, other)}"
+            reason = "Your papers disagree, so we won't use either number until you choose."
         else:
-            detail = f"{source} a household of {evidence.value}"
-        conflict = any(c.field == field for c in profile.conflicts)
-        reason = (
-            "This is different from what you told us, so we're still using your answer."
-            if conflict
-            else "We won't use this number until you confirm it."
-        )
+            reason = "We won't use this number until you confirm it."
         return spec.question.model_copy(
             update={"prompt": f"{detail}. {spec.question.prompt}", "reason": reason}
         )
@@ -618,10 +665,11 @@ def next_awaiting_question(
     assessments: dict[str, EligibilityAssessment],
     *,
     has_summary: bool = False,
+    source_labels: dict[str, str] | None = None,
 ) -> Question | None:
     """After results: confirm evidence first, then a follow-up, then the evidence offer."""
     return (
-        confirmation_question(profile, intake)
+        confirmation_question(profile, intake, source_labels)
         or next_followup_question(profile, intake, programs, assessments)
         or evidence_offer_question(profile, intake, programs, has_summary)
     )

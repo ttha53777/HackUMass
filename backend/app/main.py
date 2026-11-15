@@ -13,6 +13,7 @@ from fastapi.exceptions import RequestValidationError
 from app.agents.action_planning import action_planning
 from app.agents.discovery import make_discovery
 from app.agents.eligibility import eligibility
+from app.agents.document_analysis import make_document_analysis
 from app.agents.user_intelligence import make_user_intelligence
 from app.api.routes import ApiError, error_response, router
 from app.graph.build import build_graph
@@ -98,7 +99,8 @@ def create_app(
     checkpointer = get_checkpointer()
     graph = build_graph(
         checkpointer=checkpointer,
-        user_intelligence=make_user_intelligence(nessie, inbox),
+        user_intelligence=make_user_intelligence(nessie),
+        document_analysis=make_document_analysis(inbox),
         discovery=make_discovery(programs),
         eligibility=eligibility,
         action_planning=action_planning,

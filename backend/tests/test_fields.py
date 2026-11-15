@@ -68,3 +68,19 @@ def test_questions_are_worded_by_us():
     for key in CATALOGUE:
         question = question_for(key)
         assert question.id == f"agent:{key}" and question.type == "text" and question.target_field == key
+
+
+def test_unconfirmed_household_size_is_not_used():
+    # A household paper read but not yet confirmed must not reach a form.
+    profile = make_profile(household_size=3)
+    profile.facts["household_size"].confirmed = False
+    assert "household_size" not in store_from_profile(profile).known()
+
+
+def test_disputed_facts_are_not_used():
+    from app.graph.state import Conflict
+
+    profile = make_profile(household_size=2, monthly_income=1240.0)
+    profile.conflicts.append(Conflict(field="household_size", candidates=[]))
+    known = store_from_profile(profile).known()
+    assert "household_size" not in known and "monthly_income" in known

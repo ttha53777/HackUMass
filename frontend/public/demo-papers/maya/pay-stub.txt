@@ -1,0 +1,8 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Pay stub - Valley Grocers (fictional)
+Employee: Maya Rivera
+Pay period: October 1 - October 31, 2026
+Gross monthly pay: $1,240
+Net pay: $1,052
+Hours worked: 96
+Employer: Valley Grocers, 1 Sample Way, Amherst, MA 01002

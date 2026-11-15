@@ -1,0 +1,6 @@
+SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
+Fuel Assistance application received (fictional)
+Applicant: Maya Rivera
+Fuel Assistance number: SAMPLE-LIHEAP-0001
+Status: Application received, not yet decided
+Date: November 3, 2026
