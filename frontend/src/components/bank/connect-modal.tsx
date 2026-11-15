@@ -1,14 +1,16 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Eye, EyeOff, Landmark, Loader2, ShieldCheck, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { Check, Eye, EyeOff, Landmark, ShieldCheck, X } from "lucide-react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 import { btn } from "@/components/od/ui";
 import { useApp } from "@/components/session/session-provider";
 import { getPersonas } from "@/lib/api";
 import type { PersonaOut } from "@/lib/types";
 import { cn } from "@/lib/utils";
+
+import { BankLinkFlow } from "./link-flow";
 
 type Step = "choose" | "consent" | "connecting" | "done";
 
@@ -23,8 +25,10 @@ const plain = (label: string) => {
  * aggregator), over Capital One's Nessie sandbox. Only fictional demo accounts.
  */
 export function ConnectBankModal({ open, onClose, onConnected }: { open: boolean; onClose: () => void; onConnected?: () => void }) {
-  const { submitEvidence, whenIdle } = useApp();
+  const { submitEvidence, whenIdle, snapshot } = useApp();
   const [step, setStep] = useState<Step>("choose");
+  // The backend finished linking; the agent flow decides when to show "done".
+  const [linked, setLinked] = useState(false);
   const [personas, setPersonas] = useState<PersonaOut[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [pick, setPick] = useState("");
@@ -56,6 +60,8 @@ export function ConnectBankModal({ open, onClose, onConnected }: { open: boolean
   }, [open]);
 
   const connect = async () => {
+    setError(null);
+    setLinked(false);
     setStep("connecting");
     await whenIdle();
     const problem = await submitEvidence(pick);
@@ -65,9 +71,13 @@ export function ConnectBankModal({ open, onClose, onConnected }: { open: boolean
       setStep("consent");
       return;
     }
+    setLinked(true);
+  };
+
+  const flowComplete = useCallback(() => {
     setStep("done");
     onConnected?.();
-  };
+  }, [onConnected]);
 
   const chosen = personas?.find((p) => p.id === pick);
 
@@ -148,7 +158,11 @@ export function ConnectBankModal({ open, onClose, onConnected }: { open: boolean
               </>
             ) : null}
 
-            {step === "consent" || step === "connecting" ? (
+            {step === "connecting" ? (
+              <BankLinkFlow finished={linked} trace={snapshot?.trace ?? []} onComplete={flowComplete} />
+            ) : null}
+
+            {step === "consent" ? (
               <>
                 <p className="mb-3 text-[13.5px] leading-relaxed text-muted-foreground">
                   OpenDoor would like to read <strong className="text-ink">{chosen ? plain(chosen.label).toLowerCase() : "this demo account"}</strong> to understand your money:
@@ -181,19 +195,11 @@ export function ConnectBankModal({ open, onClose, onConnected }: { open: boolean
                   </p>
                 ) : null}
                 <div className="flex justify-end gap-2.5">
-                  <button type="button" className={btn("ghost", "sm")} onClick={() => setStep("choose")} disabled={step === "connecting"}>
+                  <button type="button" className={btn("ghost", "sm")} onClick={() => setStep("choose")}>
                     Back
                   </button>
-                  <button type="button" className={btn("primary", "sm")} disabled={step === "connecting"} onClick={() => void connect()}>
-                    {step === "connecting" ? (
-                      <>
-                        <Loader2 aria-hidden className="size-4 animate-spin" /> Connecting…
-                      </>
-                    ) : (
-                      <>
-                        <ShieldCheck aria-hidden className="size-4" /> Agree and connect
-                      </>
-                    )}
+                  <button type="button" className={btn("primary", "sm")} onClick={() => void connect()}>
+                    <ShieldCheck aria-hidden className="size-4" /> Agree and connect
                   </button>
                 </div>
               </>
