@@ -95,6 +95,7 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
             logger.warning("FILLER_ENABLED is set but GEMINI_API_KEY is not; the Filler is off")
             return
         from app.filler.consent import FillerSessions
+        from app.filler.dom_map import GeminiFieldMapper
         from app.filler.extract import GeminiReader
         from app.filler.jobs import PaperJobs
         from app.filler.loop import GeminiModel
@@ -113,7 +114,8 @@ def _mount_filler(app: FastAPI, filler: Any) -> None:
             sessions=sessions,
             jobs=PaperJobs(GeminiReader(settings.gemini_api_key, settings.read_model)),
             spike=SpikeRuns(browser, make_model),
-            runs=FillRuns(browser, make_model, sessions),
+            runs=FillRuns(browser, make_model, sessions,
+                          mapper=GeminiFieldMapper(settings.gemini_api_key, settings.read_model)),
         )
 
     from app.api.filler_routes import router as filler_router

@@ -27,6 +27,8 @@ from typing import Any, Callable
 
 from app.filler.computer import Computer
 from app.filler.consent import FillerSession, FillerSessions
+from app.filler.dom_map import FieldMapper
+from app.filler.fast import FastFiller
 from app.filler.gate import HandoffReason
 from app.filler.models import CATALOGUE, KIND_LABEL
 from app.filler.loop import AgentLoop, BrowserModel, FillSheet, LoopEnd, ModelUnavailable, SheetEntry, system_instruction
@@ -198,8 +200,8 @@ MAX_RUNS = 2
 WAIT_SECONDS = 5 * 60  # longest wait for one answer, hand-off or pause
 RUN_SECONDS = 15 * 60  # the whole run, as Steel's free tier caps a session
 
-FillStatus = str  # preparing | filling | needs_answer | paused | needs_you | review | verifying | done | stopped | failed
-ACTIVE_FILL = ("preparing", "filling", "needs_answer", "paused", "needs_you", "review", "verifying")
+FillStatus = str  # preparing | ready | filling | needs_answer | paused | needs_you | review | verifying | done | stopped | failed
+ACTIVE_FILL = ("preparing", "ready", "filling", "needs_answer", "paused", "needs_you", "review", "verifying")
 INTERACTIVE = ("needs_you", "review")  # the person may click and type in the live view
 
 HANDOFF_TEXT: dict[str, str] = {
@@ -240,6 +242,12 @@ class FillRun:
     computer: Computer | None = None
     handle: BrowserHandle | None = None
     wait_seconds: float = WAIT_SECONDS
+    prepare: bool = False  # open and map the form, then wait for "go" (the pre-flight card)
+    plan: list[dict[str, Any]] | None = None
+    fill_started: float | None = None
+    first_type_seconds: float | None = None
+    model_turns_used: bool = False
+    _go: bool = False
     _wake: asyncio.Event = field(default_factory=asyncio.Event)
     _answered: bool = False
     _pause: bool = False
@@ -258,6 +266,9 @@ class FillRun:
                         if self.handoff_reason else None),
             "filled": [{"key": k, "label": CATALOGUE[k].label} for k in self.filled if k in CATALOGUE],
             "outcome": self.outcome,
+            "plan": self.plan,
+            "first_type_seconds": None if self.first_type_seconds is None else round(self.first_type_seconds, 2),
+            "used_model": self.model_turns_used,
             "seconds_left": max(0, int(RUN_SECONDS - (time.monotonic() - self.started_at))),
         }
 
@@ -322,6 +333,9 @@ class FillRun:
             self._wake.set()
         elif action == "return" and self.status == "needs_you":
             self._wake.set()
+        elif action == "go" and self.status == "ready":
+            self._go = True
+            self._wake.set()
         elif action == "done" and self.status == "review":
             self._done = True
             self._wake.set()
@@ -375,8 +389,10 @@ class FillRuns:
     """Runs by id, at most one active per session and MAX_RUNS in all."""
 
     def __init__(self, browser: CloudBrowser, make_model: Callable[[str], BrowserModel], sessions: FillerSessions,
-                 *, type_delay_ms: int | None = None, wait_seconds: float | None = None) -> None:
+                 *, type_delay_ms: int | None = None, wait_seconds: float | None = None,
+                 mapper: FieldMapper | None = None, dwell: float | None = None, fast: bool = True) -> None:
         self._browser, self._make_model, self._sessions = browser, make_model, sessions
+        self._mapper, self._dwell, self._fast = mapper, dwell, fast
         self._type_delay_ms = type_delay_ms
         self._wait_seconds = wait_seconds or WAIT_SECONDS
         self._runs: dict[str, FillRun] = {}
@@ -387,7 +403,7 @@ class FillRuns:
             raise RunError(404, "run_not_found", "That run doesn't exist.")
         return run
 
-    def start(self, session_id: str) -> FillRun:
+    def start(self, session_id: str, *, prepare: bool = False) -> FillRun:
         active = [r for r in self._runs.values() if r.status in ACTIVE_FILL]
         if any(r.session_id == session_id for r in active):
             raise RunError(409, "run_active", "A form is already being filled. Stop it first.")
@@ -395,7 +411,8 @@ class FillRuns:
             raise RunError(429, "too_many_runs", "The helper is busy. Try again in a few minutes.")
         state = self._sessions.get(session_id)
         assert state is not None
-        run = FillRun(id=secrets.token_urlsafe(12), session_id=session_id, state=state, wait_seconds=self._wait_seconds)
+        run = FillRun(id=secrets.token_urlsafe(12), session_id=session_id, state=state,
+                      wait_seconds=self._wait_seconds, prepare=prepare)
         for old_id, old in list(self._runs.items()):  # keep finished runs of other sessions briefly
             if old.session_id == session_id and old.status not in ACTIVE_FILL:
                 del self._runs[old_id]
@@ -456,11 +473,33 @@ class FillRuns:
         askable = frozenset(CATALOGUE)
         kwargs = {} if self._type_delay_ms is None else {"type_delay_ms": self._type_delay_ms}
         run.computer = Computer(page, stream, allowed_hosts=PRACTICE_HOSTS, **kwargs)
-        model = self._make_model(system_instruction(sheet, askable))
-        loop = AgentLoop(model, run.computer, stream, sheet, allowed_hosts=PRACTICE_HOSTS, askable=askable, hooks=run)
+
+        def typed(_key: str) -> None:
+            if run.first_type_seconds is None and run.fill_started is not None:
+                run.first_type_seconds = time.monotonic() - run.fill_started
+
+        fast_kwargs = {} if self._dwell is None else {"dwell": self._dwell}
+        fast = FastFiller(run.computer, stream, sheet, run, allowed_hosts=PRACTICE_HOSTS, askable=askable,
+                          mapper=self._mapper, on_typed=typed, **fast_kwargs)
+        if run.prepare:  # the pre-flight card: show the plan, wait for the person's go
+            run.plan = await fast.plan()
+            stream.publish({"type": "plan", "rows": run.plan})
+            run._set("ready", "Ready to fill. Press Start when you are.")
+            while not run._go:
+                await run._sleep_until_woken()
+
+        run.fill_started = time.monotonic()
         run._set("filling")
-        end = await loop.run(FILL_TASK)
-        run.filled = list(end.typed_keys)
+        reached = await fast.run() if self._fast else "stuck"  # the page's own HTML; no model turns
+        run.filled = list(fast.typed_keys)
+        if reached != "review":
+            # The fast path couldn't move this page on: Gemini Computer Use takes over from here.
+            run.model_turns_used = True
+            model = self._make_model(system_instruction(sheet, askable))
+            loop = AgentLoop(model, run.computer, stream, sheet, allowed_hosts=PRACTICE_HOSTS, askable=askable, hooks=run)
+            loop.typed_keys = list(fast.typed_keys)
+            end = await loop.run(FILL_TASK)
+            run.filled = list(end.typed_keys)
 
         # Review: the person checks the highlighted fields and presses the form's own Submit.
         count = await run.computer.highlight_filled()

@@ -176,6 +176,31 @@ class Computer:
         )
         return PageFacts(url=page.url, target=_element(target), focused=_element(focused), frame_hosts=frames)
 
+    async def put(self, value: str) -> dict[str, Any]:
+        """Fill the focused field in one step (the fast path): pick a dropdown option by label,
+        or replace the text. The field is marked for the review highlight."""
+        page = self.page
+        try:
+            picked = await page.evaluate(_SELECT, value)
+            if picked == "no_match":
+                return {"error": "No option matches."}
+            if picked != "selected":
+                await page.keyboard.press("ControlOrMeta+A")
+                await page.keyboard.press("Backspace")
+                await page.keyboard.insert_text(value)
+            await page.evaluate(_MARK)
+        except Exception as exc:
+            logger.info("filler put failed (%s)", exc.__class__.__name__)
+            return {"error": "The field did not take the value."}
+        return {}
+
+    async def glide_click(self, x: float, y: float) -> None:
+        """Move the cursor visibly to a viewport point and click it."""
+        px, py = int(x), int(y)
+        await self._glide(px, py)
+        self._stream.cursor(px, py, "click")
+        await self.page.mouse.click(px, py)
+
     async def highlight_filled(self) -> int:
         """Outline every field the agent filled (the review step). Returns how many."""
         try:

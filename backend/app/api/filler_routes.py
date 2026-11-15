@@ -11,10 +11,11 @@ Session routes, under /api/sessions/{session_id}/filler (values only to that ses
     POST   /details/confirm          {keys?: [...] (none = all), edits?: {key: value}}
     DELETE /details/{key}            forget one detail
 
-    POST   /runs                     start filling the practice form (409 if one is going)
+    POST   /runs                     start filling the practice form (409 if one is going);
+                                     {prepare: true} opens and maps it first, then waits for "go"
     GET    /runs/{run_id}            status, question, hand-off, filled fields, outcome
     POST   /runs/{run_id}/answer     {value} or {skip: true}
-    POST   /runs/{run_id}/control    {action: pause | resume | take | return | done}
+    POST   /runs/{run_id}/control    {action: go | pause | resume | take | return | done}
     POST   /runs/{run_id}/stop       stop and release the browser
     WS     /runs/{run_id}/live       frames, cursor, steps, questions; the person's input during a hand-off
 
@@ -214,10 +215,15 @@ def _run_call(fn):
         raise ApiError(exc.status, exc.code, exc.message) from exc
 
 
+class StartIn(BaseModel):
+    prepare: bool = False  # open and map the form now; fill when the person sends {action: "go"}
+
+
 @session_router.post("/runs", status_code=202)
-async def start_run(session_id: str, request: Request):
+async def start_run(session_id: str, request: Request, body: StartIn | None = Body(None)):
     _state(request, session_id)
-    run = _run_call(lambda: _runs_for(request).start(session_id))
+    prepare = bool(body and body.prepare)
+    run = _run_call(lambda: _runs_for(request).start(session_id, prepare=prepare))
     return JSONResponse(run.view(), status_code=202, headers=NO_STORE)
 
 

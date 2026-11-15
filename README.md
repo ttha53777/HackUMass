@@ -138,6 +138,17 @@ Phase 2, papers and details. A paper is read only with consent: the session's **
 | `POST /details/confirm` | `{}` confirms every detail; `{"edits": {"phone": "..."}}` sets values (all or nothing). |
 | `DELETE /details/{key}` | Forget one detail. |
 
+Phases 3 and 3.5, filling a form. `POST /sessions/{id}/filler/runs` fills the practice form from confirmed details. The fast path reads the page's own HTML: each field's label, `name` and `autocomplete` are matched to a detail by rules, by a hand-checked map in `backend/app/data/filler/` for known forms, or by one text-only model call (labels only, never values). It fills a page in seconds with no model turns: about 6 s for the practice form's 10 fields. Gemini Computer Use takes over only when a page won't move on. Every field and click passes the safety gate (`backend/app/filler/gate.py`): choices, certify boxes, signatures, sign-in, CAPTCHAs and the final Submit always go to the person, who acts in the same live browser. `{"prepare": true}` opens and maps the form before the person presses Start (`{"action": "go"}`).
+
+| Call (under `/sessions/{id}/filler/runs`) | Purpose |
+|---|---|
+| `POST /` | Start; `{"prepare": true}` waits at `ready` with a plan of the first page. 409 if one is going. |
+| `GET /{run_id}` | Status, question, hand-off, filled fields, outcome, plan, seconds to first typing. |
+| `POST /{run_id}/answer` | `{"value": "..."}` or `{"skip": true}`. The answer becomes a confirmed detail. |
+| `POST /{run_id}/control` | `go`, `pause`, `resume`, `take`, `return`, `done` (after the person presses Submit). |
+| `POST /{run_id}/stop` | Stop and release the browser. Nothing is sent. |
+| `WS /{run_id}/live` | Frames, cursor, steps, questions, hand-offs; the person's clicks and keys during a hand-off or the review. |
+
 Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (CDP screencast, cursor, a caption per action), and lets Gemini Computer Use fill a built-in practice page with a fictional person. These dev routes answer requests from this machine only.
 
 | Call | Purpose |
@@ -148,7 +159,7 @@ Phase 1 is a spike: it opens its own browser, streams it live over a WebSocket (
 | `WS /filler/dev/spike/{run_id}/live` | Live events: `frame`, `cursor`, `step`, `status`, `end`. |
 | `GET /filler/dev/viewer` | A bare page that starts a run and shows it live. Open `http://localhost:8000/api/filler/dev/viewer`. |
 
-Live checks against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py` (the browser) and `scripts/spikes/filler_phase2.py` (reading three fictional sample papers).
+Live checks against Gemini: `cd backend && .venv/bin/python scripts/spikes/filler_phase1.py` (the browser), `scripts/spikes/filler_phase2.py` (reading three fictional sample papers) and `scripts/spikes/filler_phase3.py` (the Gemini loop on the practice form).
 
 Try it with the backend running:
 

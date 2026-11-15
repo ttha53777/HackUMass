@@ -117,7 +117,7 @@ def setup(repo):
     holder = {}
     runs = FillRuns(LocalBrowser(CHANNEL, headless=True),
                     lambda instruction: holder.setdefault("model", FormModel(lambda: holder["run"].computer.page)),
-                    sessions, type_delay_ms=0, wait_seconds=20)
+                    sessions, type_delay_ms=0, wait_seconds=20, fast=False)  # the Gemini loop path
     filler = Filler(sessions, PaperJobs(reader=None), SpikeRuns(browser=None, make_model=None), runs)
     with TestClient(create_app(repo, NessieService(None), filler=filler)) as client:
         yield client, holder, sessions
@@ -221,3 +221,141 @@ def test_stop_releases_the_browser_and_take_over_parks_the_agent(setup):
     assert holder["run"].handle is None
     other = client.post("/api/sessions").json()["session_id"]
     assert client.get(f"/api/sessions/{other}/filler/runs/{view['run_id']}").status_code == 404
+
+
+# -- the fast path (phase 3.5): no model turns ---------------------------------------
+
+
+@pytest.fixture
+def fast_setup(repo):
+    sessions = FillerSessions()
+
+    def no_model(instruction):
+        raise AssertionError("the fast path must not call the model")
+
+    runs = FillRuns(LocalBrowser(CHANNEL, headless=True), no_model, sessions, wait_seconds=20, dwell=0.05)
+    filler = Filler(sessions, PaperJobs(reader=None), SpikeRuns(browser=None, make_model=None), runs)
+    with TestClient(create_app(repo, NessieService(None), filler=filler)) as client:
+        yield client, sessions
+
+
+def test_fast_path_fills_the_practice_form_from_its_html_with_no_model(fast_setup):
+    client, sessions = fast_setup
+    sid = client.post("/api/sessions").json()["session_id"]
+    base = f"/api/sessions/{sid}/filler"
+    client.post(f"{base}/details/confirm", json={"edits": DETAILS})
+
+    # Pre-flight: the browser opens and the first page is mapped before anything is typed.
+    view = client.post(f"{base}/runs", json={"prepare": True}).json()
+    run_url = f"{base}/runs/{view['run_id']}"
+    run = client.app.state.filler.runs.get(sid, view["run_id"])
+    view = wait_for(client, run_url, {"ready"})
+    plan = {row["label"]: row for row in view["plan"]}
+    assert plan["First name"] == {"label": "First name", "how": "fill", "key": "first_name", "source": None}
+    assert plan["Phone number"]["how"] == "ask"
+    assert plan["Email address"]["how"] == "skip"  # optional and unknown: left empty
+
+    started = time.monotonic()
+    client.post(f"{run_url}/control", json={"action": "go"})
+    view = wait_for(client, run_url, {"needs_answer"}, timeout=10)
+    assert view["question"]["key"] == "phone"
+    client.post(f"{run_url}/answer", json={"value": "413-555-0100"})
+
+    # Page 3: ONE hand-off for the certify box and the signature together.
+    view = wait_for(client, run_url, {"needs_you"}, timeout=10)
+    assert view["handoff"]["reason"] == "attestation"
+    agent_seconds = time.monotonic() - started
+
+    async def person_signs():
+        await run.computer.page.locator("#certify").check()
+        await run.computer.page.fill("#signature", "Maya Rivera")
+
+    client.portal.call(person_signs)
+    client.post(f"{run_url}/control", json={"action": "return"})
+    view = wait_for(client, run_url, {"review"}, timeout=10)
+    assert {f["key"] for f in view["filled"]} == set(DETAILS) | {"phone"}
+    assert view["used_model"] is False
+    assert view["first_type_seconds"] < 2
+    assert agent_seconds < 10  # vs minutes with a model turn per page
+
+    async def person_sends():
+        assert await run.computer.page.locator("[data-filler-filled]").count() == len(DETAILS) + 1
+        await run.computer.page.locator("#submit").click()
+
+    client.portal.call(person_sends)
+    client.post(f"{run_url}/control", json={"action": "done"})
+    view = wait_for(client, run_url, {"done"})
+    assert view["outcome"]["status"] == "submitted"
+
+
+def test_fast_path_falls_back_to_the_model_when_a_page_will_not_move_on(repo):
+    """A required field we can't match and nobody fills: the page doesn't advance, so the Gemini loop takes over."""
+    sessions = FillerSessions()
+    calls = []
+
+    class GiveUp:
+        async def turn(self, parts, previous):
+            calls.append(1)
+            return ModelTurn("i", [Call("r", "ready_for_review", {})])
+
+    runs = FillRuns(LocalBrowser(CHANNEL, headless=True), lambda i: GiveUp(), sessions, wait_seconds=20, dwell=0)
+    filler = Filler(sessions, PaperJobs(reader=None), SpikeRuns(browser=None, make_model=None), runs)
+    with TestClient(create_app(repo, NessieService(None), filler=filler)) as client:
+        sid = client.post("/api/sessions").json()["session_id"]
+        base = f"/api/sessions/{sid}/filler"
+        client.post(f"{base}/details/confirm", json={"edits": {"first_name": "Maya"}})
+        view = client.post(f"{base}/runs").json()
+        run_url = f"{base}/runs/{view['run_id']}"
+        # Every other required field on page 1 is unknown: questions come first; skip them all.
+        while True:
+            view = wait_for(client, run_url, {"needs_answer", "needs_you", "review"}, timeout=15)
+            if view["status"] == "needs_answer":
+                client.post(f"{run_url}/answer", json={"skip": True})
+            elif view["status"] == "needs_you":
+                client.post(f"{run_url}/control", json={"action": "return"})  # the person does nothing
+            else:
+                break
+        assert view["used_model"] is True and calls
+        client.post(f"{run_url}/stop")
+
+
+# -- mapping rules -------------------------------------------------------------------
+
+from app.filler.dom_map import Field, load_map, rule_key  # noqa: E402
+
+
+def field(label="", name="", autocomplete="", type_="text"):
+    return Field("f", Element(tag="input", type=type_, text=label, name=name, editable=True), label, "", name, "",
+                 autocomplete, False, False, 0, 0, 0)
+
+
+@pytest.mark.parametrize("label,name,auto,key", [
+    ("First name", "", "", "first_name"),
+    ("Applicant's last name", "", "", "last_name"),
+    ("Name", "", "", "full_name"),
+    ("", "", "postal-code", "zip"),
+    ("Mobile phone", "", "", "phone"),
+    ("Date of birth (MM/DD/YYYY)", "", "", "date_of_birth"),
+    ("Number of people in your household", "", "", "household_size"),
+    ("Total monthly household income ($)", "", "", "monthly_income"),
+    ("", "applicant_zip", "", "zip"),
+    ("City or town", "", "", "city"),
+    ("State", "", "", "state"),
+    ("Emergency contact phone", "", "", None),  # someone else's
+    ("Employer phone", "", "", None),
+    ("Signature: type your full name", "", "", None),
+    ("Middle initial", "", "", None),
+    ("Anything else you'd like us to know?", "notes", "", None),
+    ("Statement of need", "", "", None),
+])
+def test_rules_match_only_what_they_are_sure_of(label, name, auto, key):
+    assert rule_key(field(label, name, auto)) == key
+
+
+def test_curated_maps_refuse_unknown_keys(tmp_path):
+    (tmp_path / "good.json").write_text('{"fields": {"fname": "first_name"}}')
+    (tmp_path / "bad.json").write_text('{"fields": {"ssn": "social_security"}}')
+    assert load_map("good", tmp_path) == {"fname": "first_name"}
+    assert load_map("missing", tmp_path) == {}
+    with pytest.raises(ValueError):
+        load_map("bad", tmp_path)
