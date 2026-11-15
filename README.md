@@ -1,10 +1,46 @@
-# Community Resource Navigator
+<p align="center">
+  <a href="https://opendoor.casa"><img src="docs/assets/opendoor-logo.png" alt="OpenDoor" width="420"></a>
+</p>
 
-A guided assistant that helps people find government assistance programs and local community resources, see whether they *might* qualify, and leave with a prioritised list of next steps.
+<p align="center">
+  <strong>Help is closer than it feels.</strong><br>
+  A free, guided help finder for food, heat, housing, health and more in Hampshire County, Massachusetts.
+</p>
 
-Built as a 36-hour hackathon MVP (HackUMass). The working name is a placeholder.
+<p align="center">
+  <a href="https://opendoor.casa"><strong>opendoor.casa</strong></a> ·
+  <a href="docs/demo-script.md">Demo script</a> ·
+  <a href="docs/foundation-plan.md">Design</a>
+</p>
 
-> **Project status: MVP feature-complete (tickets T1–T18).** The guided intake, 23 curated Hampshire County program records, deterministic eligibility, a ranked plan, the results UI, the optional simulated bank profile and document upload all work end to end. A scripted demo test passes. Gemini live mode is built and tested with a fake client, but **not yet verified against the real API**. The design is in [docs/foundation-plan.md](docs/foundation-plan.md).
+# OpenDoor
+
+OpenDoor asks a few plain questions, one at a time, then shows the government and community programs that serve the person's town, whether they *might* qualify, and an ordered plan of what to do next. It can read a pay stub or benefit letter, link a simulated bank account, and fill a practice application form live while the person watches, always stopping before anything is sent.
+
+It is not a chatbot. The app leads and the person answers, mostly by tapping. Every program fact and link comes from a hand-checked record with its source, never from a language model.
+
+Built at HackUMass as a 36-hour hackathon project.
+
+## Try it
+
+- **Live site:** <https://opendoor.casa>. The backend runs on Render's free plan and sleeps when idle, so the first load can take about a minute.
+- **Coverage:** the 25 ZIP codes of Hampshire County, MA (Amherst is `01002`). Try *Food* + *Heat and utilities*, ZIP `01002`, then *I'm behind on a bill*.
+- **On the site:** `/` is the landing page, `/start` the conversation, `/home` the plan, `/papers` the document wallet, and `/behind` explains how the agents work. **Watch demo** on the plan runs a 30-second guided tour.
+
+## What it does
+
+| | |
+|---|---|
+| **Guided intake** | One question at a time, chosen from the person's needs and from what nearby programs actually require. Tap-to-answer options, skippable questions, or type in your own words. Available in English, Spanish, Portuguese, Chinese and Hindi. |
+| **37 curated programs** | Food pantries, SNAP help, WIC, Fuel Assistance, RAFT, heating repair, weatherization, shelters, paratransit, legal aid, free tax help, Lifeline and more, each with a source URL and quote in `docs/curation/`. |
+| **Potential eligibility** | Rules are checked in code against the provider's stated criteria. Each program gets a preliminary label (likely a fit, possibly a fit, more information needed, likely not a fit). Unknown stays unknown, and only the provider decides. |
+| **A ranked plan** | Next steps ordered by urgency, revised as answers change, with a short note on what each new answer changed. Printable. |
+| **Papers** | Upload a pay stub, lease or utility bill; found details are shown to the person to confirm before they are used, and the file is deleted after reading. |
+| **Simulated bank link** | A fictional Capital One Nessie sandbox account becomes a monthly budget, bills and income estimate, all confirmed by the person first. |
+| **Form filling** | A Gemini-driven agent fills a practice application in a live browser, asks for anything missing, and hands control to the person for signatures, choices and the final Submit. |
+| **Crisis safety** | Danger or crisis words always show a fixed message with 911 and 988. |
+
+> **Status:** feature-complete hackathon MVP, deployed at [opendoor.casa](https://opendoor.casa). Informational only, not production software: no accounts, no database, sessions live in memory.
 
 ## Who it is for
 
@@ -181,7 +217,7 @@ Set these in `backend/.env`. That file is git-ignored; never commit keys or real
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value (e.g. `curated`) uses the 23 curated records in `backend/app/data/programs/` and the 25 Hampshire County ZIP codes in `backend/app/data/regions.json`. `.env.example` sets `fixtures`. |
+| `PROGRAM_SOURCE` | No | `fixtures` loads fictional development programs for the made-up ZIP code `00000`, labelled as test data in every response. Any other value (e.g. `curated`) uses the 37 curated records in `backend/app/data/programs/` and the 25 Hampshire County ZIP codes in `backend/app/data/regions.json`. `.env.example` sets `fixtures`. |
 | `LLM_MODE` | No | `live` or `off`. With `off`, wording comes from templates and no model is called. |
 | `GEMINI_API_KEY` | Only when `LLM_MODE=live` | Google Gemini access for reading typed chat messages, matching "Other" answers, and plainer wording of explanations and next steps. Without it, live mode falls back to templates and `/api/health` reports `off`. |
 | `LLM_MODEL` | No | Gemini model ID for live mode. Default `gemini-3.5-flash-lite`. |
@@ -264,10 +300,10 @@ For development without real data, `PROGRAM_SOURCE=fixtures` serves fictional pr
 ## Scope and limitations
 
 - **Informational only.** Fit labels are preliminary. Only the program's provider decides eligibility.
-- **Grounded data.** Program details and links come from a hand-curated, dated dataset for one region. The app does not search the live web and says so when a ZIP code is outside coverage.
+- **Grounded data.** Program details and links come from a hand-curated, dated dataset for one region, and the app says so when a ZIP code is outside coverage. Web search results appear only for needs with no curated program, apart from the plan and labelled as unchecked.
 - **Simulated banking.** Nessie is a sandbox. No real bank account is ever connected, and deposits are not treated as income until the person confirms them.
-- **Documents.** Only household size and income are read from an upload, the file is deleted immediately, and found numbers need the person's confirmation.
-- **No applications.** The app never submits anything on a user's behalf.
+- **Documents.** Only the fields for that paper's kind are read, the file is deleted immediately, and found details need the person's confirmation.
+- **Never submits.** The form-filling agent fills practice forms (and real ones only up to the first Submit). Signing and sending are always the person's own steps.
 - **Not production-ready.** No authentication, no persistence, no rate limiting.
 
 ## Repository structure
@@ -278,6 +314,7 @@ render.yaml                        Render Blueprint for the backend (see Deploym
 frontend/vercel.json               Vercel build settings (Root Directory = frontend)
 docs/foundation-plan.md            architecture, contracts, tickets, risks
 docs/demo-script.md                the demo, step by step, with recovery steps
+docs/assets/                       README images (the OpenDoor logo)
 backend/app/main.py                FastAPI entry point; wires graph, programs, sessions
 backend/app/api/routes.py          HTTP routes
 backend/app/api/execution_routes.py  browser assistant routes (mounted only when enabled)
