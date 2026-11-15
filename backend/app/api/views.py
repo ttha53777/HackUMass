@@ -28,11 +28,15 @@ from app.api.schemas import (
 )
 from app.graph.answers import display_value
 from app.graph.questions import (
+    BANK_SOURCE_PREFIX,
+    bank_card_shown,
+    bank_review_fields,
     evidence_from_source,
     get_spec,
     income_is_summed,
     open_questions,
     paper_title,
+    priority_question_ids,
     question_for_field,
     spec_for_field,
 )
@@ -40,6 +44,7 @@ from app.graph.state import (
     DirtyFlags,
     DocumentExtraction,
     EligibilityAssessment,
+    FinancialSummary,
     IntakeState,
     Profile,
     Program,
@@ -92,27 +97,56 @@ def _notes(document: DocumentExtraction, carries_summed_income: bool) -> list[st
     return notes
 
 
+def _review_rows(profile: Profile, fields, source: str) -> list[ReviewRow]:
+    """The readings from `source` still waiting for the person, one row each."""
+    disputed = {c.field for c in profile.conflicts}
+    rows: list[ReviewRow] = []
+    for field in fields:
+        fact = evidence_from_source(profile, field, source)
+        if fact is None:
+            continue
+        spec = spec_for_field(field)
+        display = display_value(spec, fact) if spec is not None else str(fact.value)
+        rows.append(ReviewRow(
+            field=field,
+            label=spec.label if spec is not None else field.replace("_", " ").capitalize(),
+            value=fact.value,
+            display=display,
+            in_conflict=field in disputed,
+        ))
+    return rows
+
+
+BANK_NOTE = (
+    "Simulated demo data from a bank sandbox, not a real account. "
+    "Bills can show you're behind, never that a shut-off notice was sent."
+)
+
+
+def bank_review(summary: FinancialSummary | None, profile: Profile) -> list[PendingReview]:
+    """One card for everything the simulated bank profile suggests, once it says more
+    than the income alone (income on its own is confirmed with a single question)."""
+    if summary is None:
+        return []
+    source = f"{BANK_SOURCE_PREFIX}{summary.persona_id}"
+    if not bank_card_shown(profile, source):
+        return []
+    return [PendingReview(
+        document_id=source,
+        kind="bank",
+        title="the simulated bank profile",
+        rows=_review_rows(profile, bank_review_fields(profile, source), source),
+        notes=[BANK_NOTE],
+        simulated=True,
+    )]
+
+
 def pending_reviews(documents: list[DocumentExtraction], profile: Profile) -> list[PendingReview]:
     """One card per paper that still has readings waiting for the person."""
-    disputed = {c.field for c in profile.conflicts}
     summed = income_is_summed(documents)
     reviews: list[PendingReview] = []
     for document in documents:
-        source = f"doc:{document.document_id}"
-        rows: list[ReviewRow] = []
-        for field in document.extracted_facts:
-            fact = evidence_from_source(profile, field, source)
-            if fact is None:
-                continue
-            spec = spec_for_field(field)
-            display = display_value(spec, fact) if spec is not None else str(fact.value)
-            rows.append(ReviewRow(
-                field=field,
-                label=spec.label if spec is not None else field.replace("_", " ").capitalize(),
-                value=fact.value,
-                display=display,
-                in_conflict=field in disputed,
-            ))
+        rows = _review_rows(profile, document.extracted_facts, f"doc:{document.document_id}")
         if rows:
             reviews.append(PendingReview(
                 document_id=document.document_id,
@@ -246,7 +280,7 @@ def build_snapshot(
     }
 
     summary = values.get("financial_summary")
-    open_items = open_questions(profile, intake, programs, assessments)
+    open_items = open_questions(profile, intake, programs, assessments, priority_question_ids(summary))
     return SessionSnapshot(
         session_id=session_id,
         phase=values.get("workflow_phase") or "intake",
@@ -276,6 +310,6 @@ def build_snapshot(
         # Only programs that are on this person's list.
         automatable_program_ids=[p.id for p in programs if p.id in (automation_modes or {})],
         automation_modes={p.id: (automation_modes or {})[p.id] for p in programs if p.id in (automation_modes or {})},
-        pending_reviews=pending_reviews(values.get("documents") or [], profile),
+        pending_reviews=bank_review(summary, profile) + pending_reviews(values.get("documents") or [], profile),
         trace=[TraceEventView(**event.model_dump()) for event in (values.get("trace") or [])[-TRACE_SHOWN:]],
     )

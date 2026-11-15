@@ -14,16 +14,14 @@ from app.api.schemas import BankSuggestion
 from app.graph.answers import AnswerError, validate_answer
 from app.graph.questions import get_spec
 from app.graph.state import AnswerIn, FinancialSummary, Question
+from app.services.nessie import countable_monthly_income
 
 
 def _money(value: float) -> str:
     return f"${round(value):,}"
 
 
-def countable_monthly(summary: FinancialSummary) -> float:
-    """Wages and benefit deposits, the part that looks like income. Other deposits
-    (transfers, refunds) are left out; they are not income."""
-    return round(sum(s.avg_monthly for s in summary.income_sources if s.kind in ("wages", "benefit")), 2)
+countable_monthly = countable_monthly_income  # wages and benefits; other deposits left out
 
 
 def _band_for(question: Question, yearly: float) -> str | None:
