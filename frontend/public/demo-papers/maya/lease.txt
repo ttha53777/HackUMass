@@ -4,5 +4,8 @@ Tenant: Maya Rivera
 Unit: 12 Example Street, Apt 3, Amherst, MA 01002
 Monthly rent: $900, due on the 1st
 Heat included: No
+Heating type: Electric baseboard, paid by tenant
 Lease term: September 1, 2026 - August 31, 2027
 Landlord: Sample Property Management
+Landlord address: 40 Sample Road, Amherst, MA 01002
+Landlord phone: 413-555-0177

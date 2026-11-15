@@ -1,0 +1,165 @@
+{
+  "_comment": "Field map for the practice form app/execution/forms/food-application.html, curated by hand. The automation record takes its readiness lists from here.",
+  "form_id": "food-application",
+  "title": "Food Assistance Application",
+  "steps": [
+    {
+      "panel": "[data-panel='1']",
+      "fields": [
+        {
+          "selector": "#fname",
+          "key": "first_name",
+          "required": true
+        },
+        {
+          "selector": "#lname",
+          "key": "last_name",
+          "required": true
+        },
+        {
+          "selector": "#dob",
+          "key": "date_of_birth",
+          "required": true
+        },
+        {
+          "selector": "#tel",
+          "key": "phone",
+          "required": true
+        },
+        {
+          "selector": "#mail",
+          "key": "email",
+          "required": false
+        },
+        {
+          "selector": "#addr",
+          "key": "street_address",
+          "required": true
+        },
+        {
+          "selector": "#town",
+          "key": "city",
+          "required": true
+        },
+        {
+          "selector": "#st",
+          "key": "state",
+          "required": true
+        },
+        {
+          "selector": "#postal",
+          "key": "zip",
+          "required": true
+        },
+        {
+          "selector": "#call_time",
+          "key": "best_time_to_call",
+          "required": false
+        }
+      ],
+      "next": "#next"
+    },
+    {
+      "panel": "[data-panel='2']",
+      "fields": [
+        {
+          "selector": "#people",
+          "key": "household_size",
+          "required": true
+        },
+        {
+          "selector": "#m2_name",
+          "key": "member_2_name",
+          "required": false
+        },
+        {
+          "selector": "#m2_rel",
+          "key": "member_2_relation",
+          "required": false
+        },
+        {
+          "selector": "#m2_dob",
+          "key": "member_2_dob",
+          "required": false
+        },
+        {
+          "selector": "#m3_name",
+          "key": "member_3_name",
+          "required": false
+        },
+        {
+          "selector": "#m3_rel",
+          "key": "member_3_relation",
+          "required": false
+        },
+        {
+          "selector": "#m3_dob",
+          "key": "member_3_dob",
+          "required": false
+        }
+      ],
+      "next": "#next"
+    },
+    {
+      "panel": "[data-panel='3']",
+      "fields": [
+        {
+          "selector": "#emp",
+          "key": "employer_name",
+          "required": true
+        },
+        {
+          "selector": "#emp_addr",
+          "key": "employer_address",
+          "required": true
+        },
+        {
+          "selector": "#wages",
+          "key": "earned_income_monthly",
+          "required": true
+        },
+        {
+          "selector": "#hours",
+          "key": "hours_per_week",
+          "required": true
+        },
+        {
+          "selector": "#oi_kind",
+          "key": "other_income_source",
+          "required": false
+        },
+        {
+          "selector": "#oi_amt",
+          "key": "other_income_amount",
+          "required": false
+        },
+        {
+          "selector": "#oi_who",
+          "key": "other_income_person",
+          "required": false
+        },
+        {
+          "selector": "#rent_amt",
+          "key": "monthly_rent",
+          "required": true
+        },
+        {
+          "selector": "#heat_rent",
+          "key": "heat_included",
+          "required": true
+        },
+        {
+          "selector": "#utility",
+          "key": "utility_company",
+          "required": false
+        }
+      ],
+      "next": "#next"
+    },
+    {
+      "panel": "[data-panel='4']",
+      "fields": [],
+      "handoff": "#ssn"
+    }
+  ]
+}

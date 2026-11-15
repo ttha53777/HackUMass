@@ -20,13 +20,24 @@ from functools import lru_cache
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from app.execution.models import AutomationRecord
+from app.execution.models import AutomationRecord, FormManifest
 
 logger = logging.getLogger(__name__)
 
 AUTOMATION_DIR = Path(__file__).resolve().parents[1] / "data" / "automation"
+FORMS_DIR = AUTOMATION_DIR / "forms"  # field maps; the pages are app/execution/forms/<form_id>.html
+FORM_PAGES_DIR = Path(__file__).resolve().parent / "forms"
 
 PROVIDERS = ("steel", "local", "off")
+# How a practice form with a manifest is filled (docs/document-to-form-demo-plan.md, 5.1):
+#   gemini_map    one Gemini call per step maps the page's labels to fill-sheet keys
+#                 (never values); falls back to the manifest after 8 s or an error.
+#                 The default whenever GEMINI_API_KEY is set.
+#   manifest      the curated field map; no model, works offline (the default with no key)
+#   computer_use  the screenshot loop, as for forms without a manifest
+FORM_ENGINES = ("manifest", "gemini_map", "computer_use")
+DEFAULT_FORM_ENGINE = "manifest"  # with no key; with a key the default is gemini_map
+DEFAULT_TYPE_DELAY_MS = 30  # visible typing for the demo; 0 types instantly
 
 # Model id for Gemini Computer Use, overridable with BROWSER_AGENT_MODEL. Measured
 # 2026-11-14 on the practice form: gemini-3.5-flash answered a screenshot turn in
@@ -62,6 +73,14 @@ class AgentSettings:
     practice_base_url: str
     local_channel: str | None
     local_headless: bool
+    form_engine: str = DEFAULT_FORM_ENGINE
+    type_delay_ms: int = 0
+    local_debug_port: int | None = None  # rehearsal only (LOCAL_BROWSER_DEBUG_PORT)
+
+    @property
+    def needs_gemini(self) -> bool:
+        """Forms without a manifest always use Gemini Computer Use; so does that engine."""
+        return self.form_engine == "computer_use"
 
     @classmethod
     def from_env(cls) -> AgentSettings:
@@ -76,15 +95,60 @@ class AgentSettings:
             # own Chromium (needs `playwright install chromium`).
             local_channel=env("LOCAL_BROWSER_CHANNEL", "chrome").strip() or None,
             local_headless=env("LOCAL_BROWSER_HEADLESS", "").strip().lower() in ("1", "true", "yes"),
+            form_engine=_form_engine(env("FORM_AGENT_ENGINE", ""), bool(env("GEMINI_API_KEY", "").strip())),
+            type_delay_ms=_int(env("FORM_TYPE_DELAY_MS", ""), DEFAULT_TYPE_DELAY_MS, 0, 200),
+            local_debug_port=_int(env("LOCAL_BROWSER_DEBUG_PORT", ""), 0, 0, 65535) or None,
         )
+
+
+def engine_for(form_id: str | None, settings: AgentSettings) -> str:
+    """Which engine fills this form: a form with a field map uses the chosen fast engine
+    (or computer_use when that is chosen and a key exists); any other form, computer_use."""
+    if form_id and (settings.form_engine != "computer_use" or not settings.gemini_api_key):
+        return settings.form_engine
+    return "computer_use"
+
+
+def _form_engine(raw: str, has_key: bool) -> str:
+    name = raw.strip().lower() or ("gemini_map" if has_key else DEFAULT_FORM_ENGINE)
+    if name not in FORM_ENGINES:
+        logger.warning("unknown FORM_AGENT_ENGINE; using %s", DEFAULT_FORM_ENGINE)
+        return DEFAULT_FORM_ENGINE
+    if name != "manifest" and not has_key:
+        logger.warning("FORM_AGENT_ENGINE=%s needs GEMINI_API_KEY; using manifest", name)
+        return "manifest"
+    return name
+
+
+def _int(raw: str, default: int, low: int, high: int) -> int:
+    try:
+        return max(low, min(high, int(raw)))
+    except ValueError:
+        return default
 
 
 def host_of(url: str) -> str:
     return (urlsplit(url).hostname or "").lower()
 
 
-def practice_url(base_url: str) -> str:
-    return f"{base_url}/practice/"
+def practice_url(base_url: str, form_id: str | None = None) -> str:
+    return f"{base_url}/practice/{form_id}/" if form_id else f"{base_url}/practice/"
+
+
+@lru_cache(maxsize=32)
+def form_manifest(form_id: str) -> FormManifest:
+    """A practice form's curated field map. Raises for an unknown form."""
+    from app.execution.models import FORM_ID
+
+    if not FORM_ID.match(form_id):
+        raise ValueError("bad form_id")
+    path = FORMS_DIR / f"{form_id}.json"
+    if not path.is_file() or not (FORM_PAGES_DIR / f"{form_id}.html").is_file():
+        raise ValueError(f"no practice form {form_id}")
+    manifest = FormManifest.model_validate(json.loads(path.read_text()))
+    if manifest.form_id != form_id:
+        raise ValueError("form_id does not match its file name")
+    return manifest
 
 
 @lru_cache(maxsize=1)
@@ -114,12 +178,13 @@ class RunTarget:
     mode: str  # "practice" or "stop_before_submit"
     start_url: str
     allowed_hosts: frozenset[str]
+    form_id: str | None = None  # a practice form with a manifest
 
 
 def resolve_target(record: AutomationRecord, settings: AgentSettings) -> RunTarget:
     if record.mode == "practice":
-        start = practice_url(settings.practice_base_url)
-        return RunTarget(record.program_id, record.mode, start, frozenset({host_of(start)}))
+        start = practice_url(settings.practice_base_url, record.form_id)
+        return RunTarget(record.program_id, record.mode, start, frozenset({host_of(start)}), record.form_id)
     assert record.start_url is not None  # enforced by AutomationRecord
     return RunTarget(
         record.program_id,

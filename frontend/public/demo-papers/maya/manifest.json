@@ -43,7 +43,7 @@
     },
     {
       "file": "shutoff-notice",
-      "title": "Notice of service disconnection (fictional)",
+      "title": "Past-due notice - Sample Electric Co. (fictional)",
       "kinds": [
         "shutoff"
       ],
@@ -79,7 +79,7 @@
     },
     {
       "file": "fuel-assistance-letter",
-      "title": "Fuel Assistance application received (fictional)",
+      "title": "Fuel Assistance benefit notice, 2025-2026 season (fictional)",
       "kinds": [
         "liheap"
       ],

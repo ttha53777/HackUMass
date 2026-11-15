@@ -27,7 +27,7 @@
     {
       "name": "Rosa Rivera",
       "relation": "mother",
-      "born": "06/02/1962"
+      "born": "09/21/1962"
     }
   ],
   "chat": {
@@ -51,14 +51,29 @@
       "kind": "income",
       "lines": [
         "Employee: Maya Rivera",
+        "Employer: Valley Grocers",
+        "Employer address: 1 Sample Way, Amherst, MA 01002",
+        "Employer phone: 413-555-0110",
         "Pay period: October 1 - October 31, 2026",
+        "Pay frequency: Monthly",
+        "Hourly rate: $15.50",
+        "Hours worked: 80",
+        "Scheduled hours per week: 18.5",
         "Gross monthly pay: $1,240",
-        "Net pay: $1,052",
-        "Hours worked: 96",
-        "Employer: Valley Grocers, 1 Sample Way, Amherst, MA 01002"
+        "Net pay: $1,052"
       ],
       "expected": {
         "monthly_income": 1240.0
+      },
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "employer_name": "Valley Grocers",
+        "employer_address": "1 Sample Way, Amherst, MA 01002",
+        "employer_phone": "413-555-0110",
+        "earned_income_monthly": "1,240",
+        "hours_per_week": "18.5"
       }
     },
     {
@@ -69,11 +84,23 @@
         "Household size: 3",
         "Maya Rivera - self - born 03/14/1994",
         "Leo Rivera - son - born 06/02/2023",
-        "Rosa Rivera - mother - born 06/02/1962",
+        "Rosa Rivera - mother - born 09/21/1962",
         "Address: 12 Example Street, Apt 3, Amherst, MA 01002"
       ],
       "expected": {
         "household_size": 3
+      },
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "date_of_birth": "03/14/1994",
+        "member_2_name": "Leo Rivera",
+        "member_2_relation": "son",
+        "member_2_dob": "06/02/2023",
+        "member_3_name": "Rosa Rivera",
+        "member_3_relation": "mother",
+        "member_3_dob": "09/21/1962"
       }
     },
     {
@@ -88,10 +115,28 @@
         "Unit: 12 Example Street, Apt 3, Amherst, MA 01002",
         "Monthly rent: $900, due on the 1st",
         "Heat included: No",
+        "Heating type: Electric baseboard, paid by tenant",
         "Lease term: September 1, 2026 - August 31, 2027",
-        "Landlord: Sample Property Management"
+        "Landlord: Sample Property Management",
+        "Landlord address: 40 Sample Road, Amherst, MA 01002",
+        "Landlord phone: 413-555-0177"
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "street_address": "12 Example Street, Apt 3",
+        "city": "Amherst",
+        "state": "MA",
+        "zip": "01002",
+        "monthly_rent": "900",
+        "heat_included": "No",
+        "heating_fuel": "Electric",
+        "landlord_name": "Sample Property Management",
+        "landlord_address": "40 Sample Road, Amherst, MA 01002",
+        "landlord_phone": "413-555-0177"
+      }
     },
     {
       "file": "electric-bill",
@@ -101,28 +146,55 @@
         "address"
       ],
       "lines": [
+        "Utility: Sample Electric Co.",
         "Account holder: Maya Rivera",
+        "Account number: SAMPLE-5512-0093",
         "Service address: 12 Example Street, Apt 3, Amherst, MA 01002",
         "Phone: 413-555-0142",
         "Email: maya.rivera@example.com",
-        "Billing period: October 2026",
-        "Amount due: $78.40",
+        "Billing period: October 8 - November 6, 2026",
+        "Previous balance: $142.60",
+        "Current charges: $171.25",
+        "Total due: $313.85",
         "Status: Past due"
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "street_address": "12 Example Street, Apt 3",
+        "city": "Amherst",
+        "state": "MA",
+        "zip": "01002",
+        "phone": "413-555-0142",
+        "email": "maya.rivera@example.com",
+        "utility_company": "Sample Electric Co.",
+        "utility_account_number": "SAMPLE-5512-0093"
+      }
     },
     {
       "file": "shutoff-notice",
-      "title": "Notice of service disconnection (fictional)",
+      "title": "Past-due notice - Sample Electric Co. (fictional)",
       "kind": "shutoff",
       "lines": [
         "Account holder: Maya Rivera",
+        "Account number: SAMPLE-5512-0093",
         "Service address: 12 Example Street, Apt 3, Amherst, MA 01002",
-        "Amount past due: $156.80",
-        "Disconnection scheduled: December 1, 2026",
-        "Call to set up a payment plan before that date."
+        "Date of notice: November 9, 2026",
+        "Amount past due: $142.60",
+        "Pay by: December 1, 2026",
+        "Call us to set up a payment plan. Massachusetts winter protection may apply to your household."
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "utility_account_number": "SAMPLE-5512-0093",
+        "amount_past_due": "142.60"
+      },
+      "note": "A past-due notice, not a shutoff: Massachusetts protects heating customers in hardship from winter shutoff (Nov 15 to Mar 15), and a Fuel Assistance household qualifies."
     },
     {
       "file": "proof-of-address",
@@ -134,7 +206,8 @@
         "Issued by: Sample Community Center",
         "Date: November 1, 2026"
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {}
     },
     {
       "file": "photo-id",
@@ -147,7 +220,17 @@
         "ID number: SAMPLE-0000",
         "Not a real document. Created for the OpenDoor demo."
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "date_of_birth": "03/14/1994",
+        "street_address": "12 Example Street, Apt 3",
+        "city": "Amherst",
+        "state": "MA",
+        "zip": "01002"
+      }
     },
     {
       "file": "landlord-notice",
@@ -155,23 +238,37 @@
       "kind": "notices",
       "lines": [
         "To: Maya Rivera, 12 Example Street, Apt 3, Amherst, MA 01002",
+        "Date of notice: November 10, 2026",
         "Rent owed: $1,800",
+        "Months owed: October 2026, November 2026",
         "Please contact the office by December 5, 2026 to arrange payment.",
         "From: Sample Property Management"
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "rent_owed": "1,800",
+        "notice_date": "11/10/2026",
+        "landlord_name": "Sample Property Management"
+      }
     },
     {
       "file": "fuel-assistance-letter",
-      "title": "Fuel Assistance application received (fictional)",
+      "title": "Fuel Assistance benefit notice, 2025-2026 season (fictional)",
       "kind": "liheap",
       "lines": [
         "Applicant: Maya Rivera",
         "Fuel Assistance number: SAMPLE-LIHEAP-0001",
-        "Status: Application received, not yet decided",
-        "Date: November 3, 2026"
+        "Status: Approved for the 2025-2026 season",
+        "Date: December 2, 2025",
+        "To continue next season, renew your application."
       ],
-      "expected": {}
+      "expected": {},
+      "expected_details": {
+        "full_name": "Maya Rivera",
+        "first_name": "Maya",
+        "last_name": "Rivera",
+        "liheap_number": "SAMPLE-LIHEAP-0001"
+      }
     },
     {
       "file": "benefit-letter",
@@ -184,7 +281,15 @@
         "Effective: January 2026"
       ],
       "expected": {},
-      "note": "Rosa's income. Its own kind (member_income) so it doesn't take Maya's proof-of-income slot. Read with that kind, the Profile Agent adds it to the pay stub's wages: $1,240 + $1,050 = $2,290 household income."
+      "note": "Rosa's income. Its own kind (member_income) so it doesn't take Maya's proof-of-income slot. Read with that kind, the Profile Agent adds it to the pay stub's wages: $1,240 + $1,050 = $2,290 household income.",
+      "expected_details": {
+        "other_income_source": "Social Security",
+        "other_income_amount": "1,050",
+        "other_income_person": "Rosa Rivera"
+      }
     }
-  ]
+  ],
+  "form_extra": {
+    "best_time_to_call": "Weekday mornings"
+  }
 }

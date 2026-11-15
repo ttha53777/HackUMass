@@ -108,7 +108,8 @@ export function Spotlight() {
     const notes = guideNotes(s, st.card);
     const action = bestAction(st);
     // The helper can fill this form and nothing blocks it: that's the main button.
-    const formReady = !st.done && st.pips.some((x) => x.k === "form" && !x.ok) && !st.pips.some((x) => !x.ok && x.k !== "form");
+    // Missing papers don't block the helper (they're for the agency); a missing income answer does.
+    const formReady = !st.done && st.pips.some((x) => x.k === "form" && !x.ok) && !st.pips.some((x) => !x.ok && x.k === "income");
     const papers =
       p.documents_needed === null ? "Not listed" : docs.length ? `${docs.length - missing.length} of ${docs.length} ready` : "None listed";
     const glance: [string, string, boolean][] = [

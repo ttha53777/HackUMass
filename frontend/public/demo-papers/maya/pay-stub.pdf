@@ -15,16 +15,21 @@ endobj
 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 6 0 obj
-<< /Length 512 >>
+<< /Length 787 >>
 stream
 BT /F2 9 Tf 72 760 Td (SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY) Tj ET
 BT /F1 18 Tf 72 726 Td (Pay stub - Valley Grocers \(fictional\)) Tj ET
 BT /F2 11 Tf 72 690 Td (Employee: Maya Rivera) Tj ET
-BT /F2 11 Tf 72 672 Td (Pay period: October 1 - October 31, 2026) Tj ET
-BT /F2 11 Tf 72 654 Td (Gross monthly pay: $1,240) Tj ET
-BT /F2 11 Tf 72 636 Td (Net pay: $1,052) Tj ET
-BT /F2 11 Tf 72 618 Td (Hours worked: 96) Tj ET
-BT /F2 11 Tf 72 600 Td (Employer: Valley Grocers, 1 Sample Way, Amherst, MA 01002) Tj ET
+BT /F2 11 Tf 72 672 Td (Employer: Valley Grocers) Tj ET
+BT /F2 11 Tf 72 654 Td (Employer address: 1 Sample Way, Amherst, MA 01002) Tj ET
+BT /F2 11 Tf 72 636 Td (Employer phone: 413-555-0110) Tj ET
+BT /F2 11 Tf 72 618 Td (Pay period: October 1 - October 31, 2026) Tj ET
+BT /F2 11 Tf 72 600 Td (Pay frequency: Monthly) Tj ET
+BT /F2 11 Tf 72 582 Td (Hourly rate: $15.50) Tj ET
+BT /F2 11 Tf 72 564 Td (Hours worked: 80) Tj ET
+BT /F2 11 Tf 72 546 Td (Scheduled hours per week: 18.5) Tj ET
+BT /F2 11 Tf 72 528 Td (Gross monthly pay: $1,240) Tj ET
+BT /F2 11 Tf 72 510 Td (Net pay: $1,052) Tj ET
 endstream
 endobj
 xref
@@ -39,5 +44,5 @@ xref
 trailer
 << /Size 7 /Root 1 0 R >>
 startxref
-959
+1234
 %%EOF

@@ -1,0 +1,124 @@
+{
+  "_comment": "Field map for the practice form app/execution/forms/fuel-renewal.html, curated by hand. The automation record takes its readiness lists from here.",
+  "form_id": "fuel-renewal",
+  "title": "Home Energy Assistance 2026-2027 Renewal",
+  "steps": [
+    {
+      "panel": "[data-panel='1']",
+      "fields": [
+        {
+          "selector": "#prev_app",
+          "key": "liheap_number",
+          "required": true
+        },
+        {
+          "selector": "#applicant_name",
+          "key": "full_name",
+          "required": true
+        },
+        {
+          "selector": "#applicant_dob",
+          "key": "date_of_birth",
+          "required": true
+        },
+        {
+          "selector": "#home_street",
+          "key": "street_address",
+          "required": true
+        },
+        {
+          "selector": "#home_city",
+          "key": "city",
+          "required": true
+        },
+        {
+          "selector": "#home_state",
+          "key": "state",
+          "required": true
+        },
+        {
+          "selector": "#home_zip",
+          "key": "zip",
+          "required": true
+        },
+        {
+          "selector": "#home_phone",
+          "key": "phone",
+          "required": true
+        },
+        {
+          "selector": "#best_time",
+          "key": "best_time_to_call",
+          "required": false
+        },
+        {
+          "selector": "#hh_size",
+          "key": "household_size",
+          "required": true
+        },
+        {
+          "selector": "#p2_name",
+          "key": "member_2_name",
+          "required": false
+        },
+        {
+          "selector": "#p2_rel",
+          "key": "member_2_relation",
+          "required": false
+        },
+        {
+          "selector": "#p2_dob",
+          "key": "member_2_dob",
+          "required": false
+        },
+        {
+          "selector": "#p3_name",
+          "key": "member_3_name",
+          "required": false
+        },
+        {
+          "selector": "#p3_rel",
+          "key": "member_3_relation",
+          "required": false
+        },
+        {
+          "selector": "#p3_dob",
+          "key": "member_3_dob",
+          "required": false
+        }
+      ],
+      "next": "#next"
+    },
+    {
+      "panel": "[data-panel='2']",
+      "fields": [
+        {
+          "selector": "#util_co",
+          "key": "utility_company",
+          "required": true
+        },
+        {
+          "selector": "#util_acct",
+          "key": "utility_account_number",
+          "required": true
+        },
+        {
+          "selector": "#rent",
+          "key": "monthly_rent",
+          "required": true
+        },
+        {
+          "selector": "#heat_in_rent",
+          "key": "heat_included",
+          "required": true
+        },
+        {
+          "selector": "#hh_income",
+          "key": "monthly_income",
+          "required": true
+        }
+      ],
+      "handoff": "#certify"
+    }
+  ]
+}

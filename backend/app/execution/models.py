@@ -6,6 +6,7 @@ field label ("Typed your phone number"), never the number.
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Literal
 from urllib.parse import urlsplit
@@ -59,6 +60,67 @@ HANDOFF_MESSAGES: dict[str, str] = {
 }
 
 
+FORM_ID = re.compile(r"^[a-z0-9][a-z0-9-]{2,39}$")
+# Only id and data-attribute selectors: curated, never built from page text.
+_SELECTOR = re.compile(r"^(#[A-Za-z][\w-]{0,60}|\[data-[a-z-]{1,30}=['\"][\w-]{1,40}['\"]\])$")
+
+
+class FormField(BaseModel):
+    selector: str
+    key: str  # a fill-sheet key (fields.CATALOGUE)
+    required: bool = True
+
+    @model_validator(mode="after")
+    def _checked(self) -> FormField:
+        from app.execution.fields import CATALOGUE
+
+        if not _SELECTOR.match(self.selector):
+            raise ValueError(f"selector must be an id or data attribute: {self.selector}")
+        if self.key not in CATALOGUE:
+            raise ValueError(f"unknown fill-sheet key: {self.key}")
+        return self
+
+
+class FormStep(BaseModel):
+    panel: str  # visible while this step is open
+    fields: list[FormField] = Field(default_factory=list)
+    next: str | None = None  # the step's Next button
+    # Clicked after the step's fields: the gate hands the browser to the person
+    # (a certify box, a Social Security field). The person signs and presses Submit.
+    handoff: str | None = None
+
+    @model_validator(mode="after")
+    def _checked(self) -> FormStep:
+        for selector in (self.panel, self.next, self.handoff):
+            if selector is not None and not _SELECTOR.match(selector):
+                raise ValueError(f"selector must be an id or data attribute: {selector}")
+        return self
+
+
+class FormManifest(BaseModel):
+    """A practice form's field map (app/data/automation/forms/<form_id>.json), curated by hand.
+
+    The manifest fill engine follows it; the automation record's readiness lists
+    are derived from it, so the form and the "Before we start" card can't disagree.
+    """
+
+    form_id: str
+    title: str
+    steps: list[FormStep]
+
+    @model_validator(mode="after")
+    def _checked(self) -> FormManifest:
+        if not FORM_ID.match(self.form_id):
+            raise ValueError("bad form_id")
+        keys = [f.key for step in self.steps for f in step.fields]
+        if len(keys) != len(set(keys)):
+            raise ValueError("a key appears twice on the form")
+        return self
+
+    def keys(self, required: bool) -> list[str]:
+        return [f.key for step in self.steps for f in step.fields if f.required == required]
+
+
 class AutomationRecord(BaseModel):
     """Curated per-program settings, from app/data/automation/<program_id>.json."""
 
@@ -77,6 +139,21 @@ class AutomationRecord(BaseModel):
     # recorded yet, so readiness can't say what's needed in advance.
     fields: list[str] = Field(default_factory=list)
     fields_optional: list[str] = Field(default_factory=list)
+    # Practice records only: our own form for this program, served at
+    # /practice/<form_id>/. Its manifest supplies `fields` and `fields_optional`.
+    form_id: str | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fields_from_form(cls, data: object) -> object:
+        if isinstance(data, dict) and data.get("form_id"):
+            from app.execution.config import form_manifest  # config imports this module
+
+            if data.get("fields") or data.get("fields_optional"):
+                raise ValueError("a record with a form_id takes its fields from the form manifest")
+            manifest = form_manifest(str(data["form_id"]))
+            data = {**data, "fields": manifest.keys(True), "fields_optional": manifest.keys(False)}
+        return data
 
     @model_validator(mode="after")
     def _fields_are_known(self) -> AutomationRecord:
@@ -101,6 +178,8 @@ class AutomationRecord(BaseModel):
                 raise ValueError("start_url host must be in allowed_hosts")
         elif self.start_url is not None:
             raise ValueError("practice records take their URL from PRACTICE_BASE_URL")
+        if self.form_id is not None and self.mode != "practice":
+            raise ValueError("only practice records have a form_id")
         return self
 
 
@@ -136,6 +215,9 @@ class RunView(BaseModel):
     # while the person has control. A credential: never logged.
     live_view_url: str | None = None
     interactive: bool = False
+    # The form is open in a browser window on this computer (BROWSER_PROVIDER=local,
+    # window shown): the person signs and sends there, not in the panel.
+    in_window: bool = False
     has_frame: bool = False  # GET .../frame has a screenshot (fallback view)
     seconds_left: int | None = None  # until the browser session expires
     outcome: Outcome | None = None
@@ -144,13 +226,26 @@ class RunView(BaseModel):
     result_recorded: bool = False
 
 
+_SOURCE_TITLE = re.compile(r"[A-Za-z][A-Za-z0-9 ,.'()-]{0,79}")
+
+
 class StartRunIn(BaseModel):
     program_id: str
     consent: Literal[True]
     # Confirmed identity details from the person's device (fill-sheet keys, see
     # fields.DEVICE_KEYS), for this run only: checked with clean_answer, put in
     # the run's FieldStore, never stored in graph state or logged.
-    details: dict[str, str] = Field(default_factory=dict, max_length=12)
+    details: dict[str, str] = Field(default_factory=dict, max_length=48)
+    # Which paper each detail came from ("your lease"), for the step log only:
+    # "Typed your account number (from your electric bill)". Titles, never values.
+    detail_sources: dict[str, str] = Field(default_factory=dict, max_length=48)
+
+    @model_validator(mode="after")
+    def _sources_are_short_titles(self) -> StartRunIn:
+        for key, title in self.detail_sources.items():
+            if key not in self.details or not _SOURCE_TITLE.fullmatch(title):
+                raise ValueError("detail_sources must name a sent detail with a short paper title")
+        return self
 
 
 class ControlIn(BaseModel):

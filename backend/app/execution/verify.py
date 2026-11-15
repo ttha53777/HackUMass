@@ -14,7 +14,8 @@ from app.execution.models import Outcome
 from app.services.llm import get_llm
 
 PRACTICE_RECEIVED = "Practice application received"
-_PRACTICE_REF = re.compile(r"\bPRACTICE-[A-Z0-9]{6}\b")
+# The generic form prints PRACTICE-XXXXXX; the per-program forms PRACTICE-FUEL-1234.
+_PRACTICE_REF = re.compile(r"\bPRACTICE-(?:[A-Z]{2,8}-\d{4}|[A-Z0-9]{6})\b")
 PROMPT_TEXT_LIMIT = 4000
 
 

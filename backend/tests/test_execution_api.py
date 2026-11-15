@@ -140,7 +140,7 @@ def test_full_practice_run_with_one_question_and_one_handoff(harness, caplog):
     assert harness.computers[0].typed == {"first_name": "Maya", "zip": "00000"}
     assert harness.provider.sessions[0].closed is True
     texts = [step["text"] for step in view["steps"]]
-    assert "Typed your first name" in texts and "Typed your ZIP code" in texts
+    assert "Typed your first name (you told us)" in texts and "Typed your ZIP code (from your answers)" in texts
     # Typed values appear nowhere: not in the step log, the model's inputs, or the logs.
     assert "Maya" not in str(view) and "Maya" not in str(harness.model.inputs)
     assert "Maya" not in caplog.text and "00000" not in str(harness.model.inputs)
@@ -235,12 +235,31 @@ def test_feature_off_hides_routes(repo, monkeypatch):
         assert client.get("/practice/").status_code == 404
 
 
-def test_provider_without_a_gemini_key_stays_off(repo, monkeypatch):
+def test_provider_without_a_gemini_key_offers_only_forms_with_a_field_map(repo, monkeypatch):
+    # The manifest engine needs no model, so the offline demo works with no key.
     monkeypatch.setenv("BROWSER_PROVIDER", "local")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("FORM_AGENT_ENGINE", "gemini_map")  # needs a key: falls back to manifest
+    with TestClient(create_app(repo, NessieService(None))) as client:
+        assert client.get("/api/health").json()["browser_agent"] is True
+        state = client.app.state
+        assert state.agent_settings.form_engine == "manifest"
+        assert state.automation and all(r.form_id for r in state.automation.values())
+        assert "capv-fuel-assistance" in state.automation
+        assert "eversource-ma-discount-rate" not in state.automation  # needs Gemini Computer Use
+        page = client.get("/practice/fuel-renewal/")
+        assert page.status_code == 200 and "Practice copy" in page.text
+        assert page.headers["content-security-policy"].startswith("default-src 'none'")
+        assert client.get("/practice/../main.py/").status_code == 404
+        assert client.get("/practice/no-such-form/").status_code == 404
+
+
+def test_provider_off_stays_off(repo, monkeypatch):
+    monkeypatch.setenv("BROWSER_PROVIDER", "off")
     with TestClient(create_app(repo, NessieService(None))) as client:
         assert client.get("/api/health").json()["browser_agent"] is False
         assert client.get("/practice/").status_code == 404
+        assert client.get("/practice/fuel-renewal/").status_code == 404
 
 
 def test_health_reports_the_agent_when_mounted(harness):
@@ -380,3 +399,25 @@ def test_a_crash_mid_run_logs_no_typed_value(repo, caplog):
     assert view["message"] == "Something went wrong with the browser. Nothing more was filled in."
     # The failure is logged by class and code location; the message (with the value) never is.
     assert "ValueError" in caplog.text and "could not type" not in caplog.text
+
+
+def test_gemini_maps_forms_by_default_when_a_key_is_set():
+    from app.execution.config import _form_engine
+
+    assert _form_engine("", has_key=True) == "gemini_map"  # Gemini does the reading
+    assert _form_engine("", has_key=False) == "manifest"  # offline fallback
+    assert _form_engine("manifest", has_key=True) == "manifest"  # an explicit choice wins
+    assert _form_engine("computer_use", has_key=False) == "manifest"
+    assert _form_engine("nonsense", has_key=True) == "manifest"
+
+
+def test_the_panel_is_told_which_engine_fills_the_form():
+    from app.execution.config import AgentSettings, engine_for
+
+    def s(engine, key):
+        return AgentSettings("local", key, "m", "", "", None, True, form_engine=engine)
+
+    assert engine_for("fuel-renewal", s("gemini_map", "k")) == "gemini_map"  # labels only go to Gemini
+    assert engine_for("fuel-renewal", s("manifest", "")) == "manifest"  # nothing goes to a model
+    assert engine_for("fuel-renewal", s("computer_use", "k")) == "computer_use"
+    assert engine_for(None, s("gemini_map", "k")) == "computer_use"  # no field map: screenshots

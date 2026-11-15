@@ -376,7 +376,12 @@ def household_income(extraction: DocumentExtraction, documents: list[DocumentExt
     """
     own = extraction.extracted_facts["monthly_income"]
     others = [d for d in documents if d.document_id != extraction.document_id and "monthly_income" in d.extracted_facts]
-    included = [d for d in others if d.kind == "member_income"]
+    # The same paper read again (same file) replaces its earlier reading; it is never added twice.
+    latest: dict[str, DocumentExtraction] = {}
+    for d in others:
+        if d.kind == "member_income" and not (extraction.kind == "member_income" and d.filename == extraction.filename):
+            latest[d.filename] = d
+    included = list(latest.values())
     if extraction.kind == "member_income":
         wages = [d for d in others if d.kind == "income"]
         included += wages[-1:]

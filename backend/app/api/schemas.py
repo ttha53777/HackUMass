@@ -361,9 +361,17 @@ class ReviewIn(BaseModel):
     edits: dict[str, float | int | str | list[str]] = Field(default_factory=dict, max_length=20)
 
 
+# Identity details, then form details read from papers (execution/fields.DEVICE_KEYS).
 IdentityKey = Literal[
     "first_name", "last_name", "full_name", "date_of_birth",
     "street_address", "city", "state", "zip", "phone", "email",
+    "member_2_name", "member_2_relation", "member_2_dob", "member_3_name",
+    "member_3_relation", "member_3_dob", "employer_name", "employer_address",
+    "employer_phone", "earned_income_monthly", "hours_per_week", "other_income_source",
+    "other_income_amount", "other_income_person", "monthly_rent", "heat_included",
+    "heating_fuel", "landlord_name", "landlord_address", "landlord_phone",
+    "utility_company", "utility_account_number", "amount_past_due", "rent_owed",
+    "notice_date", "liheap_number",
 ]
 
 
@@ -392,3 +400,6 @@ class ReadinessOut(BaseModel):
     will_ask: list[str] = Field(default_factory=list)
     unconfirmed: list[str] = Field(default_factory=list)
     blocked_by: list[str] = Field(default_factory=list)  # fields in conflict
+    # How the form is filled, so the panel can say what an AI model sees:
+    # gemini_map (field labels only), manifest (nothing), computer_use (screenshots).
+    engine: Literal["gemini_map", "manifest", "computer_use"] = "computer_use"

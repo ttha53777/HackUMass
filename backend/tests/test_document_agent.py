@@ -163,12 +163,27 @@ def test_agreement_is_not_confirmation(client):
     assert not any(c.field == "monthly_income" for c in profile.conflicts)
 
 
+SHUTOFF = (b"Notice of service disconnection\nAccount holder: A Person\nAmount past due: $142.60\n"
+           b"Disconnection scheduled: December 1, 2026\n")
+
+
 def test_shutoff_notice_outranks_the_bill(client):
     sid = start(client)
-    upload(client, sid, "shutoff.pdf", paper("shutoff-notice"), "shutoff")
+    upload(client, sid, "shutoff.txt", SHUTOFF, "shutoff")
     upload(client, sid, "bill.pdf", paper("electric-bill"), "heat")
     profile = client.app.state.sessions.values(sid)["profile"]
     assert profile.facts["utility_urgency"].value == "shutoff"
+    assert not any(c.field == "utility_urgency" for c in profile.conflicts)
+
+
+def test_the_demo_past_due_notice_and_bill_agree_on_behind(client):
+    # The demo paper is a past-due notice, not a shutoff (MA winter protection).
+    sid = start(client)
+    upload(client, sid, "notice.pdf", paper("shutoff-notice"), "shutoff")
+    upload(client, sid, "bill.pdf", paper("electric-bill"), "heat")
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert profile.facts["utility_urgency"].value == "behind"
+    assert "utility_issues" not in profile.facts
     assert not any(c.field == "utility_urgency" for c in profile.conflicts)
 
 
@@ -183,8 +198,23 @@ def test_a_kind_reads_only_its_own_fields():
 
 
 def test_unread_kinds_keep_the_paper_but_read_nothing():
-    reading = read_document("notice.txt", b"Rent owed: $1,800\nHousehold size: 4", "notices")
+    reading = read_document("other.txt", b"Rent owed: $1,800\nHousehold size: 4", "other")
     assert reading.extraction.extracted_facts == {} and "kind_not_read" in reading.extraction.notes
+    assert reading.identity == {}
+
+
+def test_notices_and_fuel_letters_give_form_details_but_no_profile_facts():
+    notice = read_document("notice.txt", b"Rent owed: $1,800\nHousehold size: 4", "notices")
+    assert notice.extraction.extracted_facts == {} and notice.identity == {"rent_owed": "1,800"}
+    letter = read_document("fuel.txt", b"Applicant: A Person\nFuel Assistance number: SAMPLE-1\nHousehold size: 4", "liheap")
+    assert letter.extraction.extracted_facts == {}
+    assert letter.identity["liheap_number"] == "SAMPLE-1"
+
+
+def test_a_form_detail_is_checked_like_a_typed_answer():
+    lease = read_document("lease.txt", b"Tenant: A Person\nMonthly rent: about nine hundred\nLandlord phone: call us\n"
+                          b"Landlord: {{phone}}\n", "lease")
+    assert not {"monthly_rent", "landlord_phone", "landlord_name"} & set(lease.identity)
 
 
 def test_labels_must_start_a_line():
@@ -299,8 +329,10 @@ def test_bills_and_notices_set_their_utility_fields():
     bill = read_kind("heat", "Utility bill\nCompany: Eversource Energy\nStatus: Past due")
     assert bill.facts == {"utility_urgency": "behind", "eversource_customer": "yes"}
     assert "eversource_customer" not in read_kind("heat", "Electric bill - Sample Electric Co.\nStatus: Past due").facts
-    notice = read_document("n.pdf", paper("shutoff-notice"), "shutoff").extraction.extracted_facts
+    notice = read_document("n.txt", SHUTOFF, "shutoff").extraction.extracted_facts
     assert notice["utility_urgency"].value == "shutoff" and notice["utility_issues"].value == ["shutoff"]
+    past_due = read_document("n.pdf", paper("shutoff-notice"), "shutoff").extraction.extracted_facts
+    assert past_due["utility_urgency"].value == "behind" and "utility_issues" not in past_due
 
 
 def test_unclaimed_readings_expire(monkeypatch):
@@ -317,6 +349,38 @@ def test_unclaimed_readings_expire(monkeypatch):
 # --- another member's income adds to the household's (Rosa's benefit letter) ----
 
 
+@pytest.mark.parametrize("order", [
+    ("pay-stub", "benefit-letter", "benefit-letter"),  # "Add all demo papers" pressed twice
+    ("benefit-letter", "pay-stub", "benefit-letter", "pay-stub"),
+])
+def test_reading_the_same_benefit_letter_again_never_adds_it_twice(client, order):
+    kinds = {"pay-stub": "income", "benefit-letter": "member_income"}
+    sid = start(client, income=False)
+    for name in order:
+        upload(client, sid, f"{name}.pdf", paper(name), kinds[name])
+    profile = client.app.state.sessions.values(sid)["profile"]
+    assert profile.facts["monthly_income"].value == 2290
+
+
+def test_a_clean_benefit_letter_is_read_without_asking_the_model():
+    from app.services import llm
+
+    class Watch:
+        calls = 0
+
+        def generate_json(self, prompt, schema):
+            Watch.calls += 1
+            return None
+
+    llm.set_llm(Watch())
+    try:
+        reading = read_document("benefit-letter.pdf", paper("benefit-letter"), "member_income")
+    finally:
+        llm.set_llm(None)
+    assert Watch.calls == 0 and "model_read" not in reading.extraction.notes
+    assert reading.extraction.extracted_facts["monthly_income"].value == 1050
+
+
 @pytest.mark.parametrize("order", [("pay-stub", "benefit-letter"), ("benefit-letter", "pay-stub")])
 def test_a_benefit_letter_adds_to_the_wages_in_either_order(client, order):
     kinds = {"pay-stub": "income", "benefit-letter": "member_income"}
@@ -326,7 +390,9 @@ def test_a_benefit_letter_adds_to_the_wages_in_either_order(client, order):
     profile = client.app.state.sessions.values(sid)["profile"]
     assert profile.facts["monthly_income"].value == 2290 and not profile.facts["monthly_income"].confirmed
     assert not any(c.field == "monthly_income" for c in profile.conflicts)  # added, not compared
-    assert "Rosa" not in str(snap["identity"]) and "Rosa" not in str(client.app.state.sessions.values(sid))
+    # Rosa's name goes to the device only as the other income's recipient, never into server state.
+    assert {r["key"] for r in snap["identity"] if "Rosa" in r["value"]} <= {"other_income_person"}
+    assert "Rosa" not in str(client.app.state.sessions.values(sid))
     income_rows = [r for review in snap["pending_reviews"] for r in review["rows"] if r["field"] == "monthly_income"]
     assert [r["value"] for r in income_rows] == [2290]  # one card carries the household total
 

@@ -20,3 +20,18 @@ export const DOC_LABEL: Record<string, string> = {
 
 /** Label for a kind; unknown kinds fall back to the provider's own wording. */
 export const docLabel = (kind: string, texts: string[]) => DOC_LABEL[kind] ?? texts[0] ?? kind;
+
+/** How a detail's source reads in the step log and on My details: "from your lease". */
+const SOURCE_NOUN: Record<string, string> = {
+  income: "your pay stub",
+  member_income: "your benefit letter",
+  dob: "your household paper",
+  heat: "your utility bill",
+  shutoff: "your past-due or shut-off notice",
+  notices: "your landlord's notice",
+  liheap: "your Fuel Assistance letter",
+  id: "your photo ID",
+  address: "your proof of address",
+  lease: "your lease",
+};
+export const sourceNoun = (kind: string) => SOURCE_NOUN[kind] ?? `your ${docLabel(kind, []).toLowerCase().replace(/^your /, "")}`;

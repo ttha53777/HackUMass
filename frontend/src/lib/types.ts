@@ -397,7 +397,34 @@ export type IdentityKey =
   | "state"
   | "zip"
   | "phone"
-  | "email";
+  | "email"
+  // Form details read from papers (backend execution/fields.PAPER_DETAIL_KEYS).
+  | "member_2_name"
+  | "member_2_relation"
+  | "member_2_dob"
+  | "member_3_name"
+  | "member_3_relation"
+  | "member_3_dob"
+  | "employer_name"
+  | "employer_address"
+  | "employer_phone"
+  | "earned_income_monthly"
+  | "hours_per_week"
+  | "other_income_source"
+  | "other_income_amount"
+  | "other_income_person"
+  | "monthly_rent"
+  | "heat_included"
+  | "heating_fuel"
+  | "landlord_name"
+  | "landlord_address"
+  | "landlord_phone"
+  | "utility_company"
+  | "utility_account_number"
+  | "amount_past_due"
+  | "rent_owed"
+  | "notice_date"
+  | "liheap_number";
 
 /** An identity detail read from a paper. Returned once; kept only on the device. */
 export type IdentityReading = { key: IdentityKey; value: string; source: string };
@@ -413,6 +440,8 @@ export type ReadinessOut = {
   will_ask: string[];
   unconfirmed: string[];
   blocked_by: string[];
+  /** How the form is filled: what an AI model sees (labels only, nothing, or screenshots). */
+  engine: "gemini_map" | "manifest" | "computer_use";
 };
 
 // ---------------------------------------------------------------------------
@@ -479,6 +508,8 @@ export type RunView = {
   /** The provider's live view. A credential: never log or share it. */
   live_view_url: string | null;
   interactive: boolean;
+  /** The form is open in a browser window on this computer: the person signs and sends there. */
+  in_window: boolean;
   /** GET .../frame has a screenshot (fallback when there is no live view). */
   has_frame: boolean;
   seconds_left: number | null;

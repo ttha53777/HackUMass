@@ -35,7 +35,7 @@ from app.execution.config import (
     AgentSettings,
     RunTarget,
 )
-from app.execution.fields import FieldStore, InvalidAnswer, clean_answer, question_for
+from app.execution.fields import TOLD_US, FieldStore, InvalidAnswer, clean_answer, question_for
 from app.execution.gate import Action, PageFacts
 from app.execution.models import (
     ACTIVE_STATUSES,
@@ -105,6 +105,7 @@ class Run:
     last_frame: bytes | None = None  # newest screenshot, memory only
     started: float = field(default_factory=time.monotonic)
     finished: float | None = None
+    in_window: bool = False  # the browser is a visible window on this computer
     task: asyncio.Task | None = None
     # True once the outcome has been written to the main graph (or there was nothing
     # to write). The panel refreshes the session snapshot after this.
@@ -140,6 +141,7 @@ class Run:
             else None,
             live_view_url=live,
             interactive=interactive and live is not None,
+            in_window=self.in_window and self.status in ("working", "needs_answer", "needs_you", "verifying"),
             has_frame=self.last_frame is not None and self.active,
             seconds_left=self.seconds_left(),
             outcome=self.outcome,
@@ -218,7 +220,8 @@ class ExecutionManager:
     ) -> None:
         self._provider = provider
         self._settings = settings
-        self._model_factory = model_factory or self._gemini
+        # Tests pass a factory; otherwise the engine follows the form (see _model_for).
+        self._model_factory = model_factory
         self._on_result = on_result
         self._pause_seconds = pause_seconds
         self._run_deadline = run_deadline
@@ -231,6 +234,24 @@ class ExecutionManager:
     @property
     def has_result_callback(self) -> bool:
         return self._on_result is not None
+
+    def _model_for(self, run: Run) -> BrowserModel:
+        """A practice form with a field map uses the fast engine unless computer_use is chosen."""
+        if self._model_factory is not None:
+            return self._model_factory(system_instruction(run.store))
+        target = run.target
+        from app.execution.config import engine_for
+
+        if target.form_id and engine_for(target.form_id, self._settings) != "computer_use":
+            from app.execution.config import form_manifest
+            from app.execution.fill import make_fill_model
+
+            hooks = _Hooks(run, self._pause_seconds)
+            return make_fill_model(
+                self._settings.form_engine, lambda: getattr(run.browser, "page", None), form_manifest(target.form_id),
+                note=lambda text: hooks.log("note", text), api_key=self._settings.gemini_api_key,
+            )
+        return self._gemini(system_instruction(run.store))
 
     def _gemini(self, instruction: str) -> BrowserModel:
         if not self._settings.gemini_api_key:
@@ -264,8 +285,13 @@ class ExecutionManager:
         if sum(1 for r in self._runs.values() if r.active) >= MAX_CONCURRENT_RUNS:
             store.clear()
             raise ExecutionError(429, "too_many_runs", "The browser assistant is busy. Try again in a few minutes.")
-        model = self._model_factory(system_instruction(store))
-        run = Run(run_id=str(uuid.uuid4()), session_id=session_id, target=target, store=store)
+        run = Run(run_id=str(uuid.uuid4()), session_id=session_id, target=target, store=store,
+                  in_window=getattr(self._provider, "name", "") == "local" and not self._settings.local_headless)
+        try:
+            model = self._model_for(run)
+        except ExecutionError:
+            store.clear()
+            raise
         self._runs[run.run_id] = run
         run.task = asyncio.create_task(self._drive(run, model))
         return run
@@ -278,7 +304,7 @@ class ExecutionManager:
         if not answer.skipped:
             raw = answer.text if answer.text is not None else (None if answer.value is None else str(answer.value))
             try:
-                run.store.put(run.question_key, clean_answer(run.question_key, raw))
+                run.store.put(run.question_key, clean_answer(run.question_key, raw), TOLD_US)
             except InvalidAnswer as exc:
                 raise ExecutionError(422, "validation_error", str(exc)) from exc
             run._answered = True

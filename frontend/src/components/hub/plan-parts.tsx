@@ -37,12 +37,16 @@ function blocker(st: HubStep): Pip | undefined {
   return st.pips.find((p) => !p.ok && p.k !== "form");
 }
 
-/** The card's main button: what blocks it first, then "Fill my form" when the helper can. */
+/**
+ * The card's main button: what blocks it first, then "Fill my form" when the helper can.
+ * A missing paper doesn't block the helper: papers are for the agency, and the form's
+ * readiness card already lists any detail it still needs.
+ */
 function primaryOf(st: HubStep): { pip: Pip; label: string } | null {
   if (st.done) return null;
-  const b = blocker(st);
-  if (b) return { pip: b, label: b.label.charAt(0).toUpperCase() + b.label.slice(1) };
   const form = st.pips.find((p) => p.k === "form" && !p.ok);
+  const b = blocker(st);
+  if (b && !(form && b.k === "papers")) return { pip: b, label: b.label.charAt(0).toUpperCase() + b.label.slice(1) };
   return form ? { pip: form, label: "Fill my form" } : null;
 }
 

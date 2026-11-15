@@ -33,6 +33,25 @@ About 4 minutes. It uses real, hand-checked Hampshire County records. The person
 | 12 | Optional: shortcut **Connect a bank** → pick a *Simulated* profile → tick consent → **Connect** → **Looks right**. | Clearly simulated and read-only. A figure that differs from an answer starts unticked. **Disconnect** removes everything read from it. |
 | 13 | Optional: **Watch demo** (nav, or the footer link on a phone). | A 70-second walk-through on a separate demo plan; your own plan comes back untouched when it ends. It never starts a form run. |
 
+### Papers to forms (about 3.5 minutes, offline)
+
+Design and the golden fill sheet: [document-to-form-demo-plan.md](document-to-form-demo-plan.md). `backend/tests/test_paper_to_form.py` runs the same fill in headless Chrome with no model and must pass before the demo.
+
+Setup: `backend/.env` with `BROWSER_PROVIDER=local`, `FORM_AGENT_ENGINE=manifest`, `LOCAL_BROWSER_HEADLESS` unset (a Chrome window opens beside the app; the person signs there). No `GEMINI_API_KEY` is needed. Intake as Maya: name **Maya**, **Food** and **Heat & utilities**, ZIP **01002**, household **2** (on purpose), **A child under 5**, **I rent**, income **I'd rather not say**.
+
+| # | Do | Say / point at |
+|---|---|---|
+| P1 | **Papers** → **Add all demo papers**. | Ten fictional papers read one after another (under 10 s). Each is read as its own kind; the toast counts the details found for forms. |
+| P2 | **Your details** → **All N look right**. | Grouped You / Household / Work and income / Home / Bills and benefits, each naming its paper. Kept on this device only; never in server state. |
+| P3 | **Your plan** → **Check them**. Household paper: tick **Household size 3** and **At home** → **Looks right**; benefit letter → **Looks right**; the rest **Looks right**. | The conflict: you said 2, the household paper lists 3 (Rosa, 64). Income is $1,240 wages + $1,050 Social Security = $2,290, added, not compared. |
+| P4 | **Fuel Assistance** → **Fill my form** (or the **Fill the form for me** shortcut) → **Turn it on** → **I agree, fill my form**. | Readiness: from your answers, from your details (grouped), and one thing we'll ask. A renewal, because last season's approval letter is on file. |
+| P5 | Watch it fill. | Visible typing. Every line names its source: "Typed your account number (from your utility bill)". |
+| P6 | Answer **Weekday mornings**. | The one field no paper covers. |
+| P7 | Handoff at the certify box. In the Chrome window: pick **Electric**, tick certify, type the name, **Submit renewal** → **I'm done**. | The helper never chooses, signs or sends. Confirmation `PRACTICE-FUEL-1234`. |
+| P8 | Optional: **SNAP food benefits** → **Fill my form**. | Same papers, a different 4-step layout with a household table. It stops at "Social Security number": we never fill one. |
+
+The past-due notice says "pay by December 1" rather than a shut-off date: Massachusetts protects heating customers in hardship from winter shut-off (November 15 to March 15), and a Fuel Assistance household qualifies.
+
 Close with the guardrails: eligibility is potential, never official; program facts only come from curated records; nothing is ever submitted for the user (the form helper hands Send back to the person); no account, no database, no Social Security number.
 
 ## If something goes wrong
@@ -42,6 +61,7 @@ Close with the guardrails: eligibility is potential, never official; program fac
 | "Your last visit timed out, so we started fresh" | The backend restarted. A new session is ready; replay from step 1 (about 30 seconds), or use **Try a sample**. |
 | "We couldn't reach the server" | Start the backend on port 8000, then choose **Try again**. |
 | Live mode is slow, or wording looks off | Set `LLM_MODE=off` in `backend/.env` and restart the backend. Templates give the same statuses, links and order. |
+| The form helper says it couldn't open the browser | `BROWSER_PROVIDER=local` needs `pip install -e ".[browser]"` and Chrome or Playwright's Chromium (`.venv/bin/playwright install chromium`). |
 | "The bank sandbox didn't respond…" | Expected when Nessie is down. The built-in simulated persona is used, and the flow is unchanged. |
 | ZIP "outside coverage" | Use `01002`, and check that `PROGRAM_SOURCE=curated`. |
 | A question you expected is not listed | It was already answered or skipped: change it under **About you**. |

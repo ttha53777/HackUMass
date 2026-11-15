@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { DETAIL_LABEL } from "@/components/documents/details-store";
+import { DETAIL_GROUPS, DETAIL_LABEL } from "@/components/documents/details-store";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 import { useToast } from "@/components/shell/toast";
@@ -31,8 +31,23 @@ const STATUS_TEXT: Record<BrowserRunStatus, string> = {
 const F = ["Fill", "Review", "Send"];
 
 /** Fill-sheet key -> label (backend execution/fields.CATALOGUE). */
-const KEY_LABEL: Record<string, string> = { ...DETAIL_LABEL, household_size: "Household size", monthly_income: "Monthly income" };
+const KEY_LABEL: Record<string, string> = {
+  ...DETAIL_LABEL,
+  household_size: "Household size",
+  monthly_income: "Monthly income",
+  best_time_to_call: "Best time to reach you",
+};
+/** A short paper title for the step log ("your lease"), or nothing if it doesn't fit the server's check. */
+const sourceTitle = (t: string | null) => (t && /^[A-Za-z][A-Za-z0-9 ,.'()-]{0,79}$/.test(t) ? t : null);
 const names = (keys: string[]) => keys.map((k) => KEY_LABEL[k] ?? k.replace(/_/g, " ")).join(", ");
+/** Many details read as groups: "You (8), Household (6), Home (2)". A few are named one by one. */
+const grouped = (keys: string[]) => {
+  const shown = keys.filter((k) => k !== "first_name" && k !== "last_name");
+  if (shown.length <= 6) return names(keys);
+  const groups = DETAIL_GROUPS.map((g) => [g.title, shown.filter((k) => (g.keys as string[]).includes(k)).length] as const).filter(([, n]) => n);
+  const rest = shown.filter((k) => !DETAIL_GROUPS.some((g) => (g.keys as string[]).includes(k)));
+  return [...groups.map(([t, n]) => `${t} (${n})`), ...(rest.length ? [names(rest)] : [])].join(", ");
+};
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
 // The run id is remembered for this tab only, so reopening the drawer resumes the run.
@@ -54,12 +69,42 @@ function writeRunId(key: string, runId: string | null) {
 }
 
 /**
+ * The demo household's papers, read in place, so the helper fills from them instead of
+ * asking. Shown only while the form needs details this device doesn't hold.
+ */
+function UseDemoHousehold({ missing }: { missing: number }) {
+  const papers = usePapersHub();
+  const toast = useToast();
+  const [status, setStatus] = useState<string | null>(null);
+  return (
+    <div className="banner info" role="note">
+      <Doodle id="docs" />
+      <span style={{ display: "grid", gap: 8 }}>
+        {missing} detail{missing === 1 ? "" : "s"} this form needs {missing === 1 ? "is" : "are"} on the demo household&apos;s papers.
+        <button
+          className="btn sm"
+          type="button"
+          disabled={!!status}
+          style={{ justifySelf: "start" }}
+          onClick={async () => {
+            const { read, details } = await papers.addDemoHousehold(setStatus);
+            toast(read ? `Read ${read} demo papers and saved ${details} details. The helper will use them.` : "The demo papers aren't on this server.");
+          }}
+        >
+          {status ?? "Fill these from the demo household's papers"}
+        </button>
+      </span>
+    </div>
+  );
+}
+
+/**
  * "Fill my form": the browser assistant fills the program's form from what the person already
  * told us (and, with the form helper on, their confirmed details), asks for anything missing, and
  * hands the browser back for every step that must be theirs. It never presses Send.
  */
 export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
-  const { closeSheet } = useHub();
+  const { closeSheet, openSheet } = useHub();
   const { refresh } = useApp();
   const { plan, setStage } = usePlan();
   const papers = usePapersHub();
@@ -157,7 +202,8 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
   }, [run, active, key, refresh, setStage, id, toast, papers, st]);
 
   // Only details whose paper still lets the helper read it ("Helper reads" on the Papers page).
-  const confirmed = useMemo(() => new Map(papers.allowedDetails.map((d) => [d.key as string, d.value])), [papers.allowedDetails]);
+  const confirmedDetails = papers.allowedDetails;
+  const confirmed = useMemo(() => new Map(confirmedDetails.map((d) => [d.key as string, d.value])), [confirmedDetails]);
   // Shown, not used: held back by their paper's switch. Names and paper titles only, never values.
   const held = papers.heldBack.filter((d) => d.key in DETAIL_LABEL && d.key !== "first_name" && d.key !== "last_name");
   const heldNote = held.length
@@ -166,6 +212,8 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
   const fromDevice = (ready?.from_device_needed ?? []).filter((k) => papers.helper && confirmed.has(k));
   const askLater = [...(ready?.from_device_needed ?? []).filter((k) => !fromDevice.includes(k)), ...(ready?.will_ask ?? []), ...(ready?.unconfirmed ?? [])];
   const blocked = (ready?.blocked_by.length ?? 0) > 0;
+  // Details the form needs that this device doesn't hold (or holds unconfirmed).
+  const missingDevice = (ready?.from_device_needed ?? []).filter((k) => !confirmed.has(k));
 
   const act = async (call: () => Promise<RunView>) => {
     setPending(true);
@@ -182,8 +230,14 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
   const begin = () =>
     act(async () => {
       const details = Object.fromEntries(fromDevice.map((k) => [k, confirmed.get(k)!]));
+      // Typed by the person: no paper to name. Read from a paper: its title, for the step log.
+      const sources = Object.fromEntries(
+        confirmedDetails
+          .filter((d) => fromDevice.includes(d.key) && d.source !== "typed" && sourceTitle(d.sourceTitle))
+          .map((d) => [d.key, sourceTitle(d.sourceTitle)!]),
+      );
       sentDetails.current = Object.keys(details).length;
-      const started = await startRun(sessionId, id, details);
+      const started = await startRun(sessionId, id, details, sources);
       writeRunId(key, started.run_id);
       return started;
     });
@@ -210,17 +264,20 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
             <div className="reuse" style={{ background: "var(--raised)", color: "var(--ink)", boxShadow: "0 0 0 1px var(--line)" }}>
               It would use
               <ul>
-                {[...confirmed.keys()].filter((k) => k in DETAIL_LABEL && k !== "first_name" && k !== "last_name").map((k) => (
-                  <li key={k}>
-                    <Tick />
-                    {KEY_LABEL[k]}
-                  </li>
-                ))}
+                {DETAIL_GROUPS.map((g) => [g.title, g.keys.filter((k) => confirmed.has(k)).length] as const)
+                  .filter(([, n]) => n)
+                  .map(([title, n]) => (
+                    <li key={title}>
+                      <Tick />
+                      {title}: {n} detail{n === 1 ? "" : "s"}
+                    </li>
+                  ))}
               </ul>
             </div>
           ) : (
             <p className="sp-n">No confirmed details yet. It will ask you for them as it goes.</p>
           )}
+          {missingDevice.length ? <UseDemoHousehold missing={missingDevice.length} /> : null}
           {heldNote ? <p className="sp-n">{heldNote}</p> : null}
           <p className="mono">Never uses: ID number · Social Security number · bank passwords</p>
           <div className="drow">
@@ -260,7 +317,7 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
               {fromDevice.length ? (
                 <div>
                   <span>From your details, on this device</span>
-                  <b>{names(fromDevice)}</b>
+                  <b title={names(fromDevice)}>{grouped(fromDevice)}</b>
                 </div>
               ) : null}
               {askLater.length ? (
@@ -274,10 +331,18 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
             <p className="sp-n">Checking what this form needs…</p>
           ) : null}
           {papers.helper && heldNote ? <p className="sp-n">{heldNote} Turn it on from Papers to use them.</p> : null}
+          {missingDevice.length ? <UseDemoHousehold missing={missingDevice.length} /> : null}
           {blocked ? (
             <div className="banner urgent" role="alert">
               <Doodle id="warn" />
-              <span>{names(ready!.blocked_by)} doesn&apos;t match yet. Settle it in My answers first so the form gets the right answer.</span>
+              <span style={{ display: "grid", gap: 8 }}>
+                {names(ready!.blocked_by)} doesn&apos;t match yet: your answer and a paper disagree. Settle it so the form gets the right answer, then come back here.
+                {s.pending_reviews.length ? (
+                  <button className="btn sm" type="button" style={{ justifySelf: "start" }} onClick={() => openSheet({ type: "review" })}>
+                    Settle it now <Arrow />
+                  </button>
+                ) : null}
+              </span>
             </div>
           ) : null}
           <div className={mode === "stop_before_submit" ? "banner info" : "banner quiet"}>
@@ -295,7 +360,11 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
             </li>
             <li style={{ display: "flex", gap: 8 }}>
               <Doodle id="eye" />
-              Screenshots of the form go to the AI model and the browser service while it works.
+              {ready?.engine === "gemini_map"
+                ? "Google Gemini reads the form's questions to match them to your details. Your answers themselves never go to Gemini."
+                : ready?.engine === "manifest"
+                  ? "Nothing about you goes to an AI model: the helper follows this form's saved map."
+                  : "Screenshots of the form go to the AI model and the browser service while it works."}
             </li>
           </ul>
           {error ? <p className="qerr">{error}</p> : null}
@@ -348,8 +417,13 @@ export function FormSheet({ s, id }: { s: SessionSnapshot; id: string }) {
           <div className="ff" style={{ gridTemplateColumns: "1fr" }}>
             <span className="v you pulse" style={{ minHeight: 48, padding: ".6em .9em" }}>
               {run.handoff.message}
+              {run.in_window && run.handoff.reason !== "stop_point"
+                ? " Do it in the form window that opened on this computer, then come back and press I'm done."
+                : ""}
             </span>
           </div>
+        ) : run.in_window && active ? (
+          <p className="sp-n">You can also watch it in the form window that opened on this computer.</p>
         ) : null}
         {run.status === "needs_answer" && run.question ? (
           <div className="ar">

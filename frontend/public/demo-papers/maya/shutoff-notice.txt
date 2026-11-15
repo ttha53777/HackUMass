@@ -1,7 +1,9 @@
 SAMPLE DOCUMENT - FICTIONAL - FOR A DEMO ONLY
-Notice of service disconnection (fictional)
+Past-due notice - Sample Electric Co. (fictional)
 Account holder: Maya Rivera
+Account number: SAMPLE-5512-0093
 Service address: 12 Example Street, Apt 3, Amherst, MA 01002
-Amount past due: $156.80
-Disconnection scheduled: December 1, 2026
-Call to set up a payment plan before that date.
+Date of notice: November 9, 2026
+Amount past due: $142.60
+Pay by: December 1, 2026
+Call us to set up a payment plan. Massachusetts winter protection may apply to your household.

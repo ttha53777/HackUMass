@@ -7,7 +7,7 @@ import { ArrowRight, ArrowUpDown, ClipboardCopy, FileSearch, FolderOpen, LayoutG
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 
 import { LoopTrace } from "@/components/loop/loop-trace";
-import { docLabel } from "@/components/od/doc-kinds";
+import { docLabel, sourceNoun } from "@/components/od/doc-kinds";
 import { btn, Panel, ProgressBar } from "@/components/od/ui";
 import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
@@ -160,7 +160,7 @@ export function WalletView() {
       await whenIdle();
       if (error) return error;
       if (!identity.length) return null;
-      const saved = await details.saveReadings(identity, title ?? `your ${docLabel(kind, []).toLowerCase()}`);
+      const saved = await details.saveReadings(identity, title ?? sourceNoun(kind));
       if (saved.otherPerson) return `This paper is for ${saved.otherPerson}, not you, so we didn't keep its name or address.`;
       return null;
     },

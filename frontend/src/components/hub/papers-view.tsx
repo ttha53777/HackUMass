@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { DETAIL_LABEL, DETAIL_ORDER, type Detail } from "@/components/documents/details-store";
+import { DETAIL_GROUPS, DETAIL_LABEL, DETAIL_ORDER, type Detail } from "@/components/documents/details-store";
 import { helperReads } from "@/components/documents/paper-store";
 import { AutoReadSetting } from "@/components/filler/auto-read-setting";
 import { DetailsReview } from "@/components/filler/details-review";
@@ -36,6 +36,7 @@ const KIND_ICON: Record<string, string> = {
   aid: "n-education",
   umass: "n-education",
   notices: "warn",
+  liheap: "n-heat",
 };
 const kindIcon = (k: string) => KIND_ICON[k] ?? "docs";
 
@@ -78,6 +79,26 @@ function DetailRow({ d }: { d: Detail }) {
   );
 }
 
+/**
+ * "Add all demo papers": the fictional household's papers, kept and read one after another
+ * (not in parallel, so the trace reads in order), each as the kind its manifest names.
+ */
+function AddAllDemoPapers() {
+  const papers = usePapersHub();
+  const toast = useToast();
+  const [status, setStatus] = useState<string | null>(null);
+  const run = async () => {
+    const { read, total, details } = await papers.addDemoHousehold(setStatus);
+    if (!read) return toast("The demo papers aren't on this server.");
+    toast(`Read ${read} of ${total} demo papers${details ? ` and saved ${details} details for forms` : ""}. The form helper is on.`);
+  };
+  return (
+    <button className="btn sm quiet" type="button" disabled={!!status} onClick={() => void run()} aria-live="polite">
+      {status ?? "Add all demo papers"}
+    </button>
+  );
+}
+
 /** "Papers": each kind of paper the plan asks for, saved once, shown at a counter or used by the helper. */
 export function PapersView() {
   const { snapshot: s } = useApp();
@@ -86,6 +107,7 @@ export function PapersView() {
   const papers = usePapersHub();
   const filler = useFiller();
   const v2 = filler.enabled === true; // the Filler (v2) replaces the v1 helper's switches and details
+  const toast = useToast();
   const [pack, setPack] = useState<string | null>(null);
   const steps = useMemo(() => (s ? hubSteps(s, plan) : []), [s, plan]);
   if (!s) return null;
@@ -101,6 +123,8 @@ export function PapersView() {
   const visits = steps.filter((st) => !st.done && st.kinds.length);
   const packStep = visits.find((st) => st.id === pack) ?? visits[0];
   const details = DETAIL_ORDER.map((k) => papers.details.find((d) => d.key === k)).filter((d): d is Detail => !!d);
+  // Ones with a different reading beside them are left for the person to choose.
+  const unconfirmed = details.filter((d) => !d.confirmed && !d.other);
 
   return (
     <>
@@ -156,9 +180,12 @@ export function PapersView() {
               {saved.length} ready{needed.length ? ` · ${needed.length} your plan still needs` : ""}
             </p>
           </div>
-          <button className="btn sm" type="button" onClick={() => openSheet({ type: "upload", kind: null })}>
-            + Add a paper
-          </button>
+          <span style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <AddAllDemoPapers />
+            <button className="btn sm" type="button" onClick={() => openSheet({ type: "upload", kind: null })}>
+              + Add a paper
+            </button>
+          </span>
         </div>
         {kinds.length ? (
           <div className="pgrid2">
@@ -320,9 +347,33 @@ export function PapersView() {
             <p className="sub" style={{ color: "var(--ink-2)", fontSize: ".94rem" }}>
               Read from your papers and kept on this device only. The form helper uses only the ones you confirm.
             </p>
-            {details.map((d) => (
-              <DetailRow key={d.id} d={d} />
-            ))}
+            {unconfirmed.length > 1 ? (
+              <div className="drow">
+                <button
+                  className="btn sm"
+                  type="button"
+                  onClick={async () => {
+                    for (const d of unconfirmed) await papers.confirmDetail(d);
+                    toast(`${unconfirmed.length} details confirmed. Kept on this device.`);
+                  }}
+                >
+                  All {unconfirmed.length} look right
+                </button>
+              </div>
+            ) : null}
+            {DETAIL_GROUPS.map((g) => {
+              const rows = details.filter((d) => g.keys.includes(d.key));
+              return rows.length ? (
+                <div key={g.title}>
+                  <p className="mono" style={{ margin: "14px 0 4px" }}>
+                    {g.title}
+                  </p>
+                  {rows.map((d) => (
+                    <DetailRow key={d.id} d={d} />
+                  ))}
+                </div>
+              ) : null;
+            })}
           </div>
         </section>
       ) : null}

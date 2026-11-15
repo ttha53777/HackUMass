@@ -1,20 +1,6 @@
 {
   "program_id": "capv-fuel-assistance",
   "mode": "practice",
-  "note": "Practice form only. The real application at toapply.org needs an account, which is always the person's to create.",
-  "fields": [
-    "first_name",
-    "last_name",
-    "date_of_birth",
-    "phone",
-    "street_address",
-    "city",
-    "state",
-    "zip",
-    "household_size",
-    "monthly_income"
-  ],
-  "fields_optional": [
-    "email"
-  ]
+  "note": "Practice form only: /practice/fuel-renewal/ (fields come from data/automation/forms/fuel-renewal.json). The real application at toapply.org needs an account, which is always the person's to create.",
+  "form_id": "fuel-renewal"
 }

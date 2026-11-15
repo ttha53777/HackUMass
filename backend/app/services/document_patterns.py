@@ -2,8 +2,9 @@
 
 Deterministic in every mode: labelled lines only, and a label must start its
 line, so a sentence planted in the middle of a paper cannot match. Each kind
-may set only its own profile fields (KIND_FIELDS); identity details for the
-fill sheet are returned separately and never enter graph state.
+may set only its own profile fields (KIND_FIELDS); identity and form details
+for the fill sheet (KIND_DETAILS) are returned separately, checked like typed
+answers, and never enter graph state.
 
 Guards, applied before any field is read:
   * a line that looks like a Social Security number is dropped (note
@@ -32,19 +33,28 @@ KIND_FIELDS: dict[str, frozenset[str]] = {
     "member_income": frozenset({"monthly_income"}),
     "address": frozenset(),
     "id": frozenset(),
+    # Read for form details only; they set no profile facts this pass.
+    "liheap": frozenset(),
+    "notices": frozenset(),
 }
 
-# Identity keys (fill-sheet keys) each kind may give the person's device.
-KIND_IDENTITY: dict[str, frozenset[str]] = {
-    "income": frozenset({"full_name"}),
-    "dob": frozenset({"full_name", "date_of_birth"}),
-    "lease": frozenset({"full_name", "street_address", "city", "state", "zip"}),
-    "heat": frozenset({"full_name", "phone", "email", "street_address", "city", "state", "zip"}),
-    "shutoff": frozenset({"full_name"}),
-    # Someone else's paper: none of its identity details are the person's own.
-    "member_income": frozenset(),
-    "address": frozenset({"full_name", "street_address", "city", "state", "zip"}),
-    "id": frozenset({"full_name", "date_of_birth", "street_address", "city", "state", "zip"}),
+_ADDRESS_KEYS = {"street_address", "city", "state", "zip"}
+# Fill-sheet keys (identity and form details) each kind may give the person's device.
+KIND_DETAILS: dict[str, frozenset[str]] = {
+    "income": frozenset({"full_name", "employer_name", "employer_address", "employer_phone",
+                         "earned_income_monthly", "hours_per_week"}),
+    "dob": frozenset({"full_name", "date_of_birth", "member_2_name", "member_2_relation", "member_2_dob",
+                      "member_3_name", "member_3_relation", "member_3_dob"}),
+    "lease": frozenset({"full_name", *_ADDRESS_KEYS, "monthly_rent", "heat_included", "heating_fuel",
+                        "landlord_name", "landlord_address", "landlord_phone"}),
+    "heat": frozenset({"full_name", "phone", "email", *_ADDRESS_KEYS, "utility_company", "utility_account_number"}),
+    "shutoff": frozenset({"full_name", "utility_account_number", "amount_past_due"}),
+    # Someone else's paper: no identity detail is the person's own, only the income line.
+    "member_income": frozenset({"other_income_source", "other_income_amount", "other_income_person"}),
+    "address": frozenset({"full_name", *_ADDRESS_KEYS}),
+    "id": frozenset({"full_name", "date_of_birth", *_ADDRESS_KEYS}),
+    "liheap": frozenset({"full_name", "liheap_number"}),
+    "notices": frozenset({"rent_owed", "notice_date", "landlord_name"}),
 }
 
 READABLE_KINDS = frozenset(KIND_FIELDS)
@@ -102,6 +112,31 @@ _EMPLOYER = _line(r"employer")
 _BENEFIT = _line(r"benefit\s+amount(?:\s+each\s+month)?|monthly\s+benefit(?:\s+amount)?|amount\s+each\s+month")
 _DOLLARS = re.compile(r"^\$?\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{2}))?$")
 _UTILITY = _line(r"utility|company|provider|electric\s+company|gas\s+company")
+_EMPLOYER_ADDRESS = _line(r"employer\s+address")
+_EMPLOYER_PHONE = _line(r"employer\s+phone")
+_GROSS_MONTHLY = _line(r"gross\s+monthly\s+pay|gross\s+pay\s+this\s+month")
+_WEEKLY_HOURS = _line(r"(?:scheduled\s+)?hours\s+per\s+week")
+_BENEFICIARY = _line(r"beneficiary")
+_RENT = _line(r"monthly\s+rent|rent\s+amount")
+_HEATING = _line(r"heating\s+(?:type|fuel)|heat\s+source")
+_LANDLORD = _line(r"landlord")
+_LANDLORD_ADDRESS = _line(r"landlord\s+address")
+_LANDLORD_PHONE = _line(r"landlord\s+phone")
+_ACCOUNT_NO = _line(r"account\s+(?:number|no\.?|#)")
+_LIHEAP_NO = _line(r"fuel\s+assistance\s+(?:number|no\.?|#)|liheap\s+(?:number|no\.?|#)")
+_RENT_OWED = _line(r"rent\s+owed|back\s+rent|amount\s+owed")
+_NOTICE_DATE = _line(r"date\s+of\s+notice|notice\s+date")
+_FROM = _line(r"from")
+_LEADING_DOLLARS = re.compile(r"^\$?\s*(\d{1,3}(?:,\d{3})+|\d+(?!,\d))(?:\.(\d{2}))?\b")
+_LONG_DATE = re.compile(r"^(?P<month>[A-Za-z]+)\.?\s+(?P<day>\d{1,2}),\s*(?P<year>\d{4})$")
+_MONTHS = {m: i for i, m in enumerate(
+    ("january", "february", "march", "april", "may", "june", "july", "august",
+     "september", "october", "november", "december"), start=1)}
+# First match wins, so "natural gas" is tried before "gas".
+_FUELS = (("natural gas", "Natural gas"), ("oil", "Oil"), ("electric", "Electric"), ("propane", "Propane"),
+          ("wood", "Wood"), ("gas", "Natural gas"))
+_INCOME_SOURCES = ((r"social\s+security|\bssa\b", "Social Security"), (r"\bssi\b|supplemental\s+security", "SSI"),
+                   (r"unemployment", "Unemployment"), (r"child\s+support", "Child support"))
 _MEMBER_ROW = re.compile(
     r"(?im)^[ \t]*(?P<name>[A-Z][\w.'-]*(?:[ \t]+[A-Z][\w.'-]*){0,3})[ \t]+-[ \t]+(?P<relation>[a-z ]+?)"
     r"[ \t]+-[ \t]+born[ \t]+(?P<born>\d{2}/\d{2}/\d{4})[ \t]*$"
@@ -182,6 +217,91 @@ _PHONE_OK = re.compile(r"^\(?\d{3}\)?[ .-]?\d{3}[ .-]?\d{4}$")
 _EMAIL_OK = re.compile(r"^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$")
 
 
+def _money(value: str | None) -> str | None:
+    """"$1,240" -> "1,240", "$900, due on the 1st" -> "900", "$142.60" -> "142.60"."""
+    match = _LEADING_DOLLARS.match((value or "").strip())
+    if not match:
+        return None
+    return match.group(1) + (f".{match.group(2)}" if match.group(2) else "")
+
+
+def _us_date(value: str | None) -> str | None:
+    """"November 10, 2026" or "11/10/2026" -> "11/10/2026"."""
+    value = (value or "").strip()
+    if parse_date(value):
+        return value
+    match = _LONG_DATE.match(value)
+    month = _MONTHS.get(match.group("month").lower()) if match else None
+    if not match or not month:
+        return None
+    try:
+        when = date(int(match.group("year")), month, int(match.group("day")))
+    except ValueError:
+        return None
+    return when.strftime("%m/%d/%Y")
+
+
+def _form_details(kind: str, text: str, allowed: frozenset[str]) -> dict[str, str]:
+    """Form details a kind may read, deterministic and labelled-line only."""
+    found: dict[str, str | None] = {}
+    if kind == "income":
+        employer = _value(_EMPLOYER, text) or ""
+        name, _, rest = employer.partition(",")
+        found["employer_name"] = name.strip() or None
+        # "Employer: Valley Grocers, 1 Sample Way, Amherst, MA 01002" carries the address too.
+        found["employer_address"] = _value(_EMPLOYER_ADDRESS, text) or (
+            rest.strip() if rest and _STREET_CITY.match(rest.strip()) else None)
+        found["employer_phone"] = _value(_EMPLOYER_PHONE, text)
+        found["earned_income_monthly"] = _money(_value(_GROSS_MONTHLY, text))
+        found["hours_per_week"] = _value(_WEEKLY_HOURS, text)
+    elif kind == "member_income":
+        found["other_income_amount"] = _money(_value(_BENEFIT, text))
+        found["other_income_person"] = _value(_BENEFICIARY, text)
+        head = " ".join([line for line in text.splitlines() if line.strip()][:TITLE_LINES])
+        found["other_income_source"] = next(
+            (label for pattern, label in _INCOME_SOURCES if re.search(pattern, head, re.I)), None)
+    elif kind == "dob":
+        others = [r for r in _MEMBER_ROW.finditer(text)
+                  if r.group("relation").strip().lower() not in ("self", "applicant")]
+        for n, row in enumerate(others[:2], start=2):
+            found[f"member_{n}_name"] = " ".join(row.group("name").split())
+            found[f"member_{n}_relation"] = " ".join(row.group("relation").split()).lower()
+            found[f"member_{n}_dob"] = row.group("born")
+    elif kind == "lease":
+        found["monthly_rent"] = _money(_value(_RENT, text))
+        heat = (_value(_HEAT_INCLUDED, text) or "").lower()
+        found["heat_included"] = heat.capitalize() if heat in ("yes", "no") else None
+        heating = (_value(_HEATING, text) or "").lower()
+        found["heating_fuel"] = next((label for word, label in _FUELS if re.search(rf"\b{word}\b", heating)), None)
+        found["landlord_name"] = _value(_LANDLORD, text)
+        found["landlord_address"] = _value(_LANDLORD_ADDRESS, text)
+        found["landlord_phone"] = _value(_LANDLORD_PHONE, text)
+    elif kind == "heat":
+        found["utility_company"] = _value(_UTILITY, text)
+        found["utility_account_number"] = _value(_ACCOUNT_NO, text)
+    elif kind == "shutoff":
+        found["utility_account_number"] = _value(_ACCOUNT_NO, text)
+        found["amount_past_due"] = _money(_value(_PAST_DUE, text))
+    elif kind == "liheap":
+        found["liheap_number"] = _value(_LIHEAP_NO, text)
+    elif kind == "notices":
+        found["rent_owed"] = _money(_value(_RENT_OWED, text))
+        found["notice_date"] = _us_date(_value(_NOTICE_DATE, text))
+        found["landlord_name"] = _value(_FROM, text)
+
+    from app.execution.fields import CATALOGUE, InvalidAnswer, clean_answer  # no import cycle: fields needs only state
+
+    kept: dict[str, str] = {}
+    for key, value in found.items():
+        if key not in allowed or not value or key not in CATALOGUE:
+            continue
+        try:
+            kept[key] = clean_answer(key, value)  # a paper's value is checked like a typed answer
+        except InvalidAnswer:
+            continue
+    return kept
+
+
 def _identity(text: str, allowed: frozenset[str]) -> dict[str, str]:
     found: dict[str, str] = {}
     if "full_name" in allowed and (name := _value(_NAME, text)):
@@ -254,10 +374,17 @@ def read_kind(kind: str, text: str, today: date | None = None) -> KindReading:
         if re.search(r"\beversource\b", company, re.I) or re.search(r"^\s*eversource\b", head, re.I):
             reading.facts["eversource_customer"] = "yes"
 
-    if kind == "shutoff" and _value(_DISCONNECT, text):
-        reading.facts["utility_urgency"] = "shutoff"
-        reading.facts["utility_issues"] = ["shutoff"]
+    if kind == "shutoff":
+        if _value(_DISCONNECT, text):
+            reading.facts["utility_urgency"] = "shutoff"
+            reading.facts["utility_issues"] = ["shutoff"]
+        elif _value(_PAST_DUE, text):
+            # A past-due notice with no disconnection date: behind, not facing a shutoff.
+            reading.facts["utility_urgency"] = "behind"
 
-    for key, value in _identity(text, KIND_IDENTITY.get(kind, frozenset())).items():
+    allowed_details = KIND_DETAILS.get(kind, frozenset())
+    for key, value in _identity(text, allowed_details).items():
+        reading.identity.setdefault(key, value)
+    for key, value in _form_details(kind, text, allowed_details).items():
         reading.identity.setdefault(key, value)
     return reading
