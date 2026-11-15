@@ -11,6 +11,7 @@ export function Drawer({
   label,
   onClose,
   full,
+  chat,
   children,
 }: {
   open: boolean;
@@ -18,6 +19,8 @@ export function Drawer({
   onClose: () => void;
   /** Full screen, white: "show this at the counter". */
   full?: boolean;
+  /** The chat layout: messages scroll, the composer stays at the bottom. */
+  chat?: boolean;
   children: ReactNode;
 }) {
   const panel = useRef<HTMLDivElement>(null);
@@ -43,7 +46,7 @@ export function Drawer({
       <div className={`scrim${open ? " on" : ""}`} onClick={onClose} aria-hidden="true" />
       <div
         ref={panel}
-        className={`drawer${open ? " on" : ""}${full ? " full" : ""}`}
+        className={`drawer${open ? " on" : ""}${full ? " full" : ""}${chat ? " chat" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={label}

@@ -107,6 +107,8 @@ export function Spotlight() {
     const checks = st.card.assessment?.checks ?? [];
     const notes = guideNotes(s, st.card);
     const action = bestAction(st);
+    // The helper can fill this form and nothing blocks it: that's the main button.
+    const formReady = !st.done && st.pips.some((x) => x.k === "form" && !x.ok) && !st.pips.some((x) => !x.ok && x.k !== "form");
     const papers =
       p.documents_needed === null ? "Not listed" : docs.length ? `${docs.length - missing.length} of ${docs.length} ready` : "None listed";
     const glance: [string, string, boolean][] = [
@@ -366,7 +368,12 @@ export function Spotlight() {
         </div>
 
         <div className="sp-f">
-          {action && !st.done ? (
+          {formReady ? (
+            <button className="go send" type="button" onClick={() => openSheet({ type: "form", id: st.id })}>
+              <span>Fill my form</span>
+              <Arrow />
+            </button>
+          ) : action && !st.done ? (
             <a className="go" href={action.href} target={action.href.startsWith("tel:") ? undefined : "_blank"} rel="noopener noreferrer">
               <span>{action.label}</span>
               <Arrow />

@@ -149,7 +149,7 @@ export function BankSheet({ s }: { s: SessionSnapshot }) {
           </button>
           {error ? <p className="qerr">{error}</p> : null}
           <div className="drow">
-            <button className={`btn${consent && pick && !working ? "" : " dis"}`} type="button" disabled={!consent || !pick || working} onClick={() => void connect()}>
+            <button className={`btn${consent && pick && !working ? "" : " dis"}`} type="button" data-tour="connect" disabled={!consent || !pick || working} onClick={() => void connect()}>
               Connect <Arrow />
             </button>
             <button className="txt-btn" type="button" onClick={closeSheet}>
@@ -195,7 +195,7 @@ export function BankSheet({ s }: { s: SessionSnapshot }) {
                 <Suggestion key={sug.question_id} sug={sug} />
               ))}
               <div className="drow">
-                <button className="btn" type="button" onClick={() => setStage("done")}>
+                <button className="btn" type="button" data-tour="looks-right" onClick={() => setStage("done")}>
                   Done <Arrow />
                 </button>
               </div>

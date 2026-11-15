@@ -30,8 +30,17 @@ acceptance checklist for states (Phase 9).
   form-helper switch), upload drawer on the real Document Agent with in-drawer review, paper and
   counter drawers, full Papers page, "Check what we read" prompt for leftover reviews. Bank:
   simulated profiles only, review card + bills summary, Disconnect; `/money` opens the bank drawer.
-- Still to come: "Fill the form for me" tile and form pip actions (Phase 7), chat (Phase 8),
-  Watch demo (Phase 9). The "What the helper did" log on Papers arrives with Phase 7.
+- **Phases 7–10 done.** Form drawer (`form-sheet.tsx`) ports the browser assistant and readiness
+  card: helper gate, "before we start", live view or screenshots, questions mid-run, hand-off,
+  result; form pips, "Fill my form" primary and the third shortcut tile; "What the helper did" on
+  Papers (counts only). B2 shipped (`InterpretOut.proposed`, tests in `test_interpret.py`); chat
+  drawer applies needs, then each proposal only to questions the backend has open. Watch demo
+  (`tour/`) runs all eight chapters on a throwaway session and restores the person's session,
+  plan and papers. **Deviation:** chapter 7 shows the form drawer up to the consent screen and
+  never starts a run (a run drives a paid cloud browser and model, can take minutes, and may stop
+  to ask questions). Phase 10: unverified web results section, outside-our-area and offline
+  states checked, a footer demo link on phones (the design hides the nav button there), toasts
+  lifted above the tour bar, more unused components marked archived, README and demo script.
 
 ## 1. What the artifact is
 

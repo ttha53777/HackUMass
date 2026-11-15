@@ -10,6 +10,7 @@ import { useApp } from "@/components/session/session-provider";
 import { clearDevice } from "@/lib/device-state";
 
 import { HubDefs } from "./hub-defs";
+import { TOUR_EVENT } from "./tour/tour";
 
 import "./hub.css";
 
@@ -63,7 +64,20 @@ export function HubShell({ fonts, children }: { fonts: string; children: ReactNo
               </Link>
             ))}
           </nav>
-          <div className="navact" />
+          <div className="navact">
+            <button className="btn" id="tourBtn" type="button" onClick={() => window.dispatchEvent(new Event(TOUR_EVENT))}>
+              Watch demo{" "}
+              <svg viewBox="0 0 28 20" aria-hidden="true">
+                <use href="#i-arrow" />
+              </svg>
+            </button>
+            <span className="tourhint">
+              see it work in 70 seconds
+              <svg className="dd" viewBox="0 0 30 26" aria-hidden="true">
+                <path d="M3 22 C10 20 18 14 22 4 M15 7 C18 6 20 5 22 3 C23 6 24 9 26 11" strokeWidth={2.2} />
+              </svg>
+            </span>
+          </div>
         </div>
       </div>
       <main id="top">
@@ -76,6 +90,10 @@ export function HubShell({ fonts, children }: { fonts: string; children: ReactNo
             <p>
               In danger now? Call <b>911</b>. Crisis support: call or text <b>988</b>.
             </p>
+            {/* The nav's Watch demo button is hidden on phones, as in the design; this keeps the demo reachable. */}
+            <button className="txt-btn demo-link" type="button" onClick={() => window.dispatchEvent(new Event(TOUR_EVENT))}>
+              Watch the 70-second demo
+            </button>
             <a
               className="leave"
               href="https://www.weather.gov"

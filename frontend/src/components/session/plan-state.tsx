@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { useApp } from "@/components/session/session-provider";
 import { emptyPlan, readPlan, savePlan, type AppStage, type PlanState } from "@/lib/device-state";
@@ -20,7 +20,13 @@ const Ctx = createContext<PlanController | null>(null);
  * Saved on this device only, under the current session; a new session starts empty.
  */
 export function PlanProvider({ children }: { children: ReactNode }) {
-  const sessionId = useApp().snapshot?.session_id ?? null;
+  const { snapshot, demo } = useApp();
+  const sessionId = snapshot?.session_id ?? null;
+  // A demo session's progress is never saved: the device keeps one plan, the person's.
+  const demoRef = useRef(demo);
+  useEffect(() => {
+    demoRef.current = demo;
+  });
   const [plan, setPlan] = useState<PlanState>(() => emptyPlan(null));
 
   useEffect(() => {
@@ -31,7 +37,7 @@ export function PlanProvider({ children }: { children: ReactNode }) {
   const update = useCallback((change: (p: PlanState) => PlanState) => {
     setPlan((prev) => {
       const next = change(prev);
-      if (next.sessionId) savePlan(next);
+      if (next.sessionId && !demoRef.current) savePlan(next);
       return next;
     });
   }, []);

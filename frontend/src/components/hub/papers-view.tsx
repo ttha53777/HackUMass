@@ -275,6 +275,28 @@ export function PapersView() {
         </section>
       ) : null}
 
+      {papers.log.length ? (
+        <section className="pv-s">
+          <div className="panel2">
+            <h3>What the helper did</h3>
+            {papers.log.map((l) => (
+              <div className="logrow" key={`${l.programId}-${l.at}`}>
+                <Doodle id="eye" />
+                <div>
+                  <b>
+                    {l.outcome === "submitted" ? "Sent by you" : l.outcome === "stopped" ? "Stopped" : "Filled"}: {l.title}
+                  </b>
+                  <small>
+                    {new Date(l.at).toLocaleDateString("en-US", { month: "short", day: "numeric" })} · {l.actions} step{l.actions === 1 ? "" : "s"} on the form
+                    {l.details ? ` · used ${l.details} of your confirmed details` : " · from your answers"}
+                  </small>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {details.length ? (
         <section className="pv-s">
           <div className="panel2">

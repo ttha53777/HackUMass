@@ -83,6 +83,16 @@ export type SessionController = {
   whenIdle: (timeoutMs?: number) => Promise<void>;
   /** Re-read the snapshot after a change made outside an answer (the browser assistant's result). */
   refresh: () => Promise<void>;
+  /** "Watch demo" is running on a throwaway session: nothing about it is kept on this device. */
+  demo: boolean;
+  /**
+   * Swap in a throwaway session the caller already set up (never stored, so a reload or the end
+   * of the demo returns to the person's own). Set it up first: the dashboard gate sends an
+   * unfinished session to /start.
+   */
+  beginDemo: (prepared: SessionSnapshot) => void;
+  /** Swap the person's own session back in. */
+  endDemo: () => Promise<void>;
 };
 
 export type PaperReadResult = {
@@ -103,6 +113,9 @@ export function useSession(): SessionController {
   const [expired, setExpired] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [pollAttempt, setPollAttempt] = useState(0);
+  const [demo, setDemo] = useState(false);
+  // The person's own session id while a demo session is swapped in.
+  const realId = useRef<string | null>(null);
   // Ignore responses that arrive after a newer session has replaced this one.
   const generation = useRef(0);
 
@@ -121,7 +134,7 @@ export function useSession(): SessionController {
       }
       next ??= await createSession();
       if (!current()) return;
-      storeId(next.session_id);
+      if (!realId.current) storeId(next.session_id);
       setExpired(lostSession);
       setLoadError(null);
       setAnswerError(null);
@@ -313,7 +326,33 @@ export function useSession(): SessionController {
     }
   }, []);
 
+  const beginDemo = useCallback(
+    (prepared: SessionSnapshot) => {
+      if (realId.current || !sessionId) return;
+      generation.current++; // responses for the person's session that are still in flight are dropped
+      realId.current = sessionId;
+      setDemo(true);
+      setAnswerError(null);
+      setSubmitting(false);
+      setSnapshot(prepared);
+      setPollAttempt(0);
+    },
+    [sessionId],
+  );
+
+  const endDemo = useCallback(async () => {
+    const back = realId.current;
+    if (!back) return;
+    realId.current = null;
+    setDemo(false);
+    setSubmitting(false);
+    await begin(back);
+  }, [begin]);
+
   return {
+    demo,
+    beginDemo,
+    endDemo,
     snapshot,
     loadError,
     answerError,

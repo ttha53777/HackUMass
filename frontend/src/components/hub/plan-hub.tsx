@@ -15,6 +15,7 @@ import { Banner, Filters, Lanes, NextCard } from "./plan-parts";
 import { HubSheets } from "./sheets";
 import { Shortcuts } from "./shortcuts";
 import { Spotlight } from "./spotlight";
+import { WebPlaces } from "./web-places";
 
 function subscribeOnline(cb: () => void) {
   window.addEventListener("online", cb);
@@ -46,7 +47,7 @@ function Skeletons() {
 
 /** "Your plan": the whole plan on one page, built from the session snapshot. */
 export function PlanHub() {
-  const { snapshot: s, refresh } = useApp();
+  const { snapshot: s, refresh, demo } = useApp();
   const { plan } = usePlan();
   const { openSheet, openSpot } = useHub();
   const online = useOnline();
@@ -70,7 +71,10 @@ export function PlanHub() {
 
   const actions: HeroAction[] =
     which === "empty"
-      ? [{ label: "Pick what you need", onClick: () => openSheet({ type: "needs" }) }]
+      ? [
+          { label: "Talk it through", onClick: () => openSheet({ type: "chat" }) },
+          { label: "Pick from a list", onClick: () => openSheet({ type: "needs" }), quiet: true },
+        ]
       : which === "urgent"
         ? [{ label: "Do it now", onClick: toNext }]
         : which === "waiting"
@@ -85,7 +89,7 @@ export function PlanHub() {
 
   return (
     <>
-      <Hero which={which} name={name} place={place} done={done} total={total} actions={actions} />
+      <Hero which={which} name={demo ? "Maya" : name} place={place} done={done} total={total} actions={actions} />
       <Told s={s} steps={steps} />
       {which !== "loading" && which !== "nomatch" ? <Shortcuts s={s} steps={steps} /> : null}
 
@@ -121,6 +125,7 @@ export function PlanHub() {
               <Lanes steps={steps} next={next} incomeId={incomeId} />
             </>
           )}
+          {which !== "loading" && which !== "offline" ? <WebPlaces /> : null}
           <p className="sp-n" style={{ marginTop: 24 }}>
             Matches are potential, never official: only each provider decides. Facts come from the providers&apos; own pages.
           </p>

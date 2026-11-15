@@ -4,6 +4,7 @@ import { paperFontVars } from "@/components/front/paper-fonts";
 import { HubShell } from "@/components/hub/hub-shell";
 import { HubProvider } from "@/components/hub/hub-state";
 import { PapersProvider } from "@/components/hub/papers-context";
+import { Tour } from "@/components/hub/tour/tour";
 import { AnswerProvider } from "@/components/session/answer-provider";
 import { PlanProvider } from "@/components/session/plan-state";
 import { Gate } from "@/components/shell/gate";
@@ -24,7 +25,10 @@ export default function HubLayout({ children }: { children: ReactNode }) {
           <AnswerProvider>
             <PapersProvider>
               <Suspense>
-                <HubProvider>{children}</HubProvider>
+                <HubProvider>
+                  {children}
+                  <Tour />
+                </HubProvider>
               </Suspense>
             </PapersProvider>
           </AnswerProvider>

@@ -21,10 +21,11 @@ function KindPill({ st }: { st: HubStep }) {
   );
 }
 
-/** What a step's blocking pip asks for, as something to do now. */
-function usePipAction(incomeId: string | null) {
+/** What a step's pip asks for, as something to do now. */
+function usePipAction(incomeId: string | null, stepId?: string) {
   const { openSheet } = useHub();
   return (pip: Pip): (() => void) | null => {
+    if (pip.k === "form" && stepId && !pip.sent) return () => openSheet({ type: "form", id: stepId });
     if (pip.k === "papers" && pip.kind) return () => openSheet({ type: "upload", kind: pip.kind });
     if (pip.k === "income" && incomeId) return () => openSheet({ type: "answers", edit: incomeId });
     return null;
@@ -34,6 +35,15 @@ function usePipAction(incomeId: string | null) {
 /** The first thing standing between the person and this step, as a button. */
 function blocker(st: HubStep): Pip | undefined {
   return st.pips.find((p) => !p.ok && p.k !== "form");
+}
+
+/** The card's main button: what blocks it first, then "Fill my form" when the helper can. */
+function primaryOf(st: HubStep): { pip: Pip; label: string } | null {
+  if (st.done) return null;
+  const b = blocker(st);
+  if (b) return { pip: b, label: b.label.charAt(0).toUpperCase() + b.label.slice(1) };
+  const form = st.pips.find((p) => p.k === "form" && !p.ok);
+  return form ? { pip: form, label: "Fill my form" } : null;
 }
 
 function Pips({ st, act }: { st: HubStep; act: (p: Pip) => (() => void) | null }) {
@@ -89,9 +99,9 @@ function DoneCheck({ st }: { st: HubStep }) {
 export function StepCard({ st, incomeId }: { st: HubStep; incomeId: string | null }) {
   const { moved } = useAnswer();
   const { openSheet, openSpot } = useHub();
-  const act = usePipAction(incomeId);
-  const b = st.done ? undefined : blocker(st);
-  const go = b ? act(b) : null;
+  const act = usePipAction(incomeId, st.id);
+  const pr = primaryOf(st);
+  const go = pr ? act(pr.pip) : null;
   const cls = ["card", `k-${st.kind}`, st.urgent && !st.done ? "urgent" : "", st.done ? "done" : "", moved.has(st.id) ? "flash" : ""]
     .filter(Boolean)
     .join(" ");
@@ -126,9 +136,9 @@ export function StepCard({ st, incomeId }: { st: HubStep; incomeId: string | nul
         </button>
       ) : null}
       <Pips st={st} act={act} />
-      {b && go ? (
-        <button className="go" type="button" onClick={go}>
-          <span>{b.label.charAt(0).toUpperCase() + b.label.slice(1)}</span>
+      {pr && go ? (
+        <button className={pr.pip.k === "form" ? "go send" : "go"} type="button" onClick={go}>
+          <span>{pr.label}</span>
           <Arrow />
         </button>
       ) : null}
@@ -161,7 +171,7 @@ export function SlimRow({ st }: { st: HubStep }) {
 }
 
 export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: string | null }) {
-  const act = usePipAction(incomeId);
+  const act = usePipAction(incomeId, st?.id);
   const { openSheet, openSpot } = useHub();
   if (!st) {
     return (
@@ -178,8 +188,8 @@ export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: 
     );
   }
   const ok = st.pips.filter((p) => p.ok).length;
-  const b = blocker(st);
-  const go = b ? act(b) : null;
+  const pr = primaryOf(st);
+  const go = pr ? act(pr.pip) : null;
   return (
     <div className="next" id="next">
       <span className="hand note">start here</span>
@@ -195,16 +205,16 @@ export function NextCard({ st, incomeId }: { st: HubStep | undefined; incomeId: 
         ) : null}
       </div>
       <div className="row">
-        {b && go ? (
+        {pr && go ? (
           <button className="btn light" type="button" onClick={go}>
-            {b.label.charAt(0).toUpperCase() + b.label.slice(1)} <Arrow />
+            {pr.label} <Arrow />
           </button>
         ) : (
           <button className="btn light" type="button" onClick={() => openSpot(st.id)}>
             See how <Arrow />
           </button>
         )}
-        <button className="txt-btn lite" type="button" onClick={() => openSpot(st.id)}>
+        <button className="txt-btn lite" type="button" data-tour="more" onClick={() => openSpot(st.id)}>
           More about this
         </button>
       </div>

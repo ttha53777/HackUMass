@@ -55,6 +55,9 @@ export function Told({ s, steps }: { s: SessionSnapshot; steps: HubStep[] }) {
       <button className="addbtn" type="button" onClick={() => openSheet({ type: "needs" })}>
         + Add a need
       </button>
+      <button className="addbtn" type="button" data-tour="chat" onClick={() => openSheet({ type: "chat" })}>
+        Talk it through
+      </button>
       <button className="addbtn" type="button" onClick={() => openSheet({ type: "answers", edit: null })}>
         My answers
       </button>

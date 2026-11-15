@@ -116,7 +116,7 @@ export function ReviewCard({ review, onDone }: { review: PendingReview; onDone?:
         </p>
       ))}
       <div className="drow">
-        <button className={`btn${busy ? " dis" : ""}`} type="button" disabled={busy} onClick={() => void send()}>
+        <button className={`btn${busy ? " dis" : ""}`} type="button" data-tour="looks-right" disabled={busy} onClick={() => void send()}>
           {ticked.size ? "Looks right" : "Use none of it"} <Arrow />
         </button>
         {ticked.size ? (

@@ -1,3 +1,4 @@
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import type { Program } from "@/lib/types";
 
 /** Each requirement in the provider's own words, with a link to where it says so. */

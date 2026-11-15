@@ -10,6 +10,28 @@ import { usePlan } from "@/components/session/plan-state";
 import { useApp } from "@/components/session/session-provider";
 
 const HELPER_KEY = "od.helper";
+const LOG_KEY = "od.helperlog";
+
+/** One run of the form helper, for "What the helper did". Counts and names only, never values. */
+export type HelperLogEntry = {
+  programId: string;
+  title: string;
+  at: string;
+  /** Steps the assistant took on the form. */
+  actions: number;
+  /** Confirmed details sent for that run. */
+  details: number;
+  outcome: "submitted" | "not_submitted" | "unclear" | "stopped";
+};
+
+function readLog(sessionId: string): HelperLogEntry[] {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(LOG_KEY) ?? "null") as { sessionId?: string; entries?: HelperLogEntry[] } | null;
+    return raw?.sessionId === sessionId && Array.isArray(raw.entries) ? raw.entries.slice(0, 20) : [];
+  } catch {
+    return [];
+  }
+}
 
 function readHelper(): boolean {
   try {
@@ -52,6 +74,10 @@ type PapersController = {
   setHelper: (on: boolean) => void;
   setHelperRead: (paper: Paper, on: boolean) => Promise<void>;
   confirmDetail: (detail: Detail, value?: string) => Promise<void>;
+  log: HelperLogEntry[];
+  addLog: (entry: HelperLogEntry) => void;
+  /** Remove every paper and detail of the current session (the demo cleans up with this). */
+  clearAll: () => Promise<void>;
   removeDetail: (detail: Detail) => Promise<void>;
 };
 
@@ -69,10 +95,32 @@ export function PapersProvider({ children }: { children: ReactNode }) {
   const store = usePapers(sessionId);
   const details = useDetails(sessionId);
   const [helper, setHelperState] = useState(false);
+  const [log, setLog] = useState<HelperLogEntry[]>([]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- device storage is only readable after mount
     setHelperState(readHelper());
   }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- device storage is only readable after mount
+    if (sessionId) setLog(readLog(sessionId));
+  }, [sessionId]);
+
+  const addLog = useCallback(
+    (entry: HelperLogEntry) => {
+      if (!sessionId) return;
+      setLog((cur) => {
+        const next = [entry, ...cur].slice(0, 20);
+        if (app.demo) return next; // a demo run is never kept on the device
+        try {
+          window.localStorage.setItem(LOG_KEY, JSON.stringify({ sessionId, entries: next }));
+        } catch {
+          // ignore: the log still shows for this visit
+        }
+        return next;
+      });
+    },
+    [sessionId, app.demo],
+  );
 
   // Latest snapshot, readable after awaiting a read.
   const latest = useRef(app);
@@ -165,6 +213,11 @@ export function PapersProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const clearAll = useCallback(async () => {
+    for (const p of store.papers) await store.remove(p.id);
+    for (const d of details.details) await details.remove(d);
+  }, [store, details]);
+
   const setHelperRead = useCallback((paper: Paper, on: boolean) => store.update(paper, { helperOff: !on }), [store]);
 
   const value = useMemo<PapersController>(
@@ -184,8 +237,11 @@ export function PapersProvider({ children }: { children: ReactNode }) {
       setHelperRead,
       confirmDetail: details.confirm,
       removeDetail: details.remove,
+      log,
+      addLog,
+      clearAll,
     }),
-    [store.papers, store.loaded, details, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead],
+    [store.papers, store.loaded, details, paperFor, keep, read, removeKind, canRead, demos, demoBlob, helper, setHelper, setHelperRead, log, addLog, clearAll],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

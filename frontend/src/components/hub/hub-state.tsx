@@ -5,6 +5,16 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { useApp } from "@/components/session/session-provider";
 import type { Kind } from "@/lib/hub-derive";
+import type { AnswerIn, SafetyContact } from "@/lib/types";
+
+/** One message in "Talk it through". Bot messages are app templates or cards, never free generation. */
+export type ChatMsg =
+  | { r: "me"; t: string }
+  | { r: "bot"; kind: "text"; t: string }
+  | { r: "bot"; kind: "heard"; needs: string[]; facts: AnswerIn[]; sel: Record<string, boolean>; done: boolean }
+  | { r: "bot"; kind: "safety"; contacts: SafetyContact[] }
+  | { r: "bot"; kind: "added"; t: string; sub: string }
+  | { r: "bot"; kind: "pick"; t: string; opts: string[] };
 
 export type Sheet =
   | { type: "needs" }
@@ -17,7 +27,10 @@ export type Sheet =
   | { type: "counter"; kinds: string[] }
   /** Check what was read from papers or the bank. */
   | { type: "review" }
-  | { type: "bank" };
+  | { type: "bank" }
+  /** The form helper on one program's form. */
+  | { type: "form"; id: string }
+  | { type: "chat" };
 
 type HubController = {
   sheet: Sheet | null;
@@ -33,6 +46,9 @@ type HubController = {
   /** "Show what helps with" filter: a need id, or null. */
   need: string | null;
   setNeed: (need: string | null) => void;
+  /** "Talk it through" history, kept while the hub is open. */
+  chat: ChatMsg[];
+  setChat: (update: (cur: ChatMsg[]) => ChatMsg[]) => void;
 };
 
 const Ctx = createContext<HubController | null>(null);
@@ -48,6 +64,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const [spot, setSpot] = useState<string | null>(null);
   const [kind, setKind] = useState<Kind | null>(null);
   const [need, setNeed] = useState<string | null>(null);
+  const [chat, setChatState] = useState<ChatMsg[]>([]);
+  const setChat = useCallback((update: (cur: ChatMsg[]) => ChatMsg[]) => setChatState(update), []);
   const params = useSearchParams();
   const router = useRouter();
   const path = usePathname();
@@ -65,6 +83,7 @@ export function HubProvider({ children }: { children: ReactNode }) {
     if (wanted === "answers") setSheet({ type: "answers", edit: null });
     if (wanted === "needs") setSheet({ type: "needs" });
     if (wanted === "bank") setSheet({ type: "bank" });
+    if (wanted === "chat") setSheet({ type: "chat" });
     if (show === "gov" || show === "local") setKind(show);
     const id = program ?? snapshot.programs.find((c) => c.program.guide?.slug === guide)?.program.id ?? null;
     if (id && snapshot.programs.some((c) => c.program.id === id)) setSpot(id);
@@ -84,8 +103,8 @@ export function HubProvider({ children }: { children: ReactNode }) {
   const closeSpot = useCallback(() => setSpot(null), []);
 
   const value = useMemo<HubController>(
-    () => ({ sheet, openSheet, closeSheet, spot, openSpot, closeSpot, kind, setKind, need, setNeed }),
-    [sheet, openSheet, closeSheet, spot, openSpot, closeSpot, kind, need],
+    () => ({ sheet, openSheet, closeSheet, spot, openSpot, closeSpot, kind, setKind, need, setNeed, chat, setChat }),
+    [sheet, openSheet, closeSheet, spot, openSpot, closeSpot, kind, need, chat, setChat],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

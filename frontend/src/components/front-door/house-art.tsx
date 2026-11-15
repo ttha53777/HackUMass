@@ -1,3 +1,4 @@
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import { cn } from "@/lib/utils";
 
 /** The house with a door that opens. Decorative. */

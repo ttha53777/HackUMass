@@ -1,5 +1,6 @@
 "use client";
 
+// Archived: not used by the live app (not routed). The live UI is components/hub/; see app/(opendoor)/_archive/legacy-dashboard/README.md.
 import { QuestionForm } from "@/components/program/question-form";
 import { useApp } from "@/components/session/session-provider";
 import { cardById, shortName } from "@/lib/derive";

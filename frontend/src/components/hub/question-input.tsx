@@ -27,12 +27,18 @@ export function QuestionInput({
   question,
   current,
   onSent,
+  onAnswer,
+  busy,
 }: {
   question: Question;
   current?: AnsweredItem;
   onSent?: () => void;
+  /** Send the answer here instead of the main session (the form assistant's questions). */
+  onAnswer?: (body: Omit<AnswerIn, "question_id">) => Promise<boolean>;
+  busy?: boolean;
 }) {
-  const { answer, working } = useAnswer();
+  const shared = useAnswer();
+  const working = onAnswer ? !!busy : shared.working;
   const uid = useId();
   const stored = current && !current.skipped ? current : undefined;
   const [picked, setPicked] = useState<string[]>(() =>
@@ -53,7 +59,7 @@ export function QuestionInput({
   });
 
   const send = async (body: Omit<AnswerIn, "question_id">) => {
-    const ok = await answer({ question_id: question.id, ...body });
+    const ok = onAnswer ? await onAnswer(body) : await shared.answer({ question_id: question.id, ...body });
     if (ok) onSent?.();
   };
 
